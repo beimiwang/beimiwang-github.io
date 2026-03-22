@@ -1,0 +1,44 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<div class="clone-card">
+  <div class="section-title" style="padding-top:.9rem;"><%= data.post ? "编辑信息" : "发布信息" %></div>
+  <form method="post" action="/plugin.php?id=xigua_hb&ac=pub<%= data.post ? `&edit=${data.post.id}` : '' %>" style="padding:0 .75rem .85rem;">
+    <div class="weui-cells mt0">
+      <div class="weui-cell">
+        <div class="weui-cell__bd">
+          <select class="weui-input" name="category_id">
+            <% data.categories.forEach((category) => { %>
+              <option value="<%= category.id %>" <%= data.post && Number(data.post.category_id) === Number(category.id) ? "selected" : "" %>><%= category.name %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="weui-cell">
+        <div class="weui-cell__bd"><input class="weui-input" name="title" type="text" value="<%= data.post ? data.post.title : '' %>" placeholder="标题"></div>
+      </div>
+      <div class="weui-cell">
+        <div class="weui-cell__bd"><input class="weui-input" name="summary" type="text" value="<%= data.post ? data.post.summary : '' %>" placeholder="简介"></div>
+      </div>
+      <div class="weui-cell">
+        <div class="weui-cell__bd"><input class="weui-input" name="price_label" type="text" value="<%= data.post ? data.post.price_label : '' %>" placeholder="价格/薪资"></div>
+      </div>
+      <div class="weui-cell">
+        <div class="weui-cell__bd"><input class="weui-input" name="location" type="text" value="<%= data.post ? data.post.location : '' %>" placeholder="位置"></div>
+      </div>
+      <div class="weui-cell">
+        <div class="weui-cell__bd"><input class="weui-input" name="cover" type="text" value="<%= data.post ? data.post.cover : '' %>" placeholder="封面图片 URL"></div>
+      </div>
+      <div class="weui-cell">
+        <div class="weui-cell__bd"><input class="weui-input" name="tags" type="text" value="<%= data.post ? data.post.tags.join('，') : '' %>" placeholder="标签，多个用逗号分隔"></div>
+      </div>
+      <div class="weui-cell">
+        <div class="weui-cell__bd"><textarea class="weui-textarea" name="content" placeholder="详细描述" rows="6"><%= data.post ? data.post.content : '' %></textarea></div>
+      </div>
+    </div>
+    <div class="toolbar-inline">
+      <button type="submit" class="weui-btn weui-btn_primary" style="margin-top:.75rem;flex:1;"><%= data.post ? "保存修改" : "提交发布" %></button>
+      <% if (data.post) { %>
+        <a href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= data.post.id %>" class="weui-btn weui-btn_default" style="margin-top:.75rem;flex:1;">返回详情</a>
+      <% } %>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,307 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'system' }) %>
+<div class="admin-topbar">
+  <div>
+    <h1>系统配置</h1>
+    <div class="meta">管理钱包余额、刷新参数、分类、公告、会员卡套餐和管理员账号。</div>
+  </div>
+</div>
+
+<% if (message) { %>
+  <div class="notice"><%= message %></div>
+<% } %>
+
+<div class="stack">
+  <div class="panel">
+    <div class="panel-header"><h2>首页入口配置</h2></div>
+    <div class="panel-body">
+      <div class="meta" style="margin-bottom:16px;">支持修改首页“管理员 / 关注 / 进拉面群 / 马丁商城 / 加盟合伙人”的文案和点击行为。行为类型为“弹二维码”时显示弹窗，为“跳转链接”时直接跳转。</div>
+      <table>
+        <thead>
+          <tr><th>入口</th><th>配置</th></tr>
+        </thead>
+        <tbody>
+          <% data.homeLinks.forEach((link) => { %>
+            <tr>
+              <td style="white-space:nowrap;"><%= ({ follow: '关注', admin: '管理员', group: '进拉面群', shop: '马丁商城', partner: '加盟合伙人' }[link.link_key] || link.link_key) %></td>
+              <td>
+                <form class="toolbar" method="post" action="/admin/system/home-links/<%= link.link_key %>" style="flex-wrap:wrap;">
+                  <input class="input" type="text" name="label" value="<%= link.label %>" placeholder="按钮文字">
+                  <select class="select" name="action_type">
+                    <option value="qr" <%= link.action_type === 'qr' ? 'selected' : '' %>>弹二维码</option>
+                    <option value="link" <%= link.action_type === 'link' ? 'selected' : '' %>>跳转链接</option>
+                  </select>
+                  <input class="input" type="text" name="target_url" value="<%= link.target_url || '' %>" placeholder="跳转链接" style="min-width:240px;">
+                  <input class="input" type="text" name="qr_image" value="<%= link.qr_image || '' %>" placeholder="二维码图片 URL" style="min-width:220px;">
+                  <input class="input" type="text" name="modal_title" value="<%= link.modal_title || '' %>" placeholder="弹窗标题" style="min-width:220px;">
+                  <input class="input" type="number" name="sort_order" value="<%= link.sort_order || 0 %>" placeholder="排序" style="max-width:110px;">
+                  <select class="select" name="enabled">
+                    <option value="1" <%= Number(link.enabled) === 1 ? 'selected' : '' %>>显示</option>
+                    <option value="0" <%= Number(link.enabled) === 0 ? 'selected' : '' %>>隐藏</option>
+                  </select>
+                  <button class="button primary" type="submit">保存</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>图片上传</h2></div>
+    <div class="panel-body">
+      <form class="toolbar" method="post" action="/admin/upload" enctype="multipart/form-data" style="margin-bottom:16px;flex-wrap:wrap;">
+        <input class="input" type="file" name="image" accept="image/*" style="padding:10px;">
+        <button class="button primary" type="submit">上传图片</button>
+      </form>
+      <table>
+        <thead>
+          <tr><th>文件</th><th>地址</th><th>大小</th><th>更新时间</th></tr>
+        </thead>
+        <tbody>
+          <% if (!uploads.length) { %>
+            <tr><td colspan="4" style="color:#6b7280;">还没有上传文件。</td></tr>
+          <% } %>
+          <% uploads.forEach((file) => { %>
+            <tr>
+              <td><%= file.name %></td>
+              <td><a href="<%= file.url %>" target="_blank"><%= file.url %></a></td>
+              <td><%= file.sizeKb %> KB</td>
+              <td><%= file.updatedAt %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <div class="meta" style="margin-top:12px;">上传后可把 `/uploads/文件名` 填到分类图标、帖子封面等 URL 字段。</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>分类页 Banner</h2></div>
+    <div class="panel-body">
+      <div class="meta" style="margin-bottom:16px;">分类页顶部横幅可在这里直接上传图片。建议图片按当前前台显示比例制作，上传后会在对应分类页顶部展示。</div>
+      <table>
+        <thead>
+          <tr><th>分类</th><th>Banner 配置</th></tr>
+        </thead>
+        <tbody>
+          <% data.categoryBanners.forEach((banner) => { %>
+            <tr>
+              <td style="white-space:nowrap;"><%= banner.name %></td>
+              <td>
+                <form class="toolbar" method="post" action="/admin/system/category-banners/<%= banner.category_id %>" style="flex-wrap:wrap;margin-bottom:10px;">
+                  <input class="input" type="text" name="image_url" value="<%= banner.image_url || '' %>" placeholder="Banner 图片 URL" style="min-width:260px;">
+                  <input class="input" type="text" name="target_url" value="<%= banner.target_url || '' %>" placeholder="点击跳转链接（可选）" style="min-width:220px;">
+                  <select class="select" name="enabled">
+                    <option value="1" <%= Number(banner.enabled) === 1 ? 'selected' : '' %>>显示</option>
+                    <option value="0" <%= Number(banner.enabled) === 0 ? 'selected' : '' %>>隐藏</option>
+                  </select>
+                  <button class="button primary" type="submit">保存配置</button>
+                </form>
+                <form class="toolbar" method="post" action="/admin/system/category-banners/<%= banner.category_id %>/upload" enctype="multipart/form-data" style="flex-wrap:wrap;">
+                  <input class="input" type="file" name="image" accept="image/*" style="padding:10px;">
+                  <input type="hidden" name="target_url" value="<%= banner.target_url || '' %>">
+                  <input type="hidden" name="enabled" value="<%= Number(banner.enabled) === 0 ? 0 : 1 %>">
+                  <button class="button ghost" type="submit">上传并应用</button>
+                </form>
+                <% if (banner.image_url) { %>
+                  <div style="margin-top:10px;">
+                    <img src="<%= banner.image_url %>" alt="<%= banner.name %> Banner" style="width:220px;max-width:100%;border-radius:10px;border:1px solid #e5e7eb;display:block;">
+                  </div>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>刷新参数</h2></div>
+    <div class="panel-body">
+      <form class="form-grid" method="post" action="/admin/system/refresh">
+        <div class="field">
+          <label>刷新间隔（分钟）</label>
+          <input class="input" type="number" name="interval_minutes" value="<%= data.refreshSettings.interval_minutes %>">
+        </div>
+        <div class="field">
+          <label>刷新上限（次数）</label>
+          <input class="input" type="number" name="max_refreshes" value="<%= data.refreshSettings.max_refreshes %>">
+        </div>
+        <div class="field">
+          <label>钱包余额</label>
+          <input class="input" type="text" value="¥ <%= data.wallet.balance.toFixed(2) %>" disabled>
+        </div>
+        <div class="field">
+          <label>刷新套餐库存</label>
+          <input class="input" type="text" value="<%= data.wallet.refresh_package_count %>" disabled>
+        </div>
+        <div>
+          <button class="button primary" type="submit">保存配置</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>分类管理</h2></div>
+    <div class="panel-body">
+      <form class="toolbar" method="post" action="/admin/system/categories" style="margin-bottom:16px;">
+        <input class="input" type="text" name="name" placeholder="新增分类名称">
+        <input class="input" type="text" name="icon" placeholder="图标 URL">
+        <input class="input" type="number" name="sort_order" placeholder="排序" style="max-width:110px;">
+        <button class="button primary" type="submit">新增分类</button>
+      </form>
+      <table>
+        <thead>
+          <tr><th>编号</th><th>名称/图标/排序</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          <% data.categories.forEach((category) => { %>
+            <tr>
+              <td><%= category.id %></td>
+              <td colspan="2">
+                <form class="toolbar" method="post" action="/admin/system/categories/<%= category.id %>">
+                  <input class="input" type="text" name="name" value="<%= category.name %>">
+                  <input class="input" type="text" name="icon" value="<%= category.icon %>">
+                  <input class="input" type="number" name="sort_order" value="<%= category.sort_order || 0 %>" style="max-width:110px;">
+                  <button class="button primary" type="submit">保存</button>
+                  <button class="button danger" type="submit" name="action" value="delete" onclick="return confirm('删除该分类？');">删除</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>公告管理</h2></div>
+    <div class="panel-body">
+      <form class="toolbar" method="post" action="/admin/system/notices" style="margin-bottom:16px;">
+        <input class="input" type="text" name="text" placeholder="新增公告内容" style="min-width:420px;">
+        <input class="input" type="number" name="sort_order" placeholder="排序" style="max-width:110px;">
+        <button class="button primary" type="submit">新增公告</button>
+      </form>
+      <div class="stack">
+        <% data.notices.forEach((notice) => { %>
+          <form class="toolbar" method="post" action="/admin/system/notices/<%= notice.id %>">
+            <input class="input" type="text" name="text" value="<%= notice.text %>" style="flex:1;">
+            <input class="input" type="number" name="sort_order" value="<%= notice.sort_order || 0 %>" style="max-width:110px;">
+            <button class="button primary" type="submit">保存</button>
+            <button class="button danger" type="submit" name="action" value="delete" onclick="return confirm('删除这条公告？');">删除</button>
+          </form>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>会员卡套餐</h2></div>
+    <div class="panel-body">
+      <form class="toolbar" method="post" action="/admin/system/plans" style="margin-bottom:16px;flex-wrap:wrap;">
+        <input class="input" type="text" name="name" placeholder="套餐名称">
+        <input class="input" type="number" step="0.01" name="price" placeholder="现价">
+        <input class="input" type="number" step="0.01" name="original_price" placeholder="原价">
+        <input class="input" type="number" name="duration_days" placeholder="时长（天）">
+        <input class="input" type="number" name="sort_order" placeholder="排序" style="max-width:110px;">
+        <input class="input" type="text" name="description" placeholder="说明" style="min-width:240px;">
+        <button class="button primary" type="submit">新增套餐</button>
+      </form>
+      <table>
+        <thead>
+          <tr><th>编号</th><th>编辑</th></tr>
+        </thead>
+        <tbody>
+          <% data.plans.forEach((plan) => { %>
+            <tr>
+              <td><%= plan.id %></td>
+              <td>
+                <form class="toolbar" method="post" action="/admin/system/plans/<%= plan.id %>" style="flex-wrap:wrap;">
+                  <input class="input" type="text" name="name" value="<%= plan.name %>">
+                  <input class="input" type="number" step="0.01" name="price" value="<%= plan.price %>">
+                  <input class="input" type="number" step="0.01" name="original_price" value="<%= plan.original_price || 0 %>">
+                  <input class="input" type="number" name="duration_days" value="<%= plan.duration_days %>">
+                  <input class="input" type="number" name="sort_order" value="<%= plan.sort_order || 0 %>" style="max-width:110px;">
+                  <input class="input" type="text" name="description" value="<%= plan.description || '' %>" style="min-width:220px;">
+                  <button class="button primary" type="submit">保存</button>
+                  <button class="button danger" type="submit" name="action" value="delete" onclick="return confirm('删除该套餐？');">删除</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>会员特权</h2></div>
+    <div class="panel-body">
+      <form class="toolbar" method="post" action="/admin/system/benefits" style="margin-bottom:16px;">
+        <input class="input" type="text" name="content" placeholder="新增会员特权内容" style="min-width:420px;">
+        <input class="input" type="number" name="sort_order" placeholder="排序" style="max-width:110px;">
+        <button class="button primary" type="submit">新增特权</button>
+      </form>
+      <div class="stack">
+        <% data.membershipBenefits.forEach((benefit) => { %>
+          <form class="toolbar" method="post" action="/admin/system/benefits/<%= benefit.id %>">
+            <input class="input" type="text" name="content" value="<%= benefit.content %>" style="flex:1;">
+            <input class="input" type="number" name="sort_order" value="<%= benefit.sort_order || 0 %>" style="max-width:110px;">
+            <button class="button primary" type="submit">保存</button>
+            <button class="button danger" type="submit" name="action" value="delete" onclick="return confirm('删除这条会员特权？');">删除</button>
+          </form>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>管理员账号</h2></div>
+    <div class="panel-body">
+      <form class="toolbar" method="post" action="/admin/system/admin-users" style="margin-bottom:16px;">
+        <input class="input" type="text" name="username" placeholder="账号">
+        <input class="input" type="text" name="nickname" placeholder="昵称">
+        <input class="input" type="password" name="password" placeholder="密码">
+        <select class="select" name="role">
+          <option value="operator">运营</option>
+          <option value="editor">编辑</option>
+          <option value="super_admin">超级管理员</option>
+        </select>
+        <button class="button primary" type="submit">新增管理员</button>
+      </form>
+      <table>
+        <thead>
+          <tr><th>编号</th><th>账号维护</th></tr>
+        </thead>
+        <tbody>
+          <% data.adminUsers.forEach((admin) => { %>
+            <tr>
+              <td><%= admin.id %></td>
+              <td>
+                <form class="toolbar" method="post" action="/admin/system/admin-users/<%= admin.id %>">
+                  <input class="input" type="text" name="username" value="<%= admin.username %>">
+                  <input class="input" type="text" name="nickname" value="<%= admin.nickname || '' %>">
+                  <input class="input" type="password" name="password" placeholder="留空则不修改">
+                  <select class="select" name="role">
+                    <option value="operator" <%= admin.role === 'operator' ? 'selected' : '' %>>运营</option>
+                    <option value="editor" <%= admin.role === 'editor' ? 'selected' : '' %>>编辑</option>
+                    <option value="super_admin" <%= admin.role === 'super_admin' ? 'selected' : '' %>>超级管理员</option>
+                  </select>
+                  <button class="button primary" type="submit">保存</button>
+                  <% if (admin.id !== 1) { %>
+                    <button class="button danger" type="submit" name="action" value="delete" onclick="return confirm('删除该管理员？');">删除</button>
+                  <% } %>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include("./partials-shell-bottom") %>

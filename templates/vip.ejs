@@ -1,0 +1,67 @@
+<%- include("partials/head", { pageTitle }) %>
+<div class="app-header simple">
+  <a class="left" href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
+  <div class="title">会员中心</div>
+</div>
+
+<div class="soft-card pad">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div>
+      <div style="font-size:.92rem;font-weight:700;color:#333;"><%= data.user.nickname %></div>
+      <div style="font-size:.66rem;color:#999;margin-top:.2rem;">当前状态：<%= data.user.membership_status === 'active' ? '已开通' : '未开通' %></div>
+      <div style="font-size:.66rem;color:#999;margin-top:.15rem;">到期时间：<%= data.user.membership_expires_at || '暂未开通' %></div>
+    </div>
+    <a class="btn-secondary" href="/plugin.php?id=xigua_hb&ac=qianbao">去充值</a>
+  </div>
+</div>
+
+<div class="grid-panel">
+  <h3>会员套餐</h3>
+  <div style="display:grid;gap:.6rem;">
+    <% data.plans.forEach((plan) => { %>
+      <div style="background:#fff;border:1px solid #eef0f3;border-radius:.8rem;padding:.8rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-size:.82rem;font-weight:700;color:#333;"><%= plan.name %></div>
+            <div style="font-size:.63rem;color:#999;margin-top:.18rem;"><%= plan.duration_days %> 天权益 · <%= plan.description %></div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:.9rem;font-weight:700;color:#32c86a;">¥<%= Number(plan.price).toFixed(0) %></div>
+            <div style="font-size:.58rem;color:#b6b6b6;text-decoration:line-through;">¥<%= Number(plan.original_price || 0).toFixed(0) %></div>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<div class="grid-panel">
+  <h3>会员订单</h3>
+  <% if (data.orders.length) { %>
+    <% data.orders.forEach((order) => { %>
+      <div class="wallet-row">
+        <div>
+          <div class="wallet-title"><%= order.plan_name || order.note || '会员订单' %></div>
+          <div class="wallet-meta"><%= order.created_at %> · <%= order.status %></div>
+        </div>
+        <div class="wallet-amount plus">¥<%= Number(order.amount).toFixed(2) %></div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <div class="empty-state" style="padding:2rem 1rem;">暂无会员订单</div>
+  <% } %>
+</div>
+
+<div class="grid-panel">
+  <h3 style="text-align:center;color:#ff6d6d;">会员特权</h3>
+  <div style="max-width:17rem;margin:.25rem auto 0;display:grid;gap:.45rem;">
+    <% data.benefits.forEach((benefit, index) => { %>
+      <div style="display:flex;align-items:flex-start;gap:.4rem;font-size:.86rem;line-height:1.35rem;font-weight:700;color:#111;">
+        <span style="flex:none;width:1.1rem;height:1.1rem;border-radius:50%;background:#111;color:#fff;font-size:.75rem;line-height:1.1rem;text-align:center;margin-top:.05rem;"><%= index + 1 %></span>
+        <span><%= benefit.content %></span>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>

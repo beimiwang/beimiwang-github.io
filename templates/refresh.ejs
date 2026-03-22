@@ -1,0 +1,37 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<div class="clone-card">
+  <div class="section-title" style="padding-top:.85rem;">自动刷新 / 刷新套餐</div>
+  <div style="padding:0 .75rem .85rem;">
+    <div class="weui-cells mt0">
+      <div class="weui-cell">
+        <div class="weui-cell__bd">刷新套餐剩余次数</div>
+        <div class="weui-cell__ft main_color"><%= wallet.refresh_package_count %> 次</div>
+      </div>
+      <div class="weui-cell">
+        <div class="weui-cell__bd">余额</div>
+        <div class="weui-cell__ft">¥ <%= wallet.balance.toFixed(2) %></div>
+      </div>
+      <div class="weui-cell">
+        <div class="weui-cell__bd">单次自动刷新扣费</div>
+        <div class="weui-cell__ft color-red">¥ 0.01</div>
+      </div>
+    </div>
+    <p style="font-size:.66rem;color:#777;line-height:1.25rem;margin-top:.55rem;">这里是按首页弹窗和脚本里的 `ac=refresh`、`do=sxtc`、`do=ref1` 倒推出的页面与接口。现在已经可以消耗套餐次数或余额来执行刷新。</p>
+    <form method="post" action="/plugin.php?id=xigua_hb&ac=refresh&do=auto" style="margin-top:.8rem;">
+      <div class="weui-cells mt0">
+        <div class="weui-cell">
+          <div class="weui-cell__bd">刷新间隔（分钟）</div>
+          <div class="weui-cell__ft"><input class="weui-input" style="width:5rem;text-align:right;" type="number" name="jiange" value="<%= settings.interval_minutes %>"></div>
+        </div>
+        <div class="weui-cell">
+          <div class="weui-cell__bd">刷新上限（次数）</div>
+          <div class="weui-cell__ft"><input class="weui-input" style="width:5rem;text-align:right;" type="number" name="jiangemax" value="<%= settings.max_refreshes %>"></div>
+        </div>
+      </div>
+      <button type="submit" class="weui-btn weui-btn_primary" style="margin-top:.75rem;">保存自动刷新参数</button>
+    </form>
+    <a class="cta" href="/plugin.php?id=xigua_hb&ac=qianbao">去钱包</a>
+  </div>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>

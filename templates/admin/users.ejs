@@ -1,0 +1,85 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'users' }) %>
+<div class="admin-topbar">
+  <div>
+    <h1>用户管理</h1>
+    <div class="meta">查看用户画像、手机号、发帖数和总浏览。</div>
+  </div>
+</div>
+
+<% if (typeof msg !== 'undefined' && msg) { %>
+  <div class="notice"><%= msg %></div>
+<% } %>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>筛选</h2>
+  </div>
+  <div class="panel-body">
+    <form class="toolbar" method="get" action="/admin/users">
+      <input type="hidden" name="token" value="<%= token %>">
+      <input class="input" type="text" name="keyword" value="<%= data.keyword %>" placeholder="搜索昵称 / 手机 / 城市">
+      <button class="button primary" type="submit">查询</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-header">
+    <h2>用户列表</h2>
+    <div class="meta"><%= data.users.length %> 位用户</div>
+  </div>
+  <div class="panel-body" style="padding-top:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>编号</th>
+          <th>用户</th>
+          <th>城市</th>
+          <th>手机</th>
+          <th>简介</th>
+          <th>发帖数</th>
+          <th>累计浏览</th>
+          <th>会员</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.users.forEach((user) => { %>
+          <tr>
+            <td><%= user.id %></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <img src="<%= user.avatar %>" alt="<%= user.nickname %>" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">
+                <strong><%= user.nickname %></strong>
+              </div>
+            </td>
+            <td><%= user.city || '-' %></td>
+            <td><%= user.phone || '-' %></td>
+            <td style="max-width:260px;color:#6b7280;"><%= user.bio || '-' %></td>
+            <td><%= user.post_count %></td>
+            <td><%= user.total_views %></td>
+            <td style="min-width:320px;">
+              <form class="toolbar" method="post" action="/admin/users/<%= user.id %>/membership" style="flex-wrap:wrap;">
+                <select class="select" name="membership_status">
+                  <option value="inactive" <%= user.membership_status === 'inactive' ? 'selected' : '' %>>未开通</option>
+                  <option value="active" <%= user.membership_status === 'active' ? 'selected' : '' %>>已开通</option>
+                </select>
+                <select class="select" name="membership_plan_id">
+                  <option value="">无套餐</option>
+                  <% plans.forEach((plan) => { %>
+                    <option value="<%= plan.id %>" <%= Number(user.membership_plan_id) === Number(plan.id) ? 'selected' : '' %>><%= plan.name %></option>
+                  <% }) %>
+                </select>
+                <input class="input" type="text" name="membership_expires_at" value="<%= user.membership_expires_at || '' %>" placeholder="到期时间">
+                <button class="button primary" type="submit">保存</button>
+              </form>
+              <div style="font-size:12px;color:#6b7280;margin-top:6px;">
+                当前套餐：<%= user.membership_plan_name || '-' %>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include("./partials-shell-bottom") %>

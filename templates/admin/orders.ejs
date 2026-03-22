@@ -1,0 +1,108 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'orders' }) %>
+<div class="admin-topbar">
+  <div>
+    <h1>订单管理</h1>
+    <div class="meta">按会员卡订单、钱包充值等类型查看订单，并直接调整订单状态。</div>
+  </div>
+</div>
+
+<% if (msg) { %>
+  <div class="notice"><%= msg %></div>
+<% } %>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>新增订单</h2>
+  </div>
+  <div class="panel-body">
+    <form class="toolbar" method="post" action="/admin/orders" style="flex-wrap:wrap;">
+      <input class="input" type="number" name="user_id" placeholder="用户编号">
+      <select class="select" name="order_type">
+        <option value="membership">会员开通</option>
+        <option value="wallet_topup">钱包充值</option>
+      </select>
+      <select class="select" name="plan_id">
+        <option value="">选择套餐</option>
+        <% plans.forEach((plan) => { %>
+          <option value="<%= plan.id %>"><%= plan.name %></option>
+        <% }) %>
+      </select>
+      <input class="input" type="number" step="0.01" name="amount" placeholder="金额">
+      <select class="select" name="status">
+        <option value="paid">已支付</option>
+        <option value="pending">待支付</option>
+        <option value="cancelled">已取消</option>
+      </select>
+      <input class="input" type="text" name="note" placeholder="备注" style="min-width:220px;">
+      <button class="button primary" type="submit">新增订单</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-header">
+    <h2>筛选</h2>
+  </div>
+  <div class="panel-body">
+    <form class="toolbar" method="get" action="/admin/orders">
+      <input class="input" type="text" name="keyword" value="<%= data.keyword %>" placeholder="搜索昵称 / 备注 / 状态">
+      <select class="select" name="orderType">
+        <option value="">全部类型</option>
+        <option value="membership" <%= data.orderType === 'membership' ? 'selected' : '' %>>会员开通</option>
+        <option value="wallet_topup" <%= data.orderType === 'wallet_topup' ? 'selected' : '' %>>钱包充值</option>
+      </select>
+      <button class="button primary" type="submit">查询</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-header">
+    <h2>订单列表</h2>
+    <div class="meta"><%= data.orders.length %> 条记录</div>
+  </div>
+  <div class="panel-body" style="padding-top:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>编号</th>
+          <th>用户</th>
+          <th>类型</th>
+          <th>套餐</th>
+          <th>金额</th>
+          <th>状态</th>
+          <th>已生效</th>
+          <th>时间</th>
+          <th>备注</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.orders.forEach((order) => { %>
+          <tr>
+            <td><%= order.id %></td>
+            <td><%= order.nickname %></td>
+            <td><%= order.order_type === 'membership' ? '会员开通' : (order.order_type === 'wallet_topup' ? '钱包充值' : order.order_type) %></td>
+            <td><%= order.plan_name || '-' %></td>
+            <td>¥ <%= Number(order.amount).toFixed(2) %></td>
+            <td><span class="badge active"><%= order.status === 'paid' ? '已支付' : (order.status === 'pending' ? '待支付' : (order.status === 'cancelled' ? '已取消' : order.status)) %></span></td>
+            <td><%= Number(order.effect_applied) === 1 ? '是' : '否' %></td>
+            <td><%= order.created_at %></td>
+            <td style="color:#6b7280;"><%= order.note || '-' %></td>
+            <td>
+              <form class="toolbar" method="post" action="/admin/orders/<%= order.id %>/status">
+                <select class="select" name="status">
+                  <option value="paid" <%= order.status === 'paid' ? 'selected' : '' %>>已支付</option>
+                  <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>待支付</option>
+                  <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>已取消</option>
+                </select>
+                <button class="button primary" type="submit">更新</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include("./partials-shell-bottom") %>

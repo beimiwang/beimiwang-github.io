@@ -1,0 +1,26 @@
+<%- include("partials/head", { pageTitle }) %>
+<div class="app-header simple">
+  <a class="left" href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+  <div class="title">每日签到</div>
+</div>
+
+<div class="soft-card pad">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div style="font-size:.86rem;font-weight:700;color:#333;">连续签到 <%= data.streak %> 天</div>
+      <div style="font-size:.64rem;color:#999;margin-top:.2rem;">今日状态：<%= data.signedToday ? "已签到" : "未签到" %></div>
+    </div>
+    <div class="mini-badge"><%= data.wallet.gold %> 金币</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:.35rem;margin-top:.9rem;">
+    <% data.history.forEach((day, index) => { %>
+      <div style="background:<%= index === 0 ? '#32c86a' : '#eef8f1' %>;color:<%= index === 0 ? '#fff' : '#32c86a' %>;border-radius:.5rem;padding:.45rem 0;text-align:center;font-size:.6rem;"><%= day %></div>
+    <% }) %>
+  </div>
+  <div style="margin-top:.9rem;font-size:.65rem;line-height:1rem;color:#666;">当前先完成了签到页和数据展示闭环，后续可继续接积分发放、补签和奖励规则。</div>
+  <form method="post" action="/plugin.php?id=xigua_wr&do=sign" style="margin-top:.9rem;">
+    <button class="weui-btn weui-btn_primary" type="submit" <%= data.signedToday ? 'disabled' : '' %>><%= data.signedToday ? '今日已签到' : '立即签到' %></button>
+  </form>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>

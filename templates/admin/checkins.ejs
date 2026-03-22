@@ -1,0 +1,59 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'checkins' }) %>
+<div class="admin-topbar">
+  <div>
+    <h1>签到记录</h1>
+    <div class="meta">查看用户每日签到、签到日期和金币奖励发放情况。</div>
+  </div>
+</div>
+
+<% if (msg) { %>
+  <div class="notice"><%= msg %></div>
+<% } %>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>筛选</h2>
+  </div>
+  <div class="panel-body">
+    <form class="toolbar" method="get" action="/admin/checkins">
+      <input class="input" type="text" name="keyword" value="<%= data.keyword %>" placeholder="搜索昵称 / 手机 / 城市 / 日期">
+      <button class="button primary" type="submit">查询</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-header">
+    <h2>签到列表</h2>
+    <div class="meta"><%= data.records.length %> 条记录</div>
+  </div>
+  <div class="panel-body" style="padding-top:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>编号</th>
+          <th>用户</th>
+          <th>手机号</th>
+          <th>城市</th>
+          <th>签到日期</th>
+          <th>奖励金币</th>
+          <th>创建时间</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.records.forEach((item) => { %>
+          <tr>
+            <td><%= item.id %></td>
+            <td><%= item.nickname %></td>
+            <td><%= item.phone || '-' %></td>
+            <td><%= item.city || '-' %></td>
+            <td><%= item.checkin_date %></td>
+            <td><%= item.reward_gold %></td>
+            <td><%= item.created_at %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include("./partials-shell-bottom") %>

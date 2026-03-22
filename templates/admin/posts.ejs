@@ -1,0 +1,79 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'posts' }) %>
+<div class="admin-topbar">
+  <div>
+    <h1>帖子管理</h1>
+    <div class="meta">按前台分类、作者、位置和状态统一管理。</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>筛选</h2>
+  </div>
+  <div class="panel-body">
+    <form class="toolbar" method="get" action="/admin/posts">
+      <input type="hidden" name="token" value="<%= token %>">
+      <input class="input" type="text" name="keyword" value="<%= data.keyword %>" placeholder="搜索标题 / 作者 / 位置">
+      <select class="select" name="status">
+        <option value="">全部状态</option>
+        <option value="active" <%= data.status === 'active' ? 'selected' : '' %>>上架中</option>
+        <option value="ended" <%= data.status === 'ended' ? 'selected' : '' %>>已下架</option>
+      </select>
+      <button class="button primary" type="submit">查询</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-header">
+    <h2>列表</h2>
+    <div class="meta"><%= data.posts.length %> 条记录</div>
+  </div>
+  <div class="panel-body" style="padding-top:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>编号</th>
+          <th>标题</th>
+          <th>作者</th>
+          <th>分类</th>
+          <th>位置</th>
+          <th>状态</th>
+          <th>浏览/赞/分享</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.posts.forEach((post) => { %>
+          <tr>
+            <td><%= post.id %></td>
+            <td>
+              <div><a href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= post.id %>" target="_blank"><%= post.title %></a></div>
+              <div style="font-size:12px;color:#6b7280;margin-top:4px;"><%= post.created_at %></div>
+            </td>
+            <td><%= post.nickname %></td>
+            <td><%= post.category_name %></td>
+            <td><%= post.location %></td>
+            <td><span class="badge <%= post.status %>"><%= post.status === 'active' ? '上架中' : '已下架' %></span></td>
+            <td><%= post.views %> / <%= post.likes %> / <%= post.shares %></td>
+            <td>
+              <div class="toolbar">
+                <a class="button ghost" href="/plugin.php?id=xigua_hb&ac=pub&edit=<%= post.id %>" target="_blank">编辑</a>
+                <form method="post" action="/admin/posts/<%= post.id %>/status?<%= data.status ? `status=${data.status}` : '' %>">
+                  <input type="hidden" name="token" value="<%= token %>">
+                  <input type="hidden" name="status" value="<%= post.status === 'active' ? 'ended' : 'active' %>">
+                  <button class="button ghost" type="submit"><%= post.status === 'active' ? '下架' : '上架' %></button>
+                </form>
+                <form method="post" action="/admin/posts/<%= post.id %>/delete" onsubmit="return confirm('确认删除这条帖子？');">
+                  <input type="hidden" name="token" value="<%= token %>">
+                  <button class="button danger" type="submit">删除</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include("./partials-shell-bottom") %>

@@ -1,0 +1,36 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<div class="app-header simple">
+  <a class="left" href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
+  <div class="title">登录 / 注册</div>
+  <% if (userSession.loggedIn) { %>
+    <a class="right" href="/plugin.php?id=xigua_hb&ac=my&high=4">我的</a>
+  <% } %>
+</div>
+
+<div class="seg-tabs cols-2">
+  <a class="<%= mode === 'login' ? 'active' : '' %>" href="/plugin.php?id=xigua_hb&ac=auth">登录</a>
+  <a class="<%= mode === 'register' ? 'active' : '' %>" href="/plugin.php?id=xigua_hb&ac=auth&mode=register">注册</a>
+</div>
+
+<div class="settings-section" style="margin-top:0;">
+  <% if (mode === 'login') { %>
+    <div class="settings-title">账号登录</div>
+    <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=auth&do=login">
+      <input class="settings-input" type="text" name="phone" placeholder="手机号" value="13800000001">
+      <input class="settings-input" type="password" name="password" placeholder="密码" value="123456">
+      <button class="settings-button" type="submit">登录</button>
+    </form>
+    <div class="auth-tip">演示账号：`13800000001 / 123456`</div>
+  <% } else { %>
+    <div class="settings-title">快速注册</div>
+    <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=auth&do=register">
+      <input class="settings-input" type="text" name="nickname" placeholder="昵称">
+      <input class="settings-input" type="text" name="phone" placeholder="手机号">
+      <input class="settings-input" type="text" name="city" placeholder="城市">
+      <input class="settings-input" type="password" name="password" placeholder="密码，至少 6 位">
+      <button class="settings-button" type="submit">注册并登录</button>
+    </form>
+  <% } %>
+</div>
+
+<%- include("partials/tabbar", { currentTab: "mine" }) %>

@@ -1,0 +1,18 @@
+<%- include("./layout-top", { pageTitle }) %>
+<div class="admin-shell">
+  <aside class="admin-side">
+    <div class="admin-brand">拉面后台</div>
+    <div class="admin-sub">根据前台功能倒推出的管理后台</div>
+    <nav class="admin-nav">
+      <a href="/admin" class="<%= active === 'dashboard' ? 'active' : '' %>">概览</a>
+      <a href="/admin/posts" class="<%= active === 'posts' ? 'active' : '' %>">帖子管理</a>
+      <a href="/admin/users" class="<%= active === 'users' ? 'active' : '' %>">用户管理</a>
+      <a href="/admin/orders" class="<%= active === 'orders' ? 'active' : '' %>">订单管理</a>
+      <a href="/admin/checkins" class="<%= active === 'checkins' ? 'active' : '' %>">签到记录</a>
+      <a href="/admin/messages" class="<%= active === 'messages' ? 'active' : '' %>">站内消息</a>
+      <a href="/admin/partners" class="<%= active === 'partners' ? 'active' : '' %>">合伙人申请</a>
+      <a href="/admin/system" class="<%= active === 'system' ? 'active' : '' %>">系统配置</a>
+      <a href="/plugin.php?id=xigua_hb&mobile=2&high=0" target="_blank">打开前台</a>
+    </nav>
+  </aside>
+  <main class="admin-main">

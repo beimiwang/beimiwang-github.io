@@ -1,0 +1,22 @@
+<%- include("./layout-top", { pageTitle }) %>
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>后台登录</h1>
+    <p>这套后台是根据前端功能倒推出来的管理端，直接管理本地 SQLite 数据库。</p>
+    <% if (error) { %>
+      <div class="notice" style="background:#fff1f0;color:#b42318;"><%= error %></div>
+    <% } %>
+    <form method="post" action="/admin/login" class="stack">
+      <div class="field">
+        <label>后台账号</label>
+        <input class="input" type="text" name="username" value="admin" placeholder="默认 admin">
+      </div>
+      <div class="field">
+        <label>后台密码</label>
+        <input class="input" type="password" name="password" placeholder="默认 admin123">
+      </div>
+      <button class="button primary" type="submit">进入后台</button>
+    </form>
+  </div>
+</div>
+<%- include("./layout-bottom") %>

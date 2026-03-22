@@ -1,0 +1,95 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<div class="app-header" style="padding-bottom:6.2rem;overflow:hidden;background-image:linear-gradient(rgba(50,200,106,.92), rgba(50,200,106,.92)), url('<%= data.user.background_image || "" %>');background-size:cover;background-position:center;">
+  <a class="right" href="/plugin.php?id=xigua_hb&ac=settings&high=4">设置</a>
+  <div style="display:flex;align-items:center;gap:.8rem;position:relative;z-index:1;">
+    <img src="<%= data.user.avatar %>" alt="<%= data.user.nickname %>" style="width:4rem;height:4rem;border-radius:50%;border:2px solid rgba(255,255,255,.8);object-fit:cover;">
+    <div>
+      <div style="font-size:1rem;font-weight:700;"><%= data.user.nickname %></div>
+      <div style="margin-top:.45rem;">
+        <a href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5" style="display:inline-flex;align-items:center;gap:.3rem;background:#25b35d;color:#fff;padding:.35rem .7rem;border-radius:999px;text-decoration:none;font-size:.68rem;">加盟合伙人</a>
+      </div>
+      <div style="margin-top:.55rem;"><span class="mini-badge">UID:84691</span></div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);margin-top:1.5rem;position:relative;z-index:1;">
+    <div style="text-align:center;"><div style="font-size:1rem;font-weight:700;"><%= data.stats.totalPosts %></div><div style="font-size:.72rem;margin-top:.15rem;">总发布</div></div>
+    <div style="text-align:center;"><div style="font-size:1rem;font-weight:700;"><%= data.stats.totalViews %></div><div style="font-size:.72rem;margin-top:.15rem;">总浏览量</div></div>
+    <div style="text-align:center;"><div style="font-size:1rem;font-weight:700;"><%= data.wallet.balance.toFixed(2) %></div><div style="font-size:.72rem;margin-top:.15rem;">钱包余额</div></div>
+  </div>
+</div>
+
+<div class="soft-card pad" style="margin-top:-1.9rem;">
+  <div style="font-size:.72rem;color:#8a8a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+    <span style="color:#32c86a;font-weight:700;">平台公告</span>
+    平台不能保证信息真实性，请勿提前支付任何费用
+  </div>
+</div>
+
+<div class="grid-panel">
+  <div class="tool-grid">
+    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=my_posts&high=4">
+      <div class="icon-wrap" style="background:#32c86a;">✈</div>
+      <div class="label">我的发布</div>
+      <div class="sub"><%= data.posts.length %>条</div>
+    </a>
+    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=qianbao">
+      <div class="icon-wrap" style="background:#32c86a;">💼</div>
+      <div class="label">我的钱包</div>
+    </a>
+    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=my&high=4">
+      <div class="icon-wrap" style="background:#32c86a;">👤</div>
+      <div class="label">个人主页</div>
+    </a>
+    <a class="tool-item" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3">
+      <div class="icon-wrap" style="background:#32c86a;">💬</div>
+      <div class="label">我的消息</div>
+    </a>
+    <a class="tool-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5">
+      <div class="icon-wrap" style="background:#32c86a;">🤝</div>
+      <div class="label">合伙人</div>
+    </a>
+  </div>
+</div>
+
+<div class="grid-panel">
+  <h3>我的订单</h3>
+  <div class="tool-grid">
+    <a class="tool-item" href="/plugin.php?id=xigua_hk&ac=join&idu=5&high=1">
+      <div class="icon-wrap" style="background:#2da7ff;">🎫</div>
+      <div class="label">会员卡订单</div>
+    </a>
+    <a class="tool-item" href="javascript:;">
+      <div class="icon-wrap" style="background:#2da7ff;">🧾</div>
+      <div class="label">我的订单</div>
+    </a>
+  </div>
+</div>
+
+<div class="grid-panel">
+  <h3>我的工具</h3>
+  <div class="tool-grid">
+    <a class="tool-item" href="/plugin.php?id=xigua_wr&high=1"><div class="icon-wrap" style="background:#ff4d73;">📅</div><div class="label">每日签到</div></a>
+    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=coupons&high=4"><div class="icon-wrap" style="background:#ff4d73;">🎁</div><div class="label">我的兑换</div></a>
+    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#ffc229;">🔖</div><div class="label">我的订阅</div></a>
+    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="icon-wrap" style="background:#ff6f1f;">📍</div><div class="label">收货地址</div></a>
+    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#7ad391;">🛡</div><div class="label">认证中心</div></a>
+    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="icon-wrap" style="background:#f59b18;">🟠</div><div class="label">提醒设置</div></a>
+    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#8c92ff;">💭</div><div class="label">我的评论</div></a>
+    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#31b6ff;">★</div><div class="label">收藏/关注</div></a>
+    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#28c76f;">👣</div><div class="label">我的足迹</div></a>
+    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#28c76f;">📞</div><div class="label">来电记录</div></a>
+  </div>
+</div>
+
+<div class="list-link">
+  <a href="javascript:;">
+    <span class="left-group"><span style="color:#7fc48f;">?</span><span>帮助中心</span></span>
+    <span style="color:#ccc;">›</span>
+  </a>
+  <a href="javascript:;">
+    <span class="left-group"><span style="color:#ff8f8f;">👤</span><span>联系客服</span></span>
+    <span style="color:#999;">有问题请找我 ›</span>
+  </a>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>

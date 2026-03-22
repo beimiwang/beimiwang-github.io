@@ -1,0 +1,91 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'messages' }) %>
+<div class="admin-topbar">
+  <div>
+    <h1>站内消息</h1>
+    <div class="meta">统一查看系统消息、钱包通知、签到通知和合伙人消息。</div>
+  </div>
+</div>
+
+<% if (msg) { %>
+  <div class="notice"><%= msg %></div>
+<% } %>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>筛选</h2>
+  </div>
+  <div class="panel-body">
+    <form class="toolbar" method="get" action="/admin/messages">
+      <input class="input" type="text" name="keyword" value="<%= data.keyword %>" placeholder="搜索昵称 / 标题 / 内容">
+      <select class="select" name="type">
+        <option value="">全部类型</option>
+        <option value="system" <%= data.type === 'system' ? 'selected' : '' %>>系统</option>
+        <option value="wallet" <%= data.type === 'wallet' ? 'selected' : '' %>>钱包</option>
+        <option value="checkin" <%= data.type === 'checkin' ? 'selected' : '' %>>签到</option>
+        <option value="partner" <%= data.type === 'partner' ? 'selected' : '' %>>合伙人</option>
+      </select>
+      <button class="button primary" type="submit">查询</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-header">
+    <h2>消息列表</h2>
+    <div class="meta"><%= data.messages.length %> 条记录</div>
+  </div>
+  <div class="panel-body" style="padding-top:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>编号</th>
+          <th>用户</th>
+          <th>类型</th>
+          <th>标题</th>
+          <th>内容</th>
+          <th>跳转</th>
+          <th>状态</th>
+          <th>时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.messages.forEach((item) => { %>
+          <tr>
+            <td><%= item.id %></td>
+            <td>
+              <div><strong><%= item.nickname %></strong></div>
+              <div style="font-size:12px;color:#6b7280;"><%= item.phone || '-' %></div>
+            </td>
+            <td><%= ({ system: '系统', wallet: '钱包', checkin: '签到', partner: '合伙人', post: '动态' }[item.type] || item.type) %></td>
+            <td><%= item.title %></td>
+            <td style="max-width:280px;color:#6b7280;"><%= item.content %></td>
+            <td>
+              <% if (item.href) { %>
+                <a href="<%= item.href %>" target="_blank"><%= item.href %></a>
+              <% } else { %>
+                -
+              <% } %>
+            </td>
+            <td>
+              <span class="badge <%= Number(item.is_read) === 1 ? 'active' : 'ended' %>">
+                <%= Number(item.is_read) === 1 ? '已读' : '未读' %>
+              </span>
+            </td>
+            <td><%= item.created_at %></td>
+            <td>
+              <form class="toolbar" method="post" action="/admin/messages/<%= item.id %>/read">
+                <select class="select" name="is_read">
+                  <option value="0" <%= Number(item.is_read) === 0 ? 'selected' : '' %>>未读</option>
+                  <option value="1" <%= Number(item.is_read) === 1 ? 'selected' : '' %>>已读</option>
+                </select>
+                <button class="button primary" type="submit">保存</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include("./partials-shell-bottom") %>

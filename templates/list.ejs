@@ -1,0 +1,303 @@
+<%- include("partials/head", { pageTitle }) %>
+<%
+  const now = Date.now();
+  const allPosts = data.posts || [];
+  const quickTags = ["全部", ...(data.filterOptions ? data.filterOptions.tags : []).slice(0, 5)];
+  const bannerText = data.category && data.category.name === "求职" ? "点击加入 拉面联盟合伙人 分享好友发布信息就能赚钱" : `${data.category ? data.category.name : "分类"}频道精选信息`;
+  const banner = data.banner && Number(data.banner.enabled) === 1 ? data.banner : null;
+  const currentArea = data.filters ? data.filters.area : "";
+  const currentTag = data.filters ? data.filters.tag : "";
+  const currentSort = data.filters ? data.filters.sort : "default";
+  function buildListUrl(overrides = {}) {
+    const params = new URLSearchParams({
+      id: "xigua_hb",
+      ac: "cat",
+      cat_id: String(data.category ? data.category.id : "")
+    });
+    const nextArea = Object.prototype.hasOwnProperty.call(overrides, "area") ? overrides.area : currentArea;
+    const nextTag = Object.prototype.hasOwnProperty.call(overrides, "tag") ? overrides.tag : currentTag;
+    const nextSort = Object.prototype.hasOwnProperty.call(overrides, "sort") ? overrides.sort : currentSort;
+    const nextKeyword = Object.prototype.hasOwnProperty.call(overrides, "keyword") ? overrides.keyword : (data.keyword || "");
+    if (nextArea) params.set("area", nextArea);
+    if (nextTag) params.set("tag", nextTag);
+    if (nextSort && nextSort !== "default") params.set("sort", nextSort);
+    if (nextKeyword) params.set("keyword", nextKeyword);
+    return `/plugin.php?${params.toString()}`;
+  }
+  function formatRelative(time) {
+    const diffMinutes = Math.max(1, Math.floor((now - new Date(String(time).replace(" ", "T")).getTime()) / 60000));
+    if (diffMinutes < 60) return `${diffMinutes}分钟前发布`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}小时前发布`;
+    return `${String(time).slice(5, 16).replace(" ", " ")}`;
+  }
+  function postType(post) {
+    const categoryName = post.category_name || (data.category ? data.category.name : "分类");
+    const firstTag = (post.tags || [])[0];
+    if (firstTag && firstTag.length <= 6) return firstTag;
+    if (categoryName === "求职") return "面匠求职";
+    if (categoryName === "招聘") return "招聘面匠";
+    return categoryName;
+  }
+%>
+
+<style>
+  .list-app {
+    background: #f5f5f5;
+    min-height: calc(100vh - 2.3rem);
+  }
+  .list-header {
+    background: #2ECC71;
+    color: #fff;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 .7rem;
+    font-size: .7rem;
+  }
+  .list-header a {
+    color: #fff;
+    text-decoration: none;
+    min-width: 2.2rem;
+  }
+  .list-header .title {
+    font-size: .9rem;
+    font-weight: 700;
+  }
+  .list-banner {
+    margin: .45rem .5rem 0;
+    height: 3.35rem;
+    border-radius: 0;
+    overflow: hidden;
+    background: linear-gradient(90deg, #f3f9ea 0%, #eaf8f1 55%, #f7f2cf 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0;
+  }
+  .list-banner.text-banner {
+    padding: 0;
+  }
+  .list-banner.has-image {
+    background: #eef7e9;
+  }
+  .list-banner img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .list-banner .line1 {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .9rem;
+    font-weight: 700;
+    color: #4fa065;
+    letter-spacing: .02rem;
+    line-height: 1.25rem;
+    text-align: center;
+  }
+  .list-filters {
+    margin-top: .55rem;
+    background: #fff;
+    padding: 0 .45rem;
+  }
+  .list-filter-top {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: center;
+    text-align: center;
+    min-height: 2.75rem;
+    font-size: .68rem;
+    color: #555;
+  }
+  .list-filter-top a {
+    color: #555;
+    text-decoration: none;
+    display: block;
+  }
+  .list-filter-top a::after {
+    content: "";
+    display: inline-block;
+    margin-left: .15rem;
+    border-left: .18rem solid transparent;
+    border-right: .18rem solid transparent;
+    border-top: .22rem solid #9a9a9a;
+    vertical-align: middle;
+    position: relative;
+    top: -.03rem;
+  }
+  .list-filter-tabs {
+    display: flex;
+    gap: .45rem;
+    overflow-x: auto;
+    padding: .5rem 0 .6rem;
+    scrollbar-width: none;
+  }
+  .list-filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .list-filter-tabs a {
+    flex: none;
+    min-width: 3.1rem;
+    height: 1.35rem;
+    line-height: 1.35rem;
+    padding: 0 .6rem;
+    background: #f1f1f1;
+    color: #555;
+    border-radius: 999px;
+    text-align: center;
+    font-size: .66rem;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .list-filter-tabs a.active {
+    background: #2ECC71;
+    color: #fff;
+  }
+  .job-list {
+    padding: .55rem .5rem 0;
+  }
+  .job-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: #fff;
+    border-radius: .62rem;
+    box-shadow: 0 .04rem .24rem rgba(0, 0, 0, .04);
+    padding: .7rem .65rem .75rem;
+    margin-bottom: .55rem;
+  }
+  .job-card.featured {
+    background: #eefaf0;
+  }
+  .job-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-bottom: .42rem;
+  }
+  .job-badges {
+    display: flex;
+    align-items: center;
+    gap: .18rem;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  .job-badge {
+    display: inline-block;
+    height: 1rem;
+    line-height: 1rem;
+    border-radius: .22rem;
+    padding: 0 .28rem;
+    font-size: .58rem;
+    font-weight: 700;
+  }
+  .job-badge.green {
+    background: #2ECC71;
+    color: #fff;
+  }
+  .job-badge.outline {
+    background: #fff;
+    color: #2ECC71;
+    border: 1px solid #2ECC71;
+    line-height: calc(1rem - 2px);
+  }
+  .job-badge.top {
+    background: #ffd96a;
+    color: #ff6b57;
+  }
+  .job-meta {
+    flex: none;
+    color: #a0a0a0;
+    font-size: .56rem;
+    line-height: .9rem;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .job-desc {
+    font-size: .82rem;
+    line-height: 1.4rem;
+    color: #333;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .job-empty {
+    margin: .7rem .5rem 0;
+    padding: 2rem 1rem;
+    background: #fff;
+    border-radius: .62rem;
+    text-align: center;
+    color: #999;
+    font-size: .68rem;
+  }
+</style>
+
+<div class="list-app">
+  <div class="list-header">
+    <a href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
+    <div class="title"><%= data.category ? data.category.name : "分类" %></div>
+    <a href="/plugin.php?id=xigua_hb&ac=pub&high=2" style="text-align:right;">发布</a>
+  </div>
+
+  <% if (banner && banner.image_url) { %>
+    <% if (banner.target_url) { %>
+      <a class="list-banner has-image" href="<%= banner.target_url %>">
+        <img src="<%= banner.image_url %>" alt="<%= data.category ? data.category.name : '分类' %> banner">
+      </a>
+    <% } else { %>
+      <div class="list-banner has-image">
+        <img src="<%= banner.image_url %>" alt="<%= data.category ? data.category.name : '分类' %> banner">
+      </div>
+    <% } %>
+  <% } else { %>
+    <div class="list-banner text-banner">
+      <div class="line1"><%= bannerText %></div>
+    </div>
+  <% } %>
+
+  <div class="list-filters">
+    <div class="list-filter-top">
+      <a href="<%= buildListUrl({ area: '' }) %>"><%= currentArea || "地区" %></a>
+      <a href="<%= buildListUrl({ tag: '' }) %>"><%= data.category ? data.category.name : "分类" %></a>
+      <a href="<%= buildListUrl({ sort: currentSort === 'default' ? 'views' : 'default' }) %>"><%= ((data.filterOptions && data.filterOptions.sorts || []).find((item) => item.value === currentSort) || { label: "默认排序" }).label %></a>
+    </div>
+    <div class="list-filter-tabs">
+      <% quickTags.forEach((tag, index) => { %>
+        <a href="<%= buildListUrl({ tag: index === 0 ? '' : tag }) %>" class="<%= (index === 0 && !currentTag) || currentTag === tag ? 'active' : '' %>"><%= tag %></a>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="job-list">
+    <% allPosts.forEach((post, index) => { %>
+      <a href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= post.id %>" class="job-card <%= index === 0 ? 'featured' : '' %>">
+        <div class="job-head">
+          <div class="job-badges">
+            <span class="job-badge green"><%= postType(post) %></span>
+            <% if (index === 0) { %><span class="job-badge top">置顶</span><% } %>
+            <% (post.tags || []).slice(0, 1).forEach((tag) => { %>
+              <span class="job-badge outline"><%= tag %></span>
+            <% }) %>
+          </div>
+          <div class="job-meta">来自<%= post.city || post.location || "本地" %>&nbsp;&nbsp;<%= formatRelative(post.created_at) %></div>
+        </div>
+        <div class="job-desc"><%= post.content || post.summary %></div>
+      </a>
+    <% }) %>
+  </div>
+
+  <% if (!allPosts.length) { %>
+    <div class="job-empty">当前分类暂无内容</div>
+  <% } %>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>

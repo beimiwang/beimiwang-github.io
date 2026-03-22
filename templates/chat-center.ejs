@@ -1,0 +1,24 @@
+<%- include("partials/head", { pageTitle }) %>
+<div class="app-header simple">
+  <a class="left" href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
+  <div class="title">消息中心</div>
+</div>
+
+<div class="grid-panel">
+  <h3>消息列表</h3>
+  <% if (data.items.length) { %>
+    <% data.items.forEach((item) => { %>
+      <a href="<%= item.href || 'javascript:;' %>" class="wallet-row" style="text-decoration:none;color:inherit;">
+        <div>
+          <div class="wallet-title"><%= item.title %></div>
+          <div class="wallet-meta"><%= item.content %></div>
+        </div>
+        <div class="wallet-meta"><%= item.created_at ? item.created_at.slice(5, 16) : '系统' %></div>
+      </a>
+    <% }) %>
+  <% } else { %>
+    <div class="empty-state" style="padding:2rem 1rem;">暂无消息</div>
+  <% } %>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>

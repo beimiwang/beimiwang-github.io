@@ -1,0 +1,61 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<div class="app-header simple">
+  <a class="left" href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+  <div class="title">个人设置</div>
+  <a class="right" href="/plugin.php?id=xigua_hb&ac=my&high=4">我的</a>
+</div>
+
+<div class="settings-section">
+  <div class="settings-title">个人资料</div>
+  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=profile">
+    <input class="settings-input" type="text" name="nickname" value="<%= data.user.nickname || '' %>" placeholder="昵称">
+    <input class="settings-input" type="text" name="city" value="<%= data.user.city || '' %>" placeholder="城市">
+    <input class="settings-input" type="text" name="avatar" value="<%= data.user.avatar || '' %>" placeholder="头像 URL">
+    <input class="settings-input" type="text" name="background_image" value="<%= data.user.background_image || '' %>" placeholder="个人主页背景 URL">
+    <textarea class="settings-textarea" name="bio" placeholder="个人简介"><%= data.user.bio || '' %></textarea>
+    <label class="switch-row"><span>评论提醒</span><input type="checkbox" name="notify_comment" value="1" <%= Number(data.user.notify_comment) === 1 ? 'checked' : '' %>></label>
+    <label class="switch-row"><span>消息提醒</span><input type="checkbox" name="notify_message" value="1" <%= Number(data.user.notify_message) === 1 ? 'checked' : '' %>></label>
+    <button class="settings-button" type="submit">保存个人资料</button>
+  </form>
+</div>
+
+<div class="settings-section">
+  <div class="settings-title">绑定手机</div>
+  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=bind_phone">
+    <input class="settings-input" type="text" name="phone" value="<%= data.user.phone || '' %>" placeholder="手机号">
+    <button class="settings-button" type="submit">保存手机号</button>
+  </form>
+</div>
+
+<div class="settings-section">
+  <div class="settings-title">收货地址</div>
+  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=address">
+    <input class="settings-input" type="text" name="contact_name" value="<%= data.address?.contact_name || '' %>" placeholder="联系人">
+    <input class="settings-input" type="text" name="address_phone" value="<%= data.address?.phone || '' %>" placeholder="联系电话">
+    <textarea class="settings-textarea" name="address" placeholder="收货地址"><%= data.address?.address || '' %></textarea>
+    <button class="settings-button" type="submit">保存地址</button>
+  </form>
+</div>
+
+<div class="settings-section">
+  <div class="settings-title">提现设置</div>
+  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=withdraw_profile">
+    <input class="settings-input" type="text" name="account_name" value="<%= data.withdrawProfile?.account_name || '' %>" placeholder="收款人姓名">
+    <select class="settings-input" name="account_type">
+      <option value="wechat" <%= data.withdrawProfile?.account_type === 'wechat' ? 'selected' : '' %>>微信</option>
+      <option value="alipay" <%= data.withdrawProfile?.account_type === 'alipay' ? 'selected' : '' %>>支付宝</option>
+      <option value="bank" <%= data.withdrawProfile?.account_type === 'bank' ? 'selected' : '' %>>银行卡</option>
+    </select>
+    <input class="settings-input" type="text" name="account_no" value="<%= data.withdrawProfile?.account_no || '' %>" placeholder="账号 / 卡号">
+    <button class="settings-button" type="submit">保存提现设置</button>
+  </form>
+</div>
+
+<div class="settings-section">
+  <div class="settings-title">登录管理</div>
+  <form method="post" action="/plugin.php?id=xigua_hb&ac=auth&do=logout">
+    <button class="settings-button danger" type="submit">退出登录</button>
+  </form>
+</div>
+
+<%- include("partials/tabbar", { currentTab: "mine" }) %>

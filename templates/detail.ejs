@@ -1,0 +1,67 @@
+<%- include("partials/head", { pageTitle }) %>
+<div class="clone-card" style="margin-top:0;border-radius:0 0 .75rem .75rem;">
+  <img src="<%= post.cover %>" alt="<%= post.title %>" style="height:12rem;object-fit:cover;">
+  <div style="padding:.85rem;">
+    <div style="font-size:1rem;line-height:1.45rem;color:#222;font-weight:700;"><%= post.title %></div>
+    <div class="clone-price" style="margin-top:.5rem;"><%= post.price_label %></div>
+    <div class="clone-tags">
+      <span><%= post.category_name %></span>
+      <% post.tags.forEach((tag) => { %><span><%= tag %></span><% }) %>
+    </div>
+    <div class="clone-meta" style="margin-top:.75rem;">
+      <span><i class="iconfont icon-weizhidingwei"></i> <%= post.location %></span>
+      <span><%= post.created_at %></span>
+    </div>
+  </div>
+</div>
+
+<div class="clone-card">
+  <div class="section-title" style="padding-top:.75rem;">详细描述</div>
+  <div style="padding:0 .75rem .9rem;font-size:.75rem;line-height:1.45rem;color:#333;">
+    <%= post.content %>
+  </div>
+</div>
+
+<div class="clone-card">
+  <div class="section-title" style="padding-top:.75rem;">发布者</div>
+  <div style="padding:0 .75rem .85rem;display:flex;gap:.65rem;align-items:center;">
+    <img src="<%= post.avatar %>" alt="<%= post.nickname %>" style="width:2.4rem;height:2.4rem;border-radius:50%;">
+    <div style="flex:1;">
+      <div style="font-size:.78rem;color:#576b95;font-weight:600;"><%= post.nickname %></div>
+      <div style="font-size:.64rem;color:#999;margin-top:.15rem;"><%= post.city %> · <%= post.phone %></div>
+      <div style="font-size:.66rem;color:#666;margin-top:.2rem;"><%= post.bio %></div>
+    </div>
+  </div>
+</div>
+
+<div class="clone-card">
+  <div style="padding:.75rem;display:flex;justify-content:space-between;align-items:center;">
+    <div class="clone-meta" style="margin-top:0;">
+      <span>浏览 <%= post.views %></span>
+      <span>点赞 <span id="likes"><%= post.likes %></span></span>
+      <span>分享 <span id="shares"><%= post.shares %></span></span>
+    </div>
+    <div style="display:flex;gap:.4rem;">
+      <button class="weui-btn weui-btn_mini weui-btn_primary" onclick="likePost(<%= post.id %>)">点赞</button>
+      <button class="weui-btn weui-btn_mini weui-btn_default" onclick="sharePost(<%= post.id %>)">分享</button>
+      <a class="weui-btn weui-btn_mini weui-btn_default" href="/plugin.php?id=xigua_hb&ac=refresh&do=sxtc">刷新</a>
+    </div>
+  </div>
+</div>
+
+<div class="clone-card">
+  <div class="section-title" style="padding-top:.75rem;">管理操作</div>
+  <div style="padding:0 .75rem .85rem;">
+    <div class="toolbar-inline" style="margin-top:0;">
+      <a href="/plugin.php?id=xigua_hb&ac=pub&edit=<%= post.id %>">编辑</a>
+      <% if (post.status === "active") { %>
+        <button type="button" onclick="toggleStatus(<%= post.id %>, false)">下架</button>
+      <% } else { %>
+        <button type="button" onclick="toggleStatus(<%= post.id %>, true)">上架</button>
+      <% } %>
+      <a href="/plugin.php?id=xigua_hb&ac=pub&del=<%= post.id %>" onclick="return confirm('删除后无法恢复，确认删除？')">删除</a>
+    </div>
+  </div>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>

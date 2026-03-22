@@ -1,0 +1,44 @@
+<%- include("partials/head", { pageTitle }) %>
+<div class="app-header simple">
+  <a class="left" href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+  <div class="title">加盟合伙人</div>
+</div>
+
+<div class="soft-card pad">
+  <div style="display:flex;align-items:center;gap:.7rem;">
+    <img src="<%= data.user.avatar %>" alt="<%= data.user.nickname %>" style="width:3rem;height:3rem;border-radius:50%;object-fit:cover;">
+    <div>
+      <div style="font-size:.9rem;font-weight:700;color:#333;"><%= data.user.nickname %></div>
+      <div style="font-size:.64rem;color:#999;margin-top:.15rem;">城市：<%= data.user.city || '未设置' %></div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:.9rem;text-align:center;">
+    <div><div style="font-size:.9rem;font-weight:700;"><%= data.stats.totalPosts %></div><div style="font-size:.62rem;color:#999;">累计发布</div></div>
+    <div><div style="font-size:.9rem;font-weight:700;"><%= data.stats.totalViews %></div><div style="font-size:.62rem;color:#999;">累计浏览</div></div>
+    <div><div style="font-size:.9rem;font-weight:700;"><%= data.wallet.balance.toFixed(2) %></div><div style="font-size:.62rem;color:#999;">钱包余额</div></div>
+  </div>
+</div>
+
+<div class="grid-panel">
+  <h3>合伙人权益</h3>
+  <div style="display:grid;gap:.55rem;">
+    <% data.benefits.forEach((benefit) => { %>
+      <div style="font-size:.68rem;line-height:1rem;color:#555;background:#f7faf8;border-radius:.6rem;padding:.7rem .8rem;"><%= benefit %></div>
+    <% }) %>
+  </div>
+</div>
+
+<div class="settings-section">
+  <div class="settings-title">提交申请</div>
+  <% if (data.application) { %>
+    <div style="font-size:.68rem;color:#666;line-height:1rem;margin-bottom:.8rem;">当前申请状态：<span class="main_color"><%= data.application.status %></span>，提交时间 <%= data.application.created_at %></div>
+  <% } %>
+  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hh&ac=apply">
+    <input class="settings-input" type="text" name="city" placeholder="所在城市" value="<%= data.user.city || '' %>">
+    <input class="settings-input" type="text" name="phone" placeholder="联系电话" value="<%= data.user.phone || '' %>">
+    <textarea class="settings-textarea" name="intro" placeholder="请简单介绍你的资源、城市和合作意向"><%= data.application?.intro || '' %></textarea>
+    <button class="settings-button" type="submit">提交合伙人申请</button>
+  </form>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>

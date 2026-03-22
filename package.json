@@ -1,0 +1,17 @@
+{
+  "name": "lamian-codex-clone",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Clone of the xigua_hb mobile portal with Express and SQLite.",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "NODE_ENV=production node src/server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "multer": "^2.0.2"
+  }
+}

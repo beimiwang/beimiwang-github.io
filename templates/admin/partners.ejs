@@ -1,0 +1,85 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'partners' }) %>
+<div class="admin-topbar">
+  <div>
+    <h1>合伙人申请</h1>
+    <div class="meta">审核用户提交的合伙人申请，并向前台发送审核结果通知。</div>
+  </div>
+</div>
+
+<% if (msg) { %>
+  <div class="notice"><%= msg %></div>
+<% } %>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>筛选</h2>
+  </div>
+  <div class="panel-body">
+    <form class="toolbar" method="get" action="/admin/partners">
+      <input class="input" type="text" name="keyword" value="<%= data.keyword %>" placeholder="搜索昵称 / 城市 / 手机 / 申请说明">
+      <select class="select" name="status">
+        <option value="">全部状态</option>
+        <option value="pending" <%= data.status === 'pending' ? 'selected' : '' %>>待审核</option>
+        <option value="approved" <%= data.status === 'approved' ? 'selected' : '' %>>已通过</option>
+        <option value="rejected" <%= data.status === 'rejected' ? 'selected' : '' %>>已拒绝</option>
+      </select>
+      <button class="button primary" type="submit">查询</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-header">
+    <h2>申请列表</h2>
+    <div class="meta"><%= data.applications.length %> 条记录</div>
+  </div>
+  <div class="panel-body" style="padding-top:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>编号</th>
+          <th>申请人</th>
+          <th>城市</th>
+          <th>电话</th>
+          <th>说明</th>
+          <th>状态</th>
+          <th>提交时间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.applications.forEach((item) => { %>
+          <tr>
+            <td><%= item.id %></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <img src="<%= item.avatar %>" alt="<%= item.nickname %>" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">
+                <strong><%= item.nickname %></strong>
+              </div>
+            </td>
+            <td><%= item.city || '-' %></td>
+            <td><%= item.phone || '-' %></td>
+            <td style="max-width:260px;color:#6b7280;"><%= item.intro || '-' %></td>
+            <td>
+              <span class="badge <%= item.status === 'approved' ? 'active' : 'ended' %>">
+                <%= item.status === 'pending' ? '待审核' : (item.status === 'approved' ? '已通过' : '已拒绝') %>
+              </span>
+            </td>
+            <td><%= item.created_at %></td>
+            <td>
+              <form class="toolbar" method="post" action="/admin/partners/<%= item.id %>/status">
+                <select class="select" name="status">
+                  <option value="pending" <%= item.status === 'pending' ? 'selected' : '' %>>待审核</option>
+                  <option value="approved" <%= item.status === 'approved' ? 'selected' : '' %>>已通过</option>
+                  <option value="rejected" <%= item.status === 'rejected' ? 'selected' : '' %>>已拒绝</option>
+                </select>
+                <button class="button primary" type="submit">保存</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include("./partials-shell-bottom") %>

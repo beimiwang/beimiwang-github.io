@@ -1,0 +1,79 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<div class="app-header" style="padding-bottom:5.8rem;">
+  <a class="left" href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+  <div class="title">我的钱包</div>
+  <a class="right" href="/plugin.php?id=xigua_hb&ac=settings&high=4">提现设置</a>
+</div>
+
+<div class="app-panel" style="padding:1rem;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;align-items:center;">
+    <div style="text-align:center;">
+      <div style="font-size:.85rem;color:#666;">我的金币</div>
+      <div style="font-size:1.25rem;font-weight:700;color:#333;margin-top:.55rem;"><%= data.wallet.gold %></div>
+      <div style="font-size:.72rem;color:#3a7bd5;margin-top:.25rem;">可用于前端功能扩展</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-size:.85rem;color:#666;">账户余额</div>
+      <div style="font-size:1.25rem;font-weight:700;color:#333;margin-top:.55rem;"><%= data.wallet.balance.toFixed(2) %>元</div>
+      <div style="font-size:.72rem;color:#999;margin-top:.25rem;">充值、提现都记入流水</div>
+    </div>
+  </div>
+</div>
+
+<div class="settings-section" style="margin-top:0;">
+  <div class="settings-title">余额充值</div>
+  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=qianbao&do=topup">
+    <input class="settings-input" type="number" min="0.01" step="0.01" name="amount" placeholder="输入充值金额">
+    <button class="settings-button" type="submit">立即充值</button>
+  </form>
+</div>
+
+<div class="settings-section">
+  <div class="settings-title">申请提现</div>
+  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=qianbao&do=withdraw">
+    <input class="settings-input" type="number" min="0.01" step="0.01" name="amount" placeholder="输入提现金额">
+    <button class="settings-button danger" type="submit">提交提现</button>
+  </form>
+</div>
+
+<div class="settings-section">
+  <div class="settings-title">钱包流水</div>
+  <% if (!data.transactions.length) { %>
+    <div class="empty-state" style="padding:1.5rem 1rem 2rem;">
+      <div class="icon">🧾</div>
+      <div style="margin-top:.7rem;">暂无流水记录</div>
+    </div>
+  <% } %>
+  <% data.transactions.forEach((item) => { %>
+    <div class="wallet-row">
+      <div>
+        <div class="wallet-title"><%= item.note || item.type %></div>
+        <div class="wallet-meta"><%= item.created_at %> · <%= item.status %></div>
+      </div>
+      <div class="wallet-amount <%= Number(item.amount) >= 0 ? 'plus' : 'minus' %>">
+        <%= Number(item.amount) >= 0 ? '+' : '' %><%= Number(item.amount).toFixed(2) %>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<div class="settings-section">
+  <div class="settings-title">提现记录</div>
+  <% if (!data.withdrawRequests.length) { %>
+    <div class="empty-state" style="padding:1.5rem 1rem 2rem;">
+      <div class="icon">💸</div>
+      <div style="margin-top:.7rem;">暂无提现记录</div>
+    </div>
+  <% } %>
+  <% data.withdrawRequests.forEach((item) => { %>
+    <div class="wallet-row">
+      <div>
+        <div class="wallet-title">提现到 <%= item.account_name || '未命名账户' %></div>
+        <div class="wallet-meta"><%= item.created_at %> · <%= item.status %></div>
+      </div>
+      <div class="wallet-amount minus">-<%= Number(item.amount).toFixed(2) %></div>
+    </div>
+  <% }) %>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>

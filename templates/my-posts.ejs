@@ -1,0 +1,39 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<div class="app-header simple">
+  <a class="left" href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+  <div class="title">我的同城信息</div>
+</div>
+
+<div class="search-shell">🔍　请输入关键词</div>
+
+<div class="seg-tabs cols-4" style="border-radius:0;margin:.55rem 0 0;">
+  <a href="/plugin.php?id=xigua_hb&ac=my_posts&tab=active&high=4" class="<%= statusTab === 'active' ? 'active' : '' %>">显示中(<%= data.posts.filter((p) => p.status === 'active').length %>)</a>
+  <a href="/plugin.php?id=xigua_hb&ac=my_posts&tab=pending&high=4" class="<%= statusTab === 'pending' ? 'active' : '' %>">待审核(0)</a>
+  <a href="/plugin.php?id=xigua_hb&ac=my_posts&tab=ended&high=4" class="<%= statusTab === 'ended' ? 'active' : '' %>">已过期(<%= data.posts.filter((p) => p.status !== 'active').length %>)</a>
+  <a href="/plugin.php?id=xigua_hb&ac=my_posts&tab=top&high=4" class="<%= statusTab === 'top' ? 'active' : '' %>">置顶(0)</a>
+</div>
+
+<% const filtered = statusTab === 'ended' ? data.posts.filter((p) => p.status !== 'active') : statusTab === 'active' ? data.posts.filter((p) => p.status === 'active') : []; %>
+<% if (filtered.length) { %>
+  <div class="simple-list">
+    <% filtered.forEach((post) => { %>
+      <div class="item">
+        <a href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= post.id %>" style="display:block;text-decoration:none;color:inherit;">
+          <div class="item-title"><%= post.title %></div>
+        </a>
+        <div class="item-desc"><%= post.summary %></div>
+        <div class="item-footer">
+          <span><%= post.location %></span>
+          <span><%= post.created_at %></span>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } else { %>
+  <div class="empty-state">
+    <div class="icon">🧾</div>
+    <div style="margin-top:.7rem;">没有更多了</div>
+  </div>
+<% } %>
+
+<%- include("partials/tabbar", { currentTab: "mine" }) %>

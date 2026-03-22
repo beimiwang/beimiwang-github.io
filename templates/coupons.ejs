@@ -1,0 +1,20 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<div class="app-header simple">
+  <a class="left" href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+  <div class="title">我的卡券</div>
+  <a class="right" href="javascript:;">领取</a>
+</div>
+
+<div class="seg-tabs cols-4" style="border-radius:0;margin:.35rem 0 0;">
+  <div>全部</div>
+  <div class="active">未使用</div>
+  <div>已使用</div>
+  <div>已过期</div>
+</div>
+
+<div class="empty-state">
+  <div class="icon">🧾</div>
+  <div style="margin-top:.7rem;">没有更多了</div>
+</div>
+
+<%- include("partials/tabbar", { currentTab: "mine" }) %>

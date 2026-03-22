@@ -1,0 +1,533 @@
+<%- include("partials/head", { pageTitle }) %>
+<%
+  const enabledHomeLinks = (data.homeLinks || []).filter((item) => Number(item.enabled) === 1);
+  const followLink = enabledHomeLinks.find((item) => item.link_key === "follow");
+  const adminLink = enabledHomeLinks.find((item) => item.link_key === "admin");
+  const groupLink = enabledHomeLinks.find((item) => item.link_key === "group");
+  const shopLink = enabledHomeLinks.find((item) => item.link_key === "shop");
+  const partnerLink = enabledHomeLinks.find((item) => item.link_key === "partner");
+
+  function homeAction(link, modalId) {
+    if (!link) return "javascript:;";
+    return link.action_type === "link" ? (link.target_url || "javascript:;") : `javascript:openModal('${modalId}')`;
+  }
+%>
+<style>
+  body{background:#f5f5f5}
+  .page__bd{overflow:hidden;width:100%}
+  .home-page{
+    max-width:32rem;
+    margin:0 auto;
+    padding-bottom:4rem;
+  }
+  .home-header{
+    position:relative;
+    background:#fff;
+    padding:.32rem .5rem .12rem;
+  }
+  .home-header-bar{
+    min-height:2rem;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:.35rem;
+  }
+  .home-side-btn{
+    display:block;
+    flex:none;
+    min-width:2.8rem;
+    padding:0 .45rem;
+    height:1.42rem;
+    line-height:1.42rem;
+    border-radius:.12rem;
+    background:#2ECC71;
+    color:#fff;
+    text-align:center;
+    text-decoration:none;
+    font-size:.68rem;
+  }
+  .home-search{
+    flex:1;
+    min-width:0;
+    position:relative;
+  }
+  .home-search input{
+    width:100%;
+    border:0;
+    height:1.5rem;
+    border-radius:.3rem;
+    background:#f5f6f9 url(/wj/sousuo.png) no-repeat .5rem center / .7rem;
+    padding:0 2.7rem 0 1.5rem;
+    line-height:1.5rem;
+    font-size:.65rem;
+    color:#333;
+    box-sizing:border-box;
+  }
+  .home-search button{
+    position:absolute;
+    right:.15rem;
+    top:50%;
+    transform:translateY(-50%);
+    border:0;
+    background:transparent;
+    color:#2ECC71;
+    font-size:.7rem;
+    font-weight:700;
+    height:1.2rem;
+    line-height:1.2rem;
+    padding:0 .3rem;
+  }
+  .home-curve{
+    display:none;
+  }
+  .home-banner-wrap{
+    background:#fff;
+    padding:0 0 .25rem;
+  }
+  .home-banner{
+    margin:.12rem .5rem 0;
+    border-radius:.25rem;
+    overflow:hidden;
+  }
+  .home-banner img{
+    display:block;
+    width:100%;
+  }
+  .home-stats{
+    background:#fff;
+    padding:.48rem .5rem;
+    white-space:nowrap;
+    font-size:.7rem;
+    color:#999;
+  }
+  .home-stats em{
+    color:#2ECC71;
+    font-style:normal;
+    margin-left:.12rem;
+  }
+  .home-stats .item{margin-right:.45rem}
+  .home-stats .sign{
+    float:right;
+    background:-webkit-linear-gradient(18deg,#3300CC,#660099,#990066,#CC0033,#FF9999,#FF4400,#3300CC);
+    -webkit-background-clip:text;
+    color:transparent;
+    text-decoration:none;
+    font-size:.72rem;
+  }
+  .home-nav{
+    background:#fff;
+    padding:.08rem .1rem .05rem;
+  }
+  .home-nav ul{
+    margin:0;
+    padding:0;
+    list-style:none;
+    display:flex;
+  }
+  .home-nav li{
+    flex:1;
+    text-align:center;
+  }
+  .home-nav a{
+    display:block;
+    text-decoration:none;
+    color:#333;
+    padding:.18rem .05rem .28rem;
+  }
+  .home-nav span{
+    display:block;
+    width:2.05rem;
+    height:2.05rem;
+    margin:0 auto;
+  }
+  .home-nav img{
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:.22rem;
+  }
+  .home-nav .m-piclist-title{
+    display:block;
+    margin-top:.2rem;
+    font-style:normal;
+    font-size:.62rem;
+    line-height:.82rem;
+    color:#333;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .home-notice{
+    background:#fff;
+    padding:.12rem .5rem 0;
+  }
+  .home-notice-row{
+    display:flex;
+    align-items:center;
+    background:#fff;
+    border-radius:.55rem;
+    box-shadow:0 .05rem .5rem rgba(0,0,0,.05);
+    padding:0 .65rem;
+    min-height:2rem;
+  }
+  .home-notice-title{
+    flex:none;
+    color:#2ECC71;
+    font-size:.75rem;
+    font-weight:700;
+    margin-right:.45rem;
+    white-space:nowrap;
+  }
+  .home-notice-slider{
+    position:relative;
+    flex:1;
+    height:2rem;
+    overflow:hidden;
+  }
+  .home-notice-slider ul{
+    margin:0;
+    padding:0;
+    list-style:none;
+    transition:transform .45s ease;
+  }
+  .home-notice-slider li{
+    height:2rem;
+    line-height:2rem;
+    overflow:hidden;
+  }
+  .home-notice-slider a{
+    display:block;
+    color:#666;
+    font-size:.68rem;
+    text-decoration:none;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .home-links{
+    padding:.35rem .5rem .1rem;
+  }
+  .home-links-row{
+    display:flex;
+    gap:.35rem;
+  }
+  .home-link-btn{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:1.78rem;
+    border-radius:.3rem;
+    background:#2ECC71;
+    color:#fff;
+    text-decoration:none;
+    font-size:.76rem;
+  }
+  button.home-link-btn{
+    border:0;
+    cursor:pointer;
+  }
+  .home-list-head{
+    margin-top:.2rem;
+    background:#fff;
+    border-top:.5rem solid #f8f8f8;
+  }
+  .home-list-head a{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:2.25rem;
+    color:#333;
+    text-decoration:none;
+    font-size:.75rem;
+  }
+  .home-list{
+    padding:0 .5rem;
+  }
+  .home-card{
+    display:block;
+    position:relative;
+    padding:.78rem .78rem .72rem;
+    margin-bottom:.5rem;
+    background:#fff;
+    border-radius:.4rem;
+    text-decoration:none;
+    color:inherit;
+  }
+  .home-card-price{
+    position:absolute;
+    top:.9rem;
+    right:.78rem;
+    color:#fb5858;
+    font-size:.8rem;
+    line-height:.8rem;
+    font-weight:700;
+    max-width:45%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .home-card-main{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+  }
+  .home-card-body{
+    flex:1;
+    min-width:0;
+    padding-right:.5rem;
+  }
+  .home-card-title{
+    font-size:.8rem;
+    line-height:1.2rem;
+    color:#333;
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    padding-right:3.1rem;
+  }
+  .home-card-thumb{
+    width:3.45rem;
+    height:3.45rem;
+    flex:none;
+    border-radius:.18rem;
+    overflow:hidden;
+    background:#f3f3f3;
+  }
+  .home-card-thumb img{
+    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .home-card-meta{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:.46rem;
+    font-size:.6rem;
+    color:#ababab;
+    gap:.4rem;
+  }
+  .home-card-meta-left{
+    display:flex;
+    align-items:center;
+    min-width:0;
+    gap:.35rem;
+  }
+  .home-type{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 .24rem;
+    height:.75rem;
+    border-radius:.15rem;
+    color:#61bf07;
+    background:#d9f1c2;
+    font-size:.55rem;
+    flex:none;
+  }
+  .home-location{
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .home-tags{
+    display:flex;
+    gap:.2rem;
+    overflow-x:auto;
+    margin-top:.35rem;
+  }
+  .home-tags span{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    white-space:nowrap;
+    padding:0 .26rem;
+    height:1rem;
+    line-height:1rem;
+    font-size:.58rem;
+    color:#777;
+  }
+  .home-tags span:after{
+    content:"";
+    position:absolute;
+    inset:0;
+    border:.05rem solid #777;
+    border-radius:.15rem;
+    transform:scale(.5);
+    transform-origin:0 0;
+    width:200%;
+    height:200%;
+    box-sizing:border-box;
+    pointer-events:none;
+  }
+  .home-empty{
+    margin:.5rem;
+    background:#fff;
+    border-radius:.4rem;
+    padding:2rem 1rem;
+    text-align:center;
+    color:#bbb;
+  }
+  .modal{display:none;position:fixed;z-index:100;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.5)}
+  .modal-content{
+    background-color:#fff;
+    border-radius:10px;
+    width:80%;
+    max-width:350px;
+    box-shadow:0 5px 15px rgba(0,0,0,.2);
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    padding:25px 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .qrcode-container{margin-bottom:20px}
+  .qrcode-container img{width:220px;height:220px;border-radius:8px;box-shadow:0 3px 8px rgba(0,0,0,.15)}
+  .content-text{text-align:center}
+  .content-text h3{color:#333;margin-bottom:15px;font-size:18px}
+  .close-button{background-color:#2ECC71;color:white;padding:10px 40px;border-radius:6px;font-size:16px;border:none;cursor:pointer;margin-top:5px}
+</style>
+
+<div class="home-page">
+  <header class="home-header">
+    <div class="home-header-bar">
+      <% if (followLink) { %>
+        <a class="home-side-btn left" href="<%= homeAction(followLink, `home-link-${followLink.link_key}`) %>"><%= followLink.label %></a>
+      <% } %>
+      <form class="home-search" method="get" action="/plugin.php">
+        <input type="hidden" name="id" value="xigua_hb">
+        <input type="hidden" name="ac" value="cat">
+        <input type="hidden" name="st" value="0">
+        <input name="keyword" type="text" value="<%= data.keyword || '' %>" placeholder="输入电话号码或位置">
+        <button type="submit">搜索</button>
+      </form>
+      <% if (adminLink) { %>
+        <a class="home-side-btn right" href="<%= homeAction(adminLink, `home-link-${adminLink.link_key}`) %>"><%= adminLink.label %></a>
+      <% } %>
+    </div>
+  </header>
+
+  <div class="home-curve"></div>
+
+  <div class="home-banner-wrap">
+    <div class="home-banner">
+      <img src="/wj/SYLF1.png" alt="banner">
+    </div>
+  </div>
+
+  <div class="home-stats">
+    <span class="item">浏览:<em><%= data.stats.views %>亿</em></span>
+    <span class="item">发布:<em><%= data.stats.posts %>万</em></span>
+    <span class="item">用户:<em><%= data.stats.users %>万</em></span>
+    <a class="sign" href="/plugin.php?id=xigua_wr&high=1">签到</a>
+  </div>
+
+  <nav class="home-nav">
+    <ul class="cl">
+      <% data.categories.slice(0, 5).forEach((category) => { %>
+        <li>
+          <a href="javascript:;" onclick="hb_jump('/plugin.php?id=xigua_hb&ac=cat&cat_id=<%= category.id %>')">
+            <span>
+              <img src="<%= category.icon %>" alt="<%= category.name %>">
+            </span>
+            <em class="m-piclist-title"><%= category.name %></em>
+          </a>
+        </li>
+      <% }) %>
+    </ul>
+  </nav>
+
+  <div class="home-notice">
+    <div class="home-notice-row">
+      <div class="home-notice-title">平台公告</div>
+      <div class="home-notice-slider" id="newsSlider" data-count="<%= data.tickerItems.length %>">
+        <ul>
+          <% data.tickerItems.forEach((item) => { %>
+            <li><a href="<%= item.href || 'javascript:;' %>"><%= item.text %></a></li>
+          <% }) %>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-links">
+    <div class="home-links-row">
+      <% if (groupLink) { %>
+        <% if (groupLink.action_type === 'qr') { %>
+          <button class="home-link-btn" onclick="openModal('home-link-<%= groupLink.link_key %>')"><%= groupLink.label %></button>
+        <% } else { %>
+          <a class="home-link-btn" href="<%= groupLink.target_url || 'javascript:;' %>"><%= groupLink.label %></a>
+        <% } %>
+      <% } %>
+      <% if (shopLink) { %>
+        <a class="home-link-btn" href="<%= homeAction(shopLink, `home-link-${shopLink.link_key}`) %>"><%= shopLink.label %></a>
+      <% } %>
+      <% if (partnerLink) { %>
+        <a class="home-link-btn" href="<%= homeAction(partnerLink, `home-link-${partnerLink.link_key}`) %>"><%= partnerLink.label %></a>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="home-list-head">
+    <a href="javascript:;">最新信息</a>
+  </div>
+
+  <div class="home-list">
+    <% if (data.posts.length) { %>
+      <% data.posts.forEach((post) => { %>
+        <a href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= post.id %>" class="home-card">
+          <span class="home-card-price"><%= post.price_label %></span>
+          <div class="home-card-main">
+            <div class="home-card-body">
+              <div class="home-card-title"><%= post.title %>，<%= post.summary %></div>
+              <div class="home-card-meta">
+                <div class="home-card-meta-left">
+                  <span class="home-type"><%= post.category_name || post.tags[0] || '信息' %></span>
+                  <span><%= post.created_at.slice(5, 16) %></span>
+                </div>
+                <div class="home-location"><%= post.location %></div>
+              </div>
+              <% if (post.tags && post.tags.length) { %>
+                <div class="home-tags">
+                  <% post.tags.forEach((tag) => { %>
+                    <span><%= tag %></span>
+                  <% }) %>
+                </div>
+              <% } %>
+            </div>
+            <div class="home-card-thumb">
+              <img src="<%= post.cover %>" alt="<%= post.title %>">
+            </div>
+          </div>
+        </a>
+      <% }) %>
+    <% } else { %>
+      <div class="home-empty">没有更多了</div>
+    <% } %>
+  </div>
+
+  <% enabledHomeLinks.forEach((link) => { %>
+    <% if (link.action_type === 'qr') { %>
+      <div id="home-link-<%= link.link_key %>" class="modal">
+        <div class="modal-content">
+          <div class="qrcode-container"><img src="<%= link.qr_image || '/wj/lamian21.png' %>" alt="<%= link.label %>"></div>
+          <div class="content-text">
+            <h3><%= link.modal_title || link.label %></h3>
+          </div>
+          <button class="close-button" onclick="closeModal('home-link-<%= link.link_key %>')">关闭</button>
+        </div>
+      </div>
+    <% } %>
+  <% }) %>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>
