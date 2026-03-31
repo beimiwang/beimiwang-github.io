@@ -1,67 +1,563 @@
 <%- include("partials/head", { pageTitle }) %>
-<div class="clone-card" style="margin-top:0;border-radius:0 0 .75rem .75rem;">
-  <img src="<%= post.cover %>" alt="<%= post.title %>" style="height:12rem;object-fit:cover;">
-  <div style="padding:.85rem;">
-    <div style="font-size:1rem;line-height:1.45rem;color:#222;font-weight:700;"><%= post.title %></div>
-    <div class="clone-price" style="margin-top:.5rem;"><%= post.price_label %></div>
-    <div class="clone-tags">
-      <span><%= post.category_name %></span>
-      <% post.tags.forEach((tag) => { %><span><%= tag %></span><% }) %>
-    </div>
-    <div class="clone-meta" style="margin-top:.75rem;">
-      <span><i class="iconfont icon-weizhidingwei"></i> <%= post.location %></span>
-      <span><%= post.created_at %></span>
-    </div>
+<%
+  const isRecruit = Number(post.category_id) === 1035;
+  const isJobWanted = Number(post.category_id) === 1034;
+  const cleanTags = (post.tags || []).filter(Boolean);
+  const safeTags = cleanTags.slice(0, 3);
+  const titlePrefix = isRecruit ? "[招聘信息]" : (isJobWanted ? "[求职信息]" : `[${post.category_name || "信息"}]`);
+  const relativeText = String(post.created_at).slice(5, 16).replace(" ", " ");
+  const plainContent = String(post.content || post.summary || "").trim();
+  const contentSentences = plainContent.split(/[。！!？?]/).map((item) => item.trim()).filter(Boolean);
+  const phoneHref = post.phone ? `tel:${post.phone}` : "javascript:;";
+  const recruitCountMatch = plainContent.match(/(\d+)\s*(名|人)/) || String(post.title || "").match(/(\d+)\s*(名|人)/);
+  const recruitCount = recruitCountMatch ? `${recruitCountMatch[1]}人` : "面议";
+  const recruitRolePool = cleanTags.filter((tag) => !["招聘", "置顶", "包食宿", "夫妻工", "分红"].includes(tag));
+  const recruitRole = recruitRolePool.length ? recruitRolePool.join("、") : (String(post.title).includes("跑堂") ? "跑堂、前厅" : String(post.title).includes("面匠") ? "面匠" : "面匠、帮厨");
+  const recruitConditions = post.summary || "要求长期稳定，踏实认真，能配合门店安排。";
+  const recruitDuty = contentSentences[0] || plainContent || "负责门店日常岗位工作。";
+  const recruitBenefits = cleanTags.length ? cleanTags.join("、") : (post.bio || "包吃住，设备齐全，工资按时发放");
+  const recruitExpiry = "15天";
+  const jobSkills = cleanTags.length ? cleanTags.slice(0, 2) : ["面匠", "炒匠"];
+  const jobIntro = plainContent || post.summary || "本人长期从事拉面相关工作，可尽快到岗。";
+  const rideMatch = String(post.title || "").match(/([^，,\s]+)\s*到\s*([^，,\s]+)/) || String(post.content || "").match(/([^，,\s]+)\s*到\s*([^，,\s]+)/);
+  const rideOrigin = rideMatch ? String(rideMatch[1]).replace(/顺风车.*$/, "").trim() : "出发地";
+  const rideDestination = rideMatch ? String(rideMatch[2]).replace(/顺风车.*$/, "").trim() : "目的地";
+  const rideType = String((safeTags[0] || "")).includes("人找车") ? "人找车" : String((safeTags[0] || "")).includes("长期") ? "长期线路车" : "车找人";
+  const rideDeparture = (String(post.content || "").match(/出发时间[:：]([^，。]+)/) || String(post.content || "").match(/([今明后]天[^，。]*)/) || [])[1] || "时间待定";
+  const ridePassengers = (String(post.content || "").match(/人数说明[:：]([^，。]+)/) || [])[1] || post.summary || "可电话沟通";
+  const rideFee = (String(post.content || "").match(/费用说明[:：]([^，。]+)/) || [])[1] || post.price_label || "电话联系";
+%>
+
+<style>
+  .detail-shell {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding-bottom: 4.8rem;
+  }
+  .detail-topbar {
+    background: #2ECC71;
+    color: #fff;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 .7rem;
+    font-size: .72rem;
+  }
+  .detail-topbar a {
+    color: #fff;
+    text-decoration: none;
+    min-width: 2.2rem;
+  }
+  .detail-topbar .title {
+    flex: 1;
+    margin: 0 .35rem;
+    text-align: center;
+    font-size: .86rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .detail-page {
+    background: #fff;
+    padding: .7rem .65rem 1rem;
+  }
+  .detail-user {
+    display: flex;
+    gap: .6rem;
+    align-items: flex-start;
+  }
+  .detail-avatar {
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: .28rem;
+    object-fit: cover;
+    flex: none;
+  }
+  .detail-user-main {
+    min-width: 0;
+    flex: 1;
+  }
+  .detail-user-name {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .18rem;
+    font-size: .74rem;
+    color: #54637a;
+    font-weight: 700;
+  }
+  .detail-auth {
+    color: #8ac98e;
+    font-weight: 500;
+  }
+  .detail-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    margin-top: .3rem;
+  }
+  .detail-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 1rem;
+    padding: 0 .34rem;
+    border-radius: .22rem;
+    font-size: .58rem;
+    line-height: 1rem;
+    text-decoration: none;
+    box-sizing: border-box;
+  }
+  .detail-badge.green {
+    background: #2ECC71;
+    color: #fff;
+  }
+  .detail-badge.top {
+    background: #ffd96a;
+    color: #ff6b57;
+  }
+  .detail-badge.outline {
+    border: 1px solid #58b6ff;
+    color: #58b6ff;
+    background: #fff;
+  }
+  .detail-meta-inline {
+    color: #a0a0a0;
+    font-size: .58rem;
+    margin-top: .3rem;
+    line-height: .95rem;
+  }
+  .detail-info-list {
+    margin-top: .72rem;
+  }
+  .detail-info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .4rem;
+    margin-bottom: .42rem;
+    font-size: .82rem;
+    line-height: 1.4rem;
+    color: #444;
+  }
+  .detail-info-label {
+    color: #2ECC71;
+    flex: none;
+    font-weight: 500;
+  }
+  .detail-desc {
+    margin-top: .62rem;
+    font-size: .82rem;
+    line-height: 1.5rem;
+    color: #333;
+  }
+  .detail-card {
+    margin-top: .72rem;
+    background: #fff;
+    border-radius: .72rem;
+    box-shadow: 0 .04rem .26rem rgba(0,0,0,.05);
+    padding: .8rem;
+  }
+  .detail-card-title {
+    font-size: .84rem;
+    color: #333;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+  }
+  .detail-card-line {
+    margin-top: .68rem;
+    border-top: 1px solid #ececec;
+    padding-top: .68rem;
+  }
+  .detail-company {
+    display: flex;
+    gap: .65rem;
+    align-items: flex-start;
+  }
+  .company-logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: #ff8d8d;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex: none;
+  }
+  .company-name {
+    font-size: .82rem;
+    color: #444;
+    line-height: 1.36rem;
+  }
+  .detail-contact-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    margin-top: .92rem;
+    color: #38c663;
+    font-size: .8rem;
+    line-height: 1.4rem;
+  }
+  .detail-call-btn {
+    flex: none;
+    min-width: 4.2rem;
+    height: 2rem;
+    border-radius: .45rem;
+    background: #2ECC71;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: .82rem;
+    font-weight: 700;
+  }
+  .detail-stats {
+    margin-top: .9rem;
+    display: flex;
+    justify-content: space-around;
+    color: #999;
+    font-size: .7rem;
+  }
+  .detail-tip {
+    margin-top: .78rem;
+    background: #fff2e3;
+    color: #f08d21;
+    border-radius: .56rem;
+    padding: .68rem .8rem;
+    font-size: .76rem;
+    line-height: 1.28rem;
+  }
+  .detail-group-box {
+    margin-top: .88rem;
+    background: #fff;
+    border-radius: .3rem;
+    padding: .7rem .65rem;
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+  }
+  .detail-group-btn {
+    width: 4.2rem;
+    height: 2rem;
+    border-radius: .25rem;
+    background: #2ECC71;
+    color: #fff;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    font-weight: 700;
+    flex: none;
+  }
+  .detail-group-text {
+    font-size: .78rem;
+    line-height: 1.35rem;
+    color: #222;
+    font-weight: 700;
+  }
+  .detail-bottom-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid #ececec;
+    padding: .42rem .55rem calc(.42rem + env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: 2.2rem 2.2rem 2.2rem 1fr 1fr;
+    gap: .45rem;
+    align-items: center;
+    z-index: 30;
+  }
+  .detail-mini-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #25324a;
+    font-size: .52rem;
+    line-height: .82rem;
+  }
+  .detail-mini-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: .2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin-bottom: .12rem;
+    color: #13264b;
+  }
+  .detail-cta {
+    height: 2.4rem;
+    border-radius: .34rem;
+    background: #2ECC71;
+    color: #fff;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .96rem;
+    font-weight: 700;
+  }
+  .ride-detail-card {
+    margin-top: .7rem;
+    background: #fff;
+    border-radius: .62rem;
+    box-shadow: 0 .04rem .22rem rgba(0,0,0,.04);
+    padding: .78rem .72rem;
+  }
+  .ride-detail-route {
+    font-size: .96rem;
+    color: #2f2f2f;
+    font-weight: 700;
+    line-height: 1.5rem;
+  }
+  .ride-detail-line {
+    margin-top: .45rem;
+    font-size: .78rem;
+    line-height: 1.34rem;
+    color: #34c565;
+    font-weight: 700;
+  }
+  .ride-detail-meta {
+    margin-top: .38rem;
+    font-size: .76rem;
+    line-height: 1.34rem;
+    color: #555;
+  }
+  .ride-detail-grid {
+    margin-top: .68rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .55rem;
+  }
+  .ride-mini-card {
+    background: #f9fbf9;
+    border-radius: .46rem;
+    padding: .58rem .62rem;
+  }
+  .ride-mini-card .label {
+    color: #9a9a9a;
+    font-size: .58rem;
+    line-height: .9rem;
+  }
+  .ride-mini-card .value {
+    margin-top: .18rem;
+    color: #2f2f2f;
+    font-size: .76rem;
+    line-height: 1.22rem;
+    font-weight: 700;
+  }
+</style>
+
+<div class="detail-shell">
+  <div class="detail-topbar">
+    <a href="javascript:history.back()">‹ 返回</a>
+    <div class="title"><%= `${titlePrefix} ${post.title}` %></div>
+    <a href="/plugin.php?id=xigua_hb&ac=pub&high=2" style="text-align:right;">发布</a>
   </div>
+
+  <% if (isRecruit) { %>
+    <div class="detail-page">
+      <div class="detail-user">
+        <img class="detail-avatar" src="<%= post.avatar %>" alt="<%= post.nickname %>">
+        <div class="detail-user-main">
+          <div class="detail-user-name">
+            <span><%= post.nickname %></span>
+            <span class="detail-auth">企业认证</span>
+          </div>
+          <div class="detail-badges">
+            <span class="detail-badge green">招聘</span>
+            <span class="detail-badge green"><%= recruitRole %></span>
+            <span class="detail-badge top">置顶</span>
+            <span class="detail-meta-inline">来自<%= post.location %>&nbsp;&nbsp;<%= relativeText %>发布</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-info-list">
+        <div class="detail-info-row"><span class="detail-info-label">招聘职位：</span><span><%= recruitRole %></span></div>
+        <div class="detail-info-row"><span class="detail-info-label">招聘人数：</span><span><%= recruitCount %></span></div>
+        <div class="detail-info-row"><span class="detail-info-label">招聘条件：</span><span><%= recruitConditions %></span></div>
+        <div class="detail-info-row"><span class="detail-info-label">工作内容：</span><span><%= recruitDuty %></span></div>
+        <div class="detail-info-row"><span class="detail-info-label">工作地点：</span><span><%= post.location %></span></div>
+        <div class="detail-info-row"><span class="detail-info-label">薪资待遇：</span><span><%= post.price_label || "面议" %></span></div>
+        <div class="detail-info-row"><span class="detail-info-label">待遇：</span><span><%= recruitBenefits %></span></div>
+        <div class="detail-info-row"><span class="detail-info-label">有效期：</span><span><%= recruitExpiry %></span></div>
+      </div>
+
+      <div class="detail-desc"><%= plainContent %></div>
+
+      <div class="detail-card">
+        <div class="detail-card-title">公司信息 <span class="detail-auth">已认证</span></div>
+        <div class="detail-card-line">
+          <div class="detail-company">
+            <div class="company-logo">企</div>
+            <div class="company-name">
+              <div><%= `${post.city || "本地"}${post.nickname}` %></div>
+              <div>信用代码：92231083MA19FU3R0G</div>
+            </div>
+          </div>
+          <div class="detail-desc" style="margin-top:.65rem;">企业介绍：<%= post.bio || "主营兰州牛肉面，提供手工牛肉拉面和西北风味快餐，门店长期稳定经营。" %></div>
+        </div>
+      </div>
+
+      <div class="detail-contact-row">
+        <div>联系时请告知在 拉面联盟 上看到的</div>
+        <a class="detail-call-btn" href="<%= phoneHref %>">打电话</a>
+      </div>
+
+      <div class="detail-stats">
+        <span>♡ <%= post.likes %></span>
+        <span>◉ 浏览量 <%= post.views %></span>
+        <span>↗ 分享 <%= post.shares %></span>
+        <span>☆ 收藏 0</span>
+      </div>
+    </div>
+  <% } else if (isJobWanted) { %>
+    <div class="detail-page">
+      <div class="detail-user">
+        <img class="detail-avatar" src="<%= post.avatar %>" alt="<%= post.nickname %>">
+        <div class="detail-user-main">
+          <div class="detail-user-name">
+            <span><%= post.nickname %></span>
+            <span class="detail-auth">个人认证</span>
+          </div>
+          <div class="detail-badges">
+            <span class="detail-badge green">求职</span>
+            <span class="detail-badge green"><%= safeTags[0] || "两口求职" %></span>
+            <span class="detail-meta-inline">来自<%= post.location %>&nbsp;&nbsp;<%= relativeText %>发布</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-desc" style="font-size:.92rem;line-height:1.62rem;margin-top:.9rem;"><%= jobIntro %></div>
+
+      <div class="detail-badges" style="margin-top:.72rem;">
+        <% jobSkills.forEach((tag) => { %>
+          <span class="detail-badge outline"><%= tag %></span>
+        <% }) %>
+      </div>
+
+      <div class="detail-contact-row">
+        <div>联系时请告知在 拉面联盟 上看到的</div>
+        <a class="detail-call-btn" href="<%= phoneHref %>">打电话</a>
+      </div>
+
+      <div class="detail-tip">提醒：平台不能保证信息真实性，请提前支付任何费用！</div>
+
+      <div class="detail-stats">
+        <span>♡ <%= post.likes %></span>
+        <span>◉ 浏览量 <%= post.views %></span>
+        <span>↗ 分享 <%= post.shares %></span>
+        <span>☆ 收藏 0</span>
+      </div>
+
+      <div class="detail-group-box">
+        <a class="detail-group-btn" href="javascript:openModal('home-link-group')">拉面群</a>
+        <div class="detail-group-text">←邀请你加入你所在城市的拉面群</div>
+      </div>
+    </div>
+  <% } else if (Number(post.category_id) === 1038) { %>
+    <div class="detail-page">
+      <div class="detail-user">
+        <img class="detail-avatar" src="<%= post.avatar %>" alt="<%= post.nickname %>">
+        <div class="detail-user-main">
+          <div class="detail-user-name">
+            <span><%= post.nickname %></span>
+          </div>
+          <div class="detail-badges">
+            <span class="detail-badge green"><%= rideType %></span>
+            <span class="detail-badge green"><%= `${rideOrigin}→${rideDestination}` %></span>
+            <span class="detail-meta-inline">来自<%= post.location %>&nbsp;&nbsp;<%= relativeText %>发布</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ride-detail-card">
+        <div class="ride-detail-route"><%= `${rideOrigin} → ${rideDestination}` %></div>
+        <div class="ride-detail-line">出发时间：<%= rideDeparture %></div>
+        <div class="ride-detail-meta"><%= ridePassengers %></div>
+        <div class="ride-detail-grid">
+          <div class="ride-mini-card">
+            <div class="label">费用说明</div>
+            <div class="value"><%= rideFee %></div>
+          </div>
+          <div class="ride-mini-card">
+            <div class="label">上车地点</div>
+            <div class="value"><%= post.location || rideOrigin %></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-desc"><%= plainContent %></div>
+
+      <div class="detail-contact-row">
+        <div>联系时请告知在 拉面联盟 上看到的</div>
+        <a class="detail-call-btn" href="<%= phoneHref %>">打电话</a>
+      </div>
+
+      <div class="detail-tip">提醒：请核实出发时间和上车地点，涉及费用请电话确认。</div>
+
+      <div class="detail-stats">
+        <span>♡ <%= post.likes %></span>
+        <span>◉ 浏览量 <%= post.views %></span>
+        <span>↗ 分享 <%= post.shares %></span>
+        <span>☆ 收藏 0</span>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="detail-page">
+      <div class="detail-user">
+        <img class="detail-avatar" src="<%= post.avatar %>" alt="<%= post.nickname %>">
+        <div class="detail-user-main">
+          <div class="detail-user-name"><span><%= post.nickname %></span></div>
+          <div class="detail-badges">
+            <span class="detail-badge green"><%= post.category_name || "信息" %></span>
+            <% safeTags.forEach((tag) => { %><span class="detail-badge outline"><%= tag %></span><% }) %>
+            <span class="detail-meta-inline">来自<%= post.location %>&nbsp;&nbsp;<%= relativeText %>发布</span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-desc"><%= plainContent %></div>
+      <div class="detail-contact-row">
+        <div>联系时请告知在 拉面联盟 上看到的</div>
+        <a class="detail-call-btn" href="<%= phoneHref %>">打电话</a>
+      </div>
+      <div class="detail-stats">
+        <span>♡ <%= post.likes %></span>
+        <span>◉ 浏览量 <%= post.views %></span>
+        <span>↗ 分享 <%= post.shares %></span>
+        <span>☆ 收藏 0</span>
+      </div>
+    </div>
+  <% } %>
 </div>
 
-<div class="clone-card">
-  <div class="section-title" style="padding-top:.75rem;">详细描述</div>
-  <div style="padding:0 .75rem .9rem;font-size:.75rem;line-height:1.45rem;color:#333;">
-    <%= post.content %>
-  </div>
+<div class="detail-bottom-bar">
+  <a class="detail-mini-action" href="/plugin.php?id=xigua_hb&mobile=2&high=0">
+    <span class="detail-mini-icon">⌂</span>
+    <span>首页</span>
+  </a>
+  <a class="detail-mini-action" href="/plugin.php?id=xigua_hb&ac=pub&high=2">
+    <span class="detail-mini-icon">＋</span>
+    <span>发布</span>
+  </a>
+  <a class="detail-mini-action" href="javascript:sharePost(<%= post.id %>)">
+    <span class="detail-mini-icon">↗</span>
+    <span>分享</span>
+  </a>
+  <a class="detail-cta" href="/plugin.php?id=xigua_hk&ac=join&idu=5&high=1">开通套餐</a>
+  <a class="detail-cta" href="<%= phoneHref %>">打电话</a>
 </div>
-
-<div class="clone-card">
-  <div class="section-title" style="padding-top:.75rem;">发布者</div>
-  <div style="padding:0 .75rem .85rem;display:flex;gap:.65rem;align-items:center;">
-    <img src="<%= post.avatar %>" alt="<%= post.nickname %>" style="width:2.4rem;height:2.4rem;border-radius:50%;">
-    <div style="flex:1;">
-      <div style="font-size:.78rem;color:#576b95;font-weight:600;"><%= post.nickname %></div>
-      <div style="font-size:.64rem;color:#999;margin-top:.15rem;"><%= post.city %> · <%= post.phone %></div>
-      <div style="font-size:.66rem;color:#666;margin-top:.2rem;"><%= post.bio %></div>
-    </div>
-  </div>
-</div>
-
-<div class="clone-card">
-  <div style="padding:.75rem;display:flex;justify-content:space-between;align-items:center;">
-    <div class="clone-meta" style="margin-top:0;">
-      <span>浏览 <%= post.views %></span>
-      <span>点赞 <span id="likes"><%= post.likes %></span></span>
-      <span>分享 <span id="shares"><%= post.shares %></span></span>
-    </div>
-    <div style="display:flex;gap:.4rem;">
-      <button class="weui-btn weui-btn_mini weui-btn_primary" onclick="likePost(<%= post.id %>)">点赞</button>
-      <button class="weui-btn weui-btn_mini weui-btn_default" onclick="sharePost(<%= post.id %>)">分享</button>
-      <a class="weui-btn weui-btn_mini weui-btn_default" href="/plugin.php?id=xigua_hb&ac=refresh&do=sxtc">刷新</a>
-    </div>
-  </div>
-</div>
-
-<div class="clone-card">
-  <div class="section-title" style="padding-top:.75rem;">管理操作</div>
-  <div style="padding:0 .75rem .85rem;">
-    <div class="toolbar-inline" style="margin-top:0;">
-      <a href="/plugin.php?id=xigua_hb&ac=pub&edit=<%= post.id %>">编辑</a>
-      <% if (post.status === "active") { %>
-        <button type="button" onclick="toggleStatus(<%= post.id %>, false)">下架</button>
-      <% } else { %>
-        <button type="button" onclick="toggleStatus(<%= post.id %>, true)">上架</button>
-      <% } %>
-      <a href="/plugin.php?id=xigua_hb&ac=pub&del=<%= post.id %>" onclick="return confirm('删除后无法恢复，确认删除？')">删除</a>
-    </div>
-  </div>
-</div>
-
-<%- include("partials/tabbar", { currentTab }) %>

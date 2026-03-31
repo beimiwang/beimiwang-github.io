@@ -60,8 +60,8 @@ function initNewsSlider() {
   const slider = document.getElementById("newsSlider");
   if (!slider) return;
 
-  const track = slider.querySelector(".toutiao-track");
-  const items = Array.from(slider.querySelectorAll(".toutiao-item"));
+  const track = slider.querySelector(".toutiao-track") || slider.querySelector("ul");
+  const items = Array.from(slider.querySelectorAll(".toutiao-item, li"));
   if (!track || items.length <= 1) return;
 
   const itemHeight = items[0].offsetHeight || 42;

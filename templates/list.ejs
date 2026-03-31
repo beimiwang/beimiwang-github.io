@@ -2,12 +2,60 @@
 <%
   const now = Date.now();
   const allPosts = data.posts || [];
+  const isRideCategory = Number(data.category && data.category.id) === 1038;
   const quickTags = ["全部", ...(data.filterOptions ? data.filterOptions.tags : []).slice(0, 5)];
   const bannerText = data.category && data.category.name === "求职" ? "点击加入 拉面联盟合伙人 分享好友发布信息就能赚钱" : `${data.category ? data.category.name : "分类"}频道精选信息`;
   const banner = data.banner && Number(data.banner.enabled) === 1 ? data.banner : null;
   const currentArea = data.filters ? data.filters.area : "";
   const currentTag = data.filters ? data.filters.tag : "";
   const currentSort = data.filters ? data.filters.sort : "default";
+  const areaGroups = [
+    { name: "全部", children: ["全部"] },
+    { name: "北京市", children: ["全北京市", "东城区", "西城区", "朝阳区", "海淀区", "丰台区", "石景山区", "通州区", "昌平区", "大兴区"] },
+    { name: "天津市", children: ["全天津市", "和平区", "河东区", "河西区", "南开区", "河北区", "红桥区", "滨海新区", "西青区", "东丽区"] },
+    { name: "河北省", children: ["全河北省", "石家庄", "唐山", "秦皇岛", "邯郸", "邢台", "保定", "张家口", "承德", "沧州", "廊坊", "衡水"] },
+    { name: "山西省", children: ["全山西省", "太原", "大同", "阳泉", "长治", "晋城", "朔州", "晋中", "运城", "忻州", "临汾", "吕梁"] },
+    { name: "内蒙古自治区", children: ["全内蒙古", "呼和浩特", "包头", "乌海", "赤峰", "通辽", "鄂尔多斯", "呼伦贝尔", "巴彦淖尔", "乌兰察布"] },
+    { name: "辽宁省", children: ["全辽宁省", "沈阳", "大连", "鞍山", "抚顺", "本溪", "丹东", "锦州", "营口", "阜新", "辽阳", "盘锦", "铁岭", "朝阳", "葫芦岛"] },
+    { name: "吉林省", children: ["全吉林省", "长春", "吉林", "四平", "辽源", "通化", "白山", "松原", "白城", "延边"] },
+    { name: "黑龙江省", children: ["全黑龙江", "哈尔滨", "齐齐哈尔", "鸡西", "鹤岗", "双鸭山", "大庆", "伊春", "佳木斯", "七台河", "牡丹江", "黑河", "绥化"] },
+    { name: "上海市", children: ["全上海市", "黄浦区", "徐汇区", "长宁区", "静安区", "普陀区", "虹口区", "杨浦区", "浦东新区", "闵行区", "宝山区", "嘉定区", "松江区", "青浦区"] },
+    { name: "江苏省", children: ["全江苏省", "南京", "无锡", "徐州", "常州", "苏州", "南通", "连云港", "淮安", "盐城", "扬州", "镇江", "泰州", "宿迁"] },
+    { name: "浙江省", children: ["全浙江省", "杭州", "宁波", "温州", "嘉兴", "湖州", "绍兴", "金华", "衢州", "舟山", "台州", "丽水"] },
+    { name: "安徽省", children: ["全安徽省", "合肥", "芜湖", "蚌埠", "淮南", "马鞍山", "淮北", "铜陵", "安庆", "黄山", "滁州", "阜阳", "宿州", "六安", "亳州", "池州", "宣城"] },
+    { name: "福建省", children: ["全福建省", "福州", "厦门", "莆田", "三明", "泉州", "漳州", "南平", "龙岩", "宁德"] },
+    { name: "江西省", children: ["全江西省", "南昌", "景德镇", "萍乡", "九江", "新余", "鹰潭", "赣州", "吉安", "宜春", "抚州", "上饶"] },
+    { name: "山东省", children: ["全山东省", "济南", "青岛", "淄博", "枣庄", "东营", "烟台", "潍坊", "济宁", "泰安", "威海", "日照", "临沂", "德州", "聊城", "滨州", "菏泽"] },
+    { name: "河南省", children: ["全河南省", "郑州", "开封", "洛阳", "平顶山", "安阳", "鹤壁", "新乡", "焦作", "濮阳", "许昌", "漯河", "三门峡", "南阳", "商丘", "信阳", "周口", "驻马店"] },
+    { name: "湖北省", children: ["全湖北省", "武汉", "黄石", "十堰", "宜昌", "襄阳", "鄂州", "荆门", "孝感", "荆州", "黄冈", "咸宁", "随州", "恩施"] },
+    { name: "湖南省", children: ["全湖南省", "长沙", "株洲", "湘潭", "衡阳", "邵阳", "岳阳", "常德", "张家界", "益阳", "郴州", "永州", "怀化", "娄底", "湘西"] },
+    { name: "广东省", children: ["全广东省", "广州", "深圳", "珠海", "汕头", "佛山", "韶关", "湛江", "肇庆", "江门", "茂名", "惠州", "梅州", "汕尾", "河源", "阳江", "清远", "东莞", "中山", "潮州", "揭阳", "云浮"] },
+    { name: "广西壮族自治区", children: ["全广西", "南宁", "柳州", "桂林", "梧州", "北海", "防城港", "钦州", "贵港", "玉林", "百色", "贺州", "河池", "来宾", "崇左"] },
+    { name: "海南省", children: ["全海南省", "海口", "三亚", "三沙", "儋州"] },
+    { name: "重庆市", children: ["全重庆市", "渝中区", "江北区", "南岸区", "九龙坡区", "沙坪坝区", "大渡口区", "渝北区", "巴南区", "北碚区", "万州区", "涪陵区"] },
+    { name: "四川省", children: ["全四川省", "成都", "自贡", "攀枝花", "泸州", "德阳", "绵阳", "广元", "遂宁", "内江", "乐山", "南充", "眉山", "宜宾", "广安", "达州", "雅安", "巴中", "资阳", "阿坝", "甘孜", "凉山"] },
+    { name: "贵州省", children: ["全贵州省", "贵阳", "六盘水", "遵义", "安顺", "毕节", "铜仁", "黔西南", "黔东南", "黔南"] },
+    { name: "云南省", children: ["全云南省", "昆明", "曲靖", "玉溪", "保山", "昭通", "丽江", "普洱", "临沧", "楚雄", "红河", "文山", "西双版纳", "大理", "德宏", "怒江", "迪庆"] },
+    { name: "西藏自治区", children: ["全西藏", "拉萨", "日喀则", "昌都", "林芝", "山南", "那曲", "阿里"] },
+    { name: "陕西省", children: ["全陕西省", "西安", "铜川", "宝鸡", "咸阳", "渭南", "延安", "汉中", "榆林", "安康", "商洛"] },
+    { name: "甘肃省", children: ["全甘肃省", "兰州", "嘉峪关", "金昌", "白银", "天水", "武威", "张掖", "平凉", "酒泉", "庆阳", "定西", "陇南", "临夏", "甘南"] },
+    { name: "青海省", children: ["全青海省", "西宁", "海东", "海北", "黄南", "海南州", "果洛", "玉树", "海西"] },
+    { name: "宁夏回族自治区", children: ["全宁夏", "银川", "石嘴山", "吴忠", "固原", "中卫"] },
+    { name: "新疆维吾尔自治区", children: ["全新疆", "乌鲁木齐", "克拉玛依", "吐鲁番", "哈密", "昌吉", "博尔塔拉", "巴音郭楞", "阿克苏", "克孜勒苏", "喀什", "和田", "伊犁", "塔城", "阿勒泰"] }
+  ];
+  const selectedAreaGroup = areaGroups.find((group) => group.name === currentArea || group.children.includes(currentArea)) || areaGroups[0];
+  const selectedSort = ((data.filterOptions && data.filterOptions.sorts || []).find((item) => item.value === currentSort) || { label: "默认排序" });
+  const rideData = data.rideData || {};
+  const tagGroups = [
+    { name: "全部分类", children: ["全部"] },
+    { name: "劳动合同", children: ["全部"] },
+    { name: "求职", children: ["全部", "面匠求职", "炒匠求职", "两口求职", "跑堂求职", "服务员求职", "烧烤师求职", "帮厨求职", "多人求职", "其他求职"] },
+    { name: "招聘", children: ["全部", "招聘面匠", "招聘炒匠", "招聘两口", "招聘跑堂", "招聘服务员", "招聘洗碗工"] },
+    { name: "饭店转让", children: ["全部", "整店转让", "空店转让", "设备带转", "旺铺转让"] },
+    { name: "顺风车", children: ["全部", "同城拼车", "跨城顺风车", "人找车", "车找人"] },
+    { name: "饭店用品", children: ["全部", "饭店用品", "二手设备", "桌椅转让", "厨房设备"] }
+  ];
+  const selectedTagGroup = tagGroups.find((group) => group.children.includes(currentTag)) || tagGroups.find((group) => group.name === (data.category ? data.category.name : "")) || tagGroups[0];
   function buildListUrl(overrides = {}) {
     const params = new URLSearchParams({
       id: "xigua_hb",
@@ -22,6 +70,24 @@
     if (nextTag) params.set("tag", nextTag);
     if (nextSort && nextSort !== "default") params.set("sort", nextSort);
     if (nextKeyword) params.set("keyword", nextKeyword);
+    return `/plugin.php?${params.toString()}`;
+  }
+  function buildRideUrl(overrides = {}) {
+    const params = new URLSearchParams({
+      id: "xigua_hb",
+      ac: "cat",
+      cat_id: String(data.category ? data.category.id : "")
+    });
+    const nextRideType = Object.prototype.hasOwnProperty.call(overrides, "ride_type") ? overrides.ride_type : (rideData.rideType || "");
+    const nextOrigin = Object.prototype.hasOwnProperty.call(overrides, "origin") ? overrides.origin : (rideData.originKeyword || "");
+    const nextDestination = Object.prototype.hasOwnProperty.call(overrides, "destination") ? overrides.destination : (rideData.destinationKeyword || "");
+    const nextRouteChip = Object.prototype.hasOwnProperty.call(overrides, "route_chip") ? overrides.route_chip : (rideData.routeChip || "");
+    const nextSort = Object.prototype.hasOwnProperty.call(overrides, "sort") ? overrides.sort : currentSort;
+    if (nextRideType) params.set("ride_type", nextRideType);
+    if (nextOrigin) params.set("origin", nextOrigin);
+    if (nextDestination) params.set("destination", nextDestination);
+    if (nextRouteChip) params.set("route_chip", nextRouteChip);
+    if (nextSort && nextSort !== "default") params.set("sort", nextSort);
     return `/plugin.php?${params.toString()}`;
   }
   function formatRelative(time) {
@@ -42,6 +108,247 @@
 %>
 
 <style>
+  .ride-app {
+    background: #f6f6f6;
+    min-height: calc(100vh - 2.3rem);
+    padding-bottom: 4rem;
+  }
+  .ride-header {
+    background: #2ECC71;
+    color: #fff;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 .7rem;
+    font-size: .7rem;
+  }
+  .ride-header a {
+    color: #fff;
+    text-decoration: none;
+    min-width: 2.2rem;
+  }
+  .ride-header .title {
+    font-size: .9rem;
+    font-weight: 700;
+  }
+  .ride-banner {
+    margin: .45rem .5rem 0;
+    height: 3.35rem;
+    overflow: hidden;
+    background: linear-gradient(90deg, #f3f9ea 0%, #eaf8f1 55%, #f7f2cf 100%);
+  }
+  .ride-banner img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .ride-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .06rem;
+    background: #fff;
+    padding: .58rem .18rem .12rem;
+    text-align: center;
+  }
+  .ride-tab {
+    text-decoration: none;
+    color: #666;
+    font-size: .6rem;
+    line-height: .92rem;
+  }
+  .ride-tab img {
+    width: 1.34rem;
+    height: 1.34rem;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto .14rem;
+  }
+  .ride-tab.active {
+    color: #2ECC71;
+    font-weight: 700;
+  }
+  .ride-tab-strip {
+    width: .56rem;
+    height: .16rem;
+    border-radius: 999px;
+    background: #2ECC71;
+    margin: .13rem auto 0;
+  }
+  .ride-routes {
+    display: flex;
+    gap: .26rem;
+    overflow-x: auto;
+    padding: .38rem .5rem .16rem;
+    background: #fff;
+    scrollbar-width: none;
+  }
+  .ride-routes::-webkit-scrollbar { display: none; }
+  .ride-route-chip {
+    flex: none;
+    min-width: 5.18rem;
+    height: 1.32rem;
+    border-radius: .24rem;
+    background: #2ECC71;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: .62rem;
+    padding: 0 .42rem;
+    white-space: nowrap;
+    font-weight: 700;
+  }
+  .ride-route-chip.is-muted {
+    background: #5ad07f;
+    color: #fff;
+  }
+  .ride-search {
+    background: #fff;
+    padding: .4rem .5rem .22rem;
+    display: grid;
+    grid-template-columns: 1fr .3rem 1fr auto;
+    gap: .18rem;
+    align-items: center;
+  }
+  .ride-search input {
+    height: 1.48rem;
+    border: none;
+    background: #f4f4f4;
+    border-radius: .36rem;
+    padding: 0 .55rem;
+    font-size: .62rem;
+    outline: none;
+  }
+  .ride-switch {
+    color: #c9c9c9;
+    text-align: center;
+    font-size: .92rem;
+  }
+  .ride-search button {
+    border: none;
+    height: 1.48rem;
+    padding: 0 .58rem;
+    border-radius: .36rem;
+    background: #68d48d;
+    color: #fff;
+    font-size: .64rem;
+    font-weight: 700;
+  }
+  .ride-disclaimer {
+    background: #fff;
+    padding: 0 .55rem .4rem;
+    color: #ff6b6b;
+    font-size: .54rem;
+    line-height: .86rem;
+  }
+  .ride-list-head {
+    margin-top: .34rem;
+    background: #fff;
+    padding: .54rem .55rem .48rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #444;
+    font-size: .7rem;
+    font-weight: 700;
+  }
+  .ride-list-head a {
+    color: #777;
+    text-decoration: none;
+    font-size: .64rem;
+    font-weight: 500;
+  }
+  .ride-cards {
+    padding: .36rem .5rem 0;
+  }
+  .ride-card {
+    background: #fff;
+    border-radius: .7rem;
+    box-shadow: 0 .04rem .18rem rgba(0,0,0,.04);
+    padding: .68rem .68rem .58rem;
+    margin-bottom: .48rem;
+  }
+  .ride-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+  .ride-card-top {
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+    flex-wrap: wrap;
+  }
+  .ride-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: .88rem;
+    border-radius: .18rem;
+    padding: 0 .26rem;
+    font-size: .52rem;
+    background: #39c86a;
+    color: #fff;
+    flex: none;
+    font-weight: 700;
+  }
+  .ride-route {
+    color: #5f5f5f;
+    font-size: .7rem;
+    font-weight: 700;
+    line-height: 1rem;
+  }
+  .ride-arrow {
+    color: #d3d3d3;
+    display: inline-block;
+    margin: 0 .06rem;
+  }
+  .ride-line {
+    margin-top: .5rem;
+    color: #36c666;
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 1.08rem;
+  }
+  .ride-desc {
+    margin-top: .12rem;
+    color: #333;
+    font-size: .68rem;
+    line-height: 1.08rem;
+  }
+  .ride-card-footer {
+    margin-top: .54rem;
+    padding-top: .42rem;
+    border-top: 1px solid #ededed;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .ride-meta {
+    color: #b0b0b0;
+    font-size: .56rem;
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+  }
+  .ride-call {
+    width: 3rem;
+    height: 1.22rem;
+    border-radius: .24rem;
+    background: #ff6c69;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: .58rem;
+    font-weight: 700;
+    flex: none;
+  }
   .list-app {
     background: #f5f5f5;
     min-height: calc(100vh - 2.3rem);
@@ -120,6 +427,7 @@
     color: #555;
     text-decoration: none;
     display: block;
+    position: relative;
   }
   .list-filter-top a::after {
     content: "";
@@ -131,6 +439,144 @@
     vertical-align: middle;
     position: relative;
     top: -.03rem;
+  }
+  .list-filter-top a.active {
+    color: #2ECC71;
+    font-weight: 700;
+  }
+  .list-filter-top a.active::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -.58rem;
+    width: 1rem;
+    height: .28rem;
+    border-radius: 999px;
+    background: #d8f6e5;
+    transform: translateX(-50%);
+  }
+  .list-filter-top a.active::after {
+    border-top-color: #2ECC71;
+  }
+  .filter-overlay {
+    display: none;
+    position: relative;
+    z-index: 8;
+    background: #fff;
+    border-top: 1px solid #f1f1f1;
+    padding: .18rem 0 .3rem;
+  }
+  .filter-overlay.is-open {
+    display: block;
+  }
+  .filter-panel {
+    display: none;
+    background: #fff;
+  }
+  .filter-panel.is-open {
+    display: block;
+  }
+  .filter-panel.area-panel {
+    display: none;
+  }
+  .filter-panel.area-panel.is-open {
+    display: grid;
+  }
+  .area-panel {
+    grid-template-columns: 1fr 1.08fr;
+    min-height: 24.8rem;
+  }
+  .filter-panel.tag-panel {
+    display: none;
+  }
+  .filter-panel.tag-panel.is-open {
+    display: grid;
+  }
+  .tag-panel {
+    grid-template-columns: .96fr 1.04fr;
+    min-height: 24.8rem;
+  }
+  .area-column {
+    max-height: 24.8rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+  }
+  .area-column.left {
+    border-right: .18rem solid #d9d9d9;
+  }
+  .area-column a {
+    display: block;
+    padding: .78rem .68rem .78rem .72rem;
+    color: #444;
+    text-decoration: none;
+    font-size: .76rem;
+    line-height: 1.08rem;
+    border-bottom: 1px solid #f1f1f1;
+    background: #fff;
+    font-weight: 500;
+  }
+  .area-column a.active {
+    color: #ff6b6b;
+  }
+  .area-column.right a.active {
+    color: #ff6b6b;
+    font-weight: 700;
+  }
+  .tag-column {
+    max-height: 24.8rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+  }
+  .tag-column.left {
+    border-right: 1px solid #efefef;
+  }
+  .tag-column a {
+    display: block;
+    padding: .78rem .68rem .78rem .72rem;
+    color: #444;
+    text-decoration: none;
+    font-size: .76rem;
+    line-height: 1.08rem;
+    border-bottom: 1px solid #f1f1f1;
+    background: #fff;
+    font-weight: 500;
+  }
+  .tag-column.left a.active,
+  .tag-column.right a.active {
+    color: #2ECC71;
+    font-weight: 700;
+  }
+  .simple-panel {
+    padding: .3rem 0 .45rem;
+    max-height: 16rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .simple-panel a {
+    display: block;
+    padding: 1rem .8rem;
+    border-bottom: 1px solid #f2f2f2;
+    color: #444;
+    text-decoration: none;
+    font-size: .8rem;
+    line-height: 1.3rem;
+    background: #fff;
+  }
+  .simple-panel a.active {
+    color: #2ECC71;
+    font-weight: 700;
+  }
+  .filter-mask {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .18);
+    z-index: 7;
+  }
+  .filter-mask.is-open {
+    display: block;
   }
   .list-filter-tabs {
     display: flex;
@@ -241,6 +687,88 @@
   }
 </style>
 
+<% if (isRideCategory) { %>
+<div class="ride-app">
+  <div class="ride-header">
+    <a href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
+    <div class="title"><%= data.category ? data.category.name : "顺风车" %></div>
+    <a href="/plugin.php?id=xigua_hb&ac=pub&high=2" style="text-align:right;">发布</a>
+  </div>
+
+  <% if (banner && banner.image_url) { %>
+    <% if (banner.target_url) { %>
+      <a class="ride-banner" href="<%= banner.target_url %>"><img src="<%= banner.image_url %>" alt="顺风车 banner"></a>
+    <% } else { %>
+      <div class="ride-banner"><img src="<%= banner.image_url %>" alt="顺风车 banner"></div>
+    <% } %>
+  <% } else { %>
+    <div class="ride-banner"><div class="line1"><%= bannerText %></div></div>
+  <% } %>
+
+  <div class="ride-tabs">
+    <% (rideData.rideTabs || ["全部", "车找人", "长期线路车", "人找车"]).forEach((tab) => { %>
+      <% const active = (!rideData.rideType && tab === "全部") || rideData.rideType === tab; %>
+      <a class="ride-tab <%= active ? 'active' : '' %>" href="<%= buildRideUrl({ ride_type: tab === '全部' ? '' : tab, route_chip: '', origin: rideData.originKeyword || '', destination: rideData.destinationKeyword || '' }) %>">
+        <img src="<%= data.category && data.category.icon ? data.category.icon : 'https://lzlm1.oss-cn-beijing.aliyuncs.com/xigua/20251110/wx6911d54baf82b.png' %>" alt="<%= tab %>">
+        <div><%= tab %></div>
+        <% if (active) { %><div class="ride-tab-strip"></div><% } %>
+      </a>
+    <% }) %>
+  </div>
+
+  <div class="ride-routes">
+    <% (rideData.routeChips || []).forEach((chip, index) => { %>
+      <a class="ride-route-chip <%= (!rideData.routeChip && index > 2) ? 'is-muted' : '' %>" href="<%= buildRideUrl({ route_chip: chip, origin: '', destination: '' }) %>"><%= chip.replace('⇌', '⇌') %></a>
+    <% }) %>
+  </div>
+
+  <form class="ride-search" method="get" action="/plugin.php">
+    <input type="hidden" name="id" value="xigua_hb">
+    <input type="hidden" name="ac" value="cat">
+    <input type="hidden" name="cat_id" value="<%= data.category ? data.category.id : 1038 %>">
+    <% if (rideData.rideType) { %><input type="hidden" name="ride_type" value="<%= rideData.rideType %>"><% } %>
+    <% if (rideData.routeChip) { %><input type="hidden" name="route_chip" value="<%= rideData.routeChip %>"><% } %>
+    <input type="text" name="origin" value="<%= rideData.originKeyword || '' %>" placeholder="出发地搜索">
+    <div class="ride-switch">⇄</div>
+    <input type="text" name="destination" value="<%= rideData.destinationKeyword || '' %>" placeholder="目的地搜索">
+    <button type="submit">搜索</button>
+  </form>
+
+  <div class="ride-disclaimer">📢 免责声明：本平台不对任何人提供任何形式担保，所有信息仅供参考，不承担任何民事及法律责任，用户使用本平台即视为同意。</div>
+
+  <div class="ride-list-head">
+    <span>顺风车信息</span>
+    <a href="<%= buildRideUrl({ sort: currentSort === 'default' ? 'views' : 'default' }) %>"><%= selectedSort.label %></a>
+  </div>
+
+  <div class="ride-cards">
+    <% if (allPosts.length) { %>
+      <% allPosts.forEach((post) => { %>
+        <div class="ride-card">
+          <a href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= post.id %>" class="ride-card-link">
+          <div class="ride-card-top">
+            <span class="ride-badge"><%= post.ride_type || "车找人" %></span>
+            <span class="ride-route"><%= `${post.ride_origin || "出发地"} → ${post.ride_destination || "目的地"}` %></span>
+          </div>
+          <div class="ride-line">出发时间：<%= post.ride_departure_text || "时间待定" %></div>
+          <div class="ride-desc"><%= post.ride_description || post.summary || post.content %></div>
+          </a>
+          <div class="ride-card-footer">
+            <div class="ride-meta">
+              <span><%= formatRelative(post.created_at) %></span>
+              <span>◉ <%= post.views %></span>
+            </div>
+            <a class="ride-call" href="tel:<%= post.phone %>">📞 电话</a>
+          </div>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div class="job-empty">当前顺风车暂无内容</div>
+    <% } %>
+  </div>
+</div>
+<%- include("partials/tabbar", { currentTab }) %>
+<% } else { %>
 <div class="list-app">
   <div class="list-header">
     <a href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
@@ -266,9 +794,48 @@
 
   <div class="list-filters">
     <div class="list-filter-top">
-      <a href="<%= buildListUrl({ area: '' }) %>"><%= currentArea || "地区" %></a>
-      <a href="<%= buildListUrl({ tag: '' }) %>"><%= data.category ? data.category.name : "分类" %></a>
-      <a href="<%= buildListUrl({ sort: currentSort === 'default' ? 'views' : 'default' }) %>"><%= ((data.filterOptions && data.filterOptions.sorts || []).find((item) => item.value === currentSort) || { label: "默认排序" }).label %></a>
+      <a href="javascript:;" class="js-filter-toggle" data-panel="area-panel"><%= currentArea || "地区" %></a>
+      <a href="javascript:;" class="js-filter-toggle" data-panel="tag-panel"><%= currentTag || (data.category ? data.category.name : "分类") %></a>
+      <a href="javascript:;" class="js-filter-toggle" data-panel="sort-panel"><%= selectedSort.label %></a>
+    </div>
+    <div class="filter-overlay" id="filterOverlay">
+      <div class="filter-panel area-panel" data-panel="area-panel">
+        <div class="area-column left">
+          <% areaGroups.forEach((group) => { %>
+            <a
+              href="javascript:;"
+              class="js-area-group <%= selectedAreaGroup.name === group.name ? 'active' : '' %>"
+              data-group="<%= group.name %>"
+            ><%= group.name %></a>
+          <% }) %>
+        </div>
+        <div class="area-column right">
+          <% selectedAreaGroup.children.forEach((areaName) => { %>
+            <a href="<%= buildListUrl({ area: areaName === '全部' ? '' : areaName }) %>" class="<%= (!currentArea && areaName === '全部') || currentArea === areaName ? 'active' : '' %>"><%= areaName %></a>
+          <% }) %>
+        </div>
+      </div>
+      <div class="filter-panel tag-panel" data-panel="tag-panel">
+        <div class="tag-column left">
+          <% tagGroups.forEach((group) => { %>
+            <a
+              href="javascript:;"
+              class="js-tag-group <%= selectedTagGroup.name === group.name ? 'active' : '' %>"
+              data-group="<%= group.name %>"
+            ><%= group.name %></a>
+          <% }) %>
+        </div>
+        <div class="tag-column right">
+          <% selectedTagGroup.children.forEach((tagName) => { %>
+            <a href="<%= buildListUrl({ tag: tagName === '全部' ? '' : tagName }) %>" class="<%= (!currentTag && tagName === '全部') || currentTag === tagName ? 'active' : '' %>"><%= tagName %></a>
+          <% }) %>
+        </div>
+      </div>
+      <div class="filter-panel simple-panel" data-panel="sort-panel">
+        <% ((data.filterOptions && data.filterOptions.sorts) || []).forEach((sortItem) => { %>
+          <a href="<%= buildListUrl({ sort: sortItem.value }) %>" class="<%= currentSort === sortItem.value ? 'active' : '' %>"><%= sortItem.label %></a>
+        <% }) %>
+      </div>
     </div>
     <div class="list-filter-tabs">
       <% quickTags.forEach((tag, index) => { %>
@@ -276,6 +843,7 @@
       <% }) %>
     </div>
   </div>
+  <div class="filter-mask" id="filterMask"></div>
 
   <div class="job-list">
     <% allPosts.forEach((post, index) => { %>
@@ -300,4 +868,85 @@
   <% } %>
 </div>
 
+<script>
+  (function () {
+    const overlay = document.getElementById("filterOverlay");
+    const mask = document.getElementById("filterMask");
+    const toggles = Array.from(document.querySelectorAll(".js-filter-toggle"));
+    const panels = Array.from(document.querySelectorAll(".filter-panel"));
+    const areaGroups = {
+      <% areaGroups.forEach((group, index) => { %>
+        "<%= group.name %>": <%- JSON.stringify(group.children) %><%= index < areaGroups.length - 1 ? ',' : '' %>
+      <% }) %>
+    };
+    const tagGroups = {
+      <% tagGroups.forEach((group, index) => { %>
+        "<%= group.name %>": <%- JSON.stringify(group.children) %><%= index < tagGroups.length - 1 ? ',' : '' %>
+      <% }) %>
+    };
+    let currentPanel = "";
+
+    function closePanels() {
+      currentPanel = "";
+      overlay.classList.remove("is-open");
+      mask.classList.remove("is-open");
+      panels.forEach((panel) => panel.classList.remove("is-open"));
+      toggles.forEach((toggle) => toggle.classList.remove("active"));
+    }
+
+    function openPanel(panelName, toggle) {
+      if (currentPanel === panelName) {
+        closePanels();
+        return;
+      }
+      currentPanel = panelName;
+      overlay.classList.add("is-open");
+      mask.classList.add("is-open");
+      panels.forEach((panel) => panel.classList.toggle("is-open", panel.dataset.panel === panelName));
+      toggles.forEach((item) => item.classList.toggle("active", item === toggle));
+    }
+
+    toggles.forEach((toggle) => {
+      toggle.addEventListener("click", function () {
+        openPanel(toggle.dataset.panel, toggle);
+      });
+    });
+
+    mask.addEventListener("click", closePanels);
+
+    document.querySelectorAll(".js-area-group").forEach((link) => {
+      link.addEventListener("click", function () {
+        const group = link.dataset.group;
+        const rightColumn = document.querySelector(".area-column.right");
+        if (!rightColumn || !areaGroups[group]) return;
+        document.querySelectorAll(".js-area-group").forEach((item) => item.classList.toggle("active", item === link));
+        rightColumn.innerHTML = areaGroups[group].map(function (areaName) {
+          const href = areaName === "全部"
+            ? "<%= buildListUrl({ area: '' }) %>"
+            : "<%= buildListUrl({ area: '__AREA__' }) %>".replace("__AREA__", encodeURIComponent(areaName));
+          const active = <%- JSON.stringify(currentArea) %> === areaName || (!<%- JSON.stringify(currentArea) %> && areaName === "全部");
+          return '<a href="' + href + '"' + (active ? ' class="active"' : '') + '>' + areaName + '</a>';
+        }).join("");
+      });
+    });
+
+    document.querySelectorAll(".js-tag-group").forEach((link) => {
+      link.addEventListener("click", function () {
+        const group = link.dataset.group;
+        const rightColumn = document.querySelector(".tag-column.right");
+        if (!rightColumn || !tagGroups[group]) return;
+        document.querySelectorAll(".js-tag-group").forEach((item) => item.classList.toggle("active", item === link));
+        rightColumn.innerHTML = tagGroups[group].map(function (tagName) {
+          const href = tagName === "全部"
+            ? "<%= buildListUrl({ tag: '' }) %>"
+            : "<%= buildListUrl({ tag: '__TAG__' }) %>".replace("__TAG__", encodeURIComponent(tagName));
+          const active = <%- JSON.stringify(currentTag) %> === tagName || (!<%- JSON.stringify(currentTag) %> && tagName === "全部");
+          return '<a href="' + href + '"' + (active ? ' class="active"' : '') + '>' + tagName + '</a>';
+        }).join("");
+      });
+    });
+  })();
+</script>
+
 <%- include("partials/tabbar", { currentTab }) %>
+<% } %>

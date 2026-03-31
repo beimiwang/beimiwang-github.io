@@ -1,44 +1,193 @@
 <%- include("partials/head", { pageTitle, message }) %>
-<div class="clone-card">
-  <div class="section-title" style="padding-top:.9rem;"><%= data.post ? "编辑信息" : "发布信息" %></div>
-  <form method="post" action="/plugin.php?id=xigua_hb&ac=pub<%= data.post ? `&edit=${data.post.id}` : '' %>" style="padding:0 .75rem .85rem;">
-    <div class="weui-cells mt0">
-      <div class="weui-cell">
-        <div class="weui-cell__bd">
-          <select class="weui-input" name="category_id">
+<%
+  const post = data.post || null;
+  const selectedCategoryId = post ? Number(post.category_id) : 1035;
+  const isRide = selectedCategoryId === 1038;
+  const rideType = (post && (post.tags || [])[0]) || "车找人";
+  const routeMatch = post ? (String(post.title || "").match(/([^，,\s]+)\s*到\s*([^，,\s]+)/) || String(post.content || "").match(/([^，,\s]+)\s*到\s*([^，,\s]+)/)) : null;
+  const rideOrigin = routeMatch ? String(routeMatch[1]).replace(/顺风车.*$/, "").trim() : "";
+  const rideDestination = routeMatch ? String(routeMatch[2]).replace(/顺风车.*$/, "").trim() : "";
+  const departureMatch = post ? String(post.content || "").match(/出发时间[:：]([^，。]+)/) : null;
+  const passengerMatch = post ? String(post.content || "").match(/人数说明[:：]([^，。]+)/) : null;
+  const feeMatch = post ? String(post.content || "").match(/费用说明[:：]([^，。]+)/) : null;
+  const noteMatch = post ? String(post.content || "").match(/补充说明[:：]([^，。]+)/) : null;
+%>
+
+<style>
+  .pub-shell { background:#f5f5f5; min-height:100vh; padding-bottom:1rem; }
+  .pub-card { margin:.6rem .5rem 0; background:#fff; border-radius:.6rem; box-shadow:0 .04rem .24rem rgba(0,0,0,.04); overflow:hidden; }
+  .pub-head { padding:.85rem .8rem .55rem; font-size:.86rem; font-weight:700; color:#333; }
+  .pub-form { padding:0 .8rem .9rem; }
+  .pub-item { padding:.7rem 0; border-bottom:1px solid #f1f1f1; }
+  .pub-item:last-child { border-bottom:none; }
+  .pub-input, .pub-select, .pub-textarea {
+    width:100%; border:none; outline:none; background:#f7f7f7; border-radius:.45rem;
+    padding:0 .65rem; font-size:.72rem; color:#333; box-sizing:border-box;
+  }
+  .pub-input, .pub-select { height:2rem; }
+  .pub-textarea { min-height:6.4rem; padding:.6rem .65rem; resize:none; }
+  .pub-grid { display:grid; grid-template-columns:1fr 1fr; gap:.55rem; }
+  .pub-submit { margin-top:.85rem; width:100%; height:2.2rem; border:none; border-radius:.5rem; background:#2ECC71; color:#fff; font-size:.8rem; font-weight:700; }
+  .pub-tip { margin-top:.3rem; color:#999; font-size:.58rem; line-height:.95rem; }
+  .pub-switch { display:flex; gap:.45rem; margin-top:.55rem; }
+  .pub-switch a {
+    flex:1; height:1.9rem; border-radius:.42rem; display:flex; align-items:center; justify-content:center;
+    text-decoration:none; font-size:.72rem; color:#666; background:#f3f3f3;
+  }
+  .pub-switch a.active { background:#2ECC71; color:#fff; font-weight:700; }
+  .ride-pub-shell {
+    margin-top: .75rem;
+    border-top: 1px solid #f2f2f2;
+    padding-top: .75rem;
+  }
+  .ride-pub-title {
+    font-size: .82rem;
+    font-weight: 700;
+    color: #2f2f2f;
+    margin-bottom: .45rem;
+  }
+  .ride-pub-tip {
+    font-size: .6rem;
+    color: #999;
+    line-height: .95rem;
+    margin: -.1rem 0 .45rem;
+  }
+  .ride-chip-row {
+    display: flex;
+    gap: .35rem;
+    overflow-x: auto;
+    padding-bottom: .1rem;
+    margin-bottom: .5rem;
+  }
+  .ride-chip {
+    flex: none;
+    min-width: 4rem;
+    height: 1.42rem;
+    border-radius: 999px;
+    border: 1px solid #d8f3e1;
+    color: #2ECC71;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .64rem;
+    background: #f7fffa;
+  }
+  .ride-chip.is-active {
+    background: #2ECC71;
+    color: #fff;
+    border-color: #2ECC71;
+    font-weight: 700;
+  }
+</style>
+
+<div class="pub-shell">
+  <div class="pub-card">
+    <div class="pub-head"><%= post ? "编辑信息" : "发布信息" %></div>
+    <div class="pub-form">
+      <div class="pub-switch">
+        <a href="javascript:;" class="<%= !isRide ? 'active' : '' %>" data-category-switch="normal">普通信息</a>
+        <a href="javascript:;" class="<%= isRide ? 'active' : '' %>" data-category-switch="ride">顺风车</a>
+      </div>
+
+      <form method="post" action="/plugin.php?id=xigua_hb&ac=pub<%= post ? `&edit=${post.id}` : '' %>">
+        <div class="pub-item">
+          <select class="pub-select" name="category_id" id="categorySelect">
             <% data.categories.forEach((category) => { %>
-              <option value="<%= category.id %>" <%= data.post && Number(data.post.category_id) === Number(category.id) ? "selected" : "" %>><%= category.name %></option>
+              <option value="<%= category.id %>" <%= Number(selectedCategoryId) === Number(category.id) ? "selected" : "" %>><%= category.name %></option>
             <% }) %>
           </select>
         </div>
-      </div>
-      <div class="weui-cell">
-        <div class="weui-cell__bd"><input class="weui-input" name="title" type="text" value="<%= data.post ? data.post.title : '' %>" placeholder="标题"></div>
-      </div>
-      <div class="weui-cell">
-        <div class="weui-cell__bd"><input class="weui-input" name="summary" type="text" value="<%= data.post ? data.post.summary : '' %>" placeholder="简介"></div>
-      </div>
-      <div class="weui-cell">
-        <div class="weui-cell__bd"><input class="weui-input" name="price_label" type="text" value="<%= data.post ? data.post.price_label : '' %>" placeholder="价格/薪资"></div>
-      </div>
-      <div class="weui-cell">
-        <div class="weui-cell__bd"><input class="weui-input" name="location" type="text" value="<%= data.post ? data.post.location : '' %>" placeholder="位置"></div>
-      </div>
-      <div class="weui-cell">
-        <div class="weui-cell__bd"><input class="weui-input" name="cover" type="text" value="<%= data.post ? data.post.cover : '' %>" placeholder="封面图片 URL"></div>
-      </div>
-      <div class="weui-cell">
-        <div class="weui-cell__bd"><input class="weui-input" name="tags" type="text" value="<%= data.post ? data.post.tags.join('，') : '' %>" placeholder="标签，多个用逗号分隔"></div>
-      </div>
-      <div class="weui-cell">
-        <div class="weui-cell__bd"><textarea class="weui-textarea" name="content" placeholder="详细描述" rows="6"><%= data.post ? data.post.content : '' %></textarea></div>
-      </div>
+
+        <div id="normalFields" style="<%= isRide ? 'display:none;' : '' %>">
+          <div class="pub-item"><input class="pub-input" name="title" type="text" value="<%= post && !isRide ? post.title : '' %>" placeholder="标题"></div>
+          <div class="pub-item"><input class="pub-input" name="summary" type="text" value="<%= post && !isRide ? post.summary : '' %>" placeholder="简介"></div>
+          <div class="pub-item"><input class="pub-input" name="price_label" type="text" value="<%= post && !isRide ? post.price_label : '' %>" placeholder="价格/薪资"></div>
+          <div class="pub-item"><input class="pub-input" name="location" type="text" value="<%= post && !isRide ? post.location : '' %>" placeholder="位置"></div>
+          <div class="pub-item"><input class="pub-input" name="cover" type="text" value="<%= post && !isRide ? post.cover : '' %>" placeholder="封面图片 URL"></div>
+          <div class="pub-item"><input class="pub-input" name="tags" type="text" value="<%= post && !isRide ? post.tags.join('，') : '' %>" placeholder="标签，多个用逗号分隔"></div>
+          <div class="pub-item"><textarea class="pub-textarea" name="content" placeholder="详细描述"><%= post && !isRide ? post.content : '' %></textarea></div>
+        </div>
+
+        <div id="rideFields" style="<%= isRide ? '' : 'display:none;' %>">
+          <div class="ride-pub-shell">
+            <div class="ride-pub-title">顺风车发布</div>
+            <div class="ride-pub-tip">填写出发地、目的地、时间和人数后，系统会自动生成顺风车标题与详情。</div>
+            <div class="ride-chip-row">
+              <% ["车找人", "长期线路车", "人找车"].forEach((item) => { %>
+                <span class="ride-chip <%= rideType === item ? 'is-active' : '' %>" data-ride-chip="<%= item %>"><%= item %></span>
+              <% }) %>
+            </div>
+          </div>
+          <div class="pub-item">
+            <select class="pub-select" name="ride_type" id="rideTypeSelect">
+              <% ["车找人", "长期线路车", "人找车"].forEach((item) => { %>
+                <option value="<%= item %>" <%= rideType === item ? 'selected' : '' %>><%= item %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="pub-grid">
+            <div class="pub-item"><input class="pub-input" name="ride_origin" type="text" value="<%= rideOrigin %>" placeholder="出发地"></div>
+            <div class="pub-item"><input class="pub-input" name="ride_destination" type="text" value="<%= rideDestination %>" placeholder="目的地"></div>
+          </div>
+          <div class="pub-grid">
+            <div class="pub-item"><input class="pub-input" name="ride_departure_time" type="text" value="<%= departureMatch ? departureMatch[1].trim() : '' %>" placeholder="出发时间"></div>
+            <div class="pub-item"><input class="pub-input" name="ride_passengers" type="text" value="<%= passengerMatch ? passengerMatch[1].trim() : '' %>" placeholder="人数说明"></div>
+          </div>
+          <div class="pub-grid">
+            <div class="pub-item"><input class="pub-input" name="ride_fee" type="text" value="<%= feeMatch ? feeMatch[1].trim() : (post && isRide ? post.price_label : '') %>" placeholder="费用说明"></div>
+            <div class="pub-item"><input class="pub-input" name="phone" type="text" value="" placeholder="联系电话(可留空)"></div>
+          </div>
+          <div class="pub-item">
+            <textarea class="pub-textarea" name="ride_note" placeholder="补充说明"><%= noteMatch ? noteMatch[1].trim() : '' %></textarea>
+            <div class="pub-tip">发布后会自动生成顺风车标题、说明和详情内容。</div>
+          </div>
+        </div>
+
+        <button type="submit" class="pub-submit"><%= post ? "保存修改" : "提交发布" %></button>
+      </form>
     </div>
-    <div class="toolbar-inline">
-      <button type="submit" class="weui-btn weui-btn_primary" style="margin-top:.75rem;flex:1;"><%= data.post ? "保存修改" : "提交发布" %></button>
-      <% if (data.post) { %>
-        <a href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= data.post.id %>" class="weui-btn weui-btn_default" style="margin-top:.75rem;flex:1;">返回详情</a>
-      <% } %>
-    </div>
-  </form>
+  </div>
 </div>
+
+<script>
+  (function () {
+    const categorySelect = document.getElementById("categorySelect");
+    const normalFields = document.getElementById("normalFields");
+    const rideFields = document.getElementById("rideFields");
+    const switchers = document.querySelectorAll("[data-category-switch]");
+    const rideTypeSelect = document.getElementById("rideTypeSelect");
+    const rideChips = document.querySelectorAll("[data-ride-chip]");
+
+    function syncMode(mode) {
+      const isRide = mode === "ride";
+      normalFields.style.display = isRide ? "none" : "";
+      rideFields.style.display = isRide ? "" : "none";
+      categorySelect.value = isRide ? "1038" : (categorySelect.value === "1038" ? "1035" : categorySelect.value);
+      switchers.forEach((link) => link.classList.toggle("active", link.dataset.categorySwitch === mode));
+    }
+
+    switchers.forEach((link) => {
+      link.addEventListener("click", function () {
+        syncMode(link.dataset.categorySwitch);
+      });
+    });
+
+    categorySelect.addEventListener("change", function () {
+      syncMode(categorySelect.value === "1038" ? "ride" : "normal");
+    });
+
+    if (rideTypeSelect) {
+      function syncRideChips() {
+        rideChips.forEach((chip) => chip.classList.toggle("is-active", chip.dataset.rideChip === rideTypeSelect.value));
+      }
+      syncRideChips();
+      rideTypeSelect.addEventListener("change", syncRideChips);
+      rideChips.forEach((chip) => {
+        chip.addEventListener("click", function () {
+          rideTypeSelect.value = chip.dataset.rideChip;
+          syncRideChips();
+        });
+      });
+    }
+  })();
+</script>

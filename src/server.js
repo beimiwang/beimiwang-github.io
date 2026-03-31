@@ -169,6 +169,7 @@ function redirectWithMessage(res, url, message) {
 
 function parsePostForm(body) {
   const form = body.form || body;
+  const categoryId = Number(form.category_id || form.categoryId || 1035);
   const title = String(form.title || "").trim();
   const content = String(form.content || "").trim();
   const summary = String(form.summary || content.slice(0, 48) || "").trim();
@@ -178,8 +179,40 @@ function parsePostForm(body) {
     .filter(Boolean)
     .slice(0, 5);
 
+  if (categoryId === 1038) {
+    const rideType = String(form.ride_type || "车找人").trim() || "车找人";
+    const origin = String(form.ride_origin || "").trim();
+    const destination = String(form.ride_destination || "").trim();
+    const departureTime = String(form.ride_departure_time || "").trim();
+    const passengers = String(form.ride_passengers || "").trim();
+    const fee = String(form.ride_fee || "").trim();
+    const note = String(form.ride_note || "").trim();
+    const composedTitle = `${origin || "出发地"}到${destination || "目的地"}顺风车`;
+    const composedSummary = `${rideType}${passengers ? `，${passengers}` : ""}${note ? `，${note}` : ""}`.trim();
+    const contentLines = [
+      composedTitle,
+      departureTime ? `出发时间：${departureTime}` : "",
+      passengers ? `人数说明：${passengers}` : "",
+      fee ? `费用说明：${fee}` : "",
+      note ? `补充说明：${note}` : "",
+      `联系电话：${String(form.phone || "").trim() || "请在详情页查看"}`
+    ].filter(Boolean);
+    return {
+      categoryId,
+      title: composedTitle,
+      summary: composedSummary || departureTime || "时间待定",
+      content: contentLines.join("，"),
+      cover: "",
+      priceLabel: fee || "电话联系",
+      location: origin || "未填写位置",
+      tags: [rideType].filter(Boolean),
+      status: form.status === "ended" ? "ended" : "active",
+      userId: DEMO_USER_ID
+    };
+  }
+
   return {
-    categoryId: Number(form.category_id || form.categoryId || 1035),
+    categoryId,
     title,
     summary,
     content,
@@ -281,12 +314,44 @@ function renderPlugin(req, res) {
       return res.render("detail", { currentTab: "home", pageTitle: post.title, post, message: msg });
     }
 
+    if (ac === "ride_api") {
+      const data = getPostsByCategory(1038, {
+        sort: req.query.sort || "default",
+        rideType: req.query.ride_type || "",
+        origin: req.query.origin || "",
+        destination: req.query.destination || "",
+        routeChip: req.query.route_chip || ""
+      });
+      return res.json({
+        ok: true,
+        filters: data.rideData || {},
+        sort: data.filters || {},
+        posts: data.posts.map((post) => ({
+          id: post.id,
+          title: post.title,
+          route: `${post.ride_origin || "出发地"} -> ${post.ride_destination || "目的地"}`,
+          rideType: post.ride_type || "车找人",
+          departureText: post.ride_departure_text || "时间待定",
+          description: post.ride_description || post.summary || "",
+          location: post.location || "",
+          createdAt: post.created_at,
+          views: post.views,
+          phone: post.phone || "",
+          href: `/plugin.php?id=xigua_hb&ac=view&pubid=${post.id}`
+        }))
+      });
+    }
+
     if (ac === "cat") {
       const data = getPostsByCategory(Number(catId), {
         keyword,
         area: req.query.area || "",
         tag: req.query.tag || "",
-        sort: req.query.sort || "default"
+        sort: req.query.sort || "default",
+        rideType: req.query.ride_type || "",
+        origin: req.query.origin || "",
+        destination: req.query.destination || "",
+        routeChip: req.query.route_chip || ""
       });
       return res.render("list", {
         currentTab: "home",
@@ -452,6 +517,37 @@ function renderPlugin(req, res) {
 
 app.get("/", (req, res) => {
   res.redirect("/plugin.php?id=xigua_hb&mobile=2&high=0");
+});
+
+app.get("/plugin.php", (req, res, next) => {
+  if (!(req.query.id === "xigua_hb" && req.query.ac === "ride_api")) {
+    return next();
+  }
+  const data = getPostsByCategory(1038, {
+    sort: req.query.sort || "default",
+    rideType: req.query.ride_type || "",
+    origin: req.query.origin || "",
+    destination: req.query.destination || "",
+    routeChip: req.query.route_chip || ""
+  });
+  return res.json({
+    ok: true,
+    filters: data.rideData || {},
+    sort: data.filters || {},
+    posts: data.posts.map((post) => ({
+      id: post.id,
+      title: post.title,
+      route: `${post.ride_origin || "出发地"} -> ${post.ride_destination || "目的地"}`,
+      rideType: post.ride_type || "车找人",
+      departureText: post.ride_departure_text || "时间待定",
+      description: post.ride_description || post.summary || "",
+      location: post.location || "",
+      createdAt: post.created_at,
+      views: post.views,
+      phone: post.phone || "",
+      href: `/plugin.php?id=xigua_hb&ac=view&pubid=${post.id}`
+    }))
+  });
 });
 
 app.get("/plugin.php", renderPlugin);

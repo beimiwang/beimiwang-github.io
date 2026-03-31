@@ -434,13 +434,11 @@ function buildHomeTickerItems(posts) {
     .slice()
     .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
 
-  const officialItems = getNotices().map((notice, index) => ({
+  const officialItems = getNotices().map((notice) => ({
     type: "official",
     text: notice.text,
-    // Keep pure platform notices non-clickable, but let publish-style notices jump to details.
-    href: notice.text.includes("发布了") && latestPosts[index - 1]
-      ? `/plugin.php?id=xigua_hb&ac=view&pubid=${latestPosts[index - 1].id}`
-      : ""
+    // Official notices stay non-clickable; post dynamics below handle detail jumps.
+    href: ""
   }));
 
   const userItems = latestPosts
@@ -484,7 +482,7 @@ function basePostQuery(whereClause = "WHERE 1=1", orderBy = "ORDER BY datetime(p
 function getHomeData(keyword = "") {
   const hasKeyword = keyword && keyword.trim();
   const whereClause = hasKeyword
-    ? "WHERE posts.status = 'active' AND (posts.title LIKE @keyword OR posts.summary LIKE @keyword OR posts.location LIKE @keyword)"
+    ? "WHERE posts.status = 'active' AND (posts.title LIKE @keyword OR posts.summary LIKE @keyword OR posts.location LIKE @keyword OR users.city LIKE @keyword OR users.phone LIKE @keyword OR posts.content LIKE @keyword)"
     : "WHERE posts.status = 'active'";
   const postRows = db.prepare(basePostQuery(whereClause)).all(
     hasKeyword ? { keyword: `%${keyword.trim()}%` } : {}
@@ -507,6 +505,36 @@ function getPostById(id) {
   return row ? normalizePost(row) : null;
 }
 
+function normalizeRidePost(post) {
+  const title = String(post.title || "");
+  const summary = String(post.summary || "");
+  const content = String(post.content || "");
+  const text = `${title} ${summary} ${content}`;
+  const routeMatch = title.match(/([^，,\s]+)\s*[到→至-]+\s*([^，,\s]+)/) || content.match(/([^，,\s]+)\s*[到→至-]+\s*([^，,\s]+)/);
+  const origin = routeMatch ? String(routeMatch[1]).replace(/顺风车.*$/, "").trim() : String(post.city || post.location || "出发地");
+  const destination = routeMatch ? String(routeMatch[2]).replace(/顺风车.*$/, "").trim() : String(post.location || "目的地");
+  let rideType = "车找人";
+  if (text.includes("车找人")) {
+    rideType = "车找人";
+  } else if (text.includes("人找车")) {
+    rideType = "人找车";
+  } else if (text.includes("长期")) {
+    rideType = "长期线路车";
+  }
+  const departureText = (content.match(/(出发时间[:：]?\s*[^\n，。]+)/) || content.match(/([今明后]天[^，。]*)/) || content.match(/(\d{4}-\d{2}-\d{2})/) || content.match(/(\d+月\d+日(?:或\d+号)?)/) || [])[1] || "时间待定";
+  const description = summary || content.split(/[。！!]/)[0] || title;
+  const routeChip = `${origin} ⇌ ${destination}`;
+  return {
+    ...post,
+    ride_type: rideType,
+    ride_origin: origin,
+    ride_destination: destination,
+    ride_departure_text: departureText.replace(/^出发时间[:：]?\s*/, ""),
+    ride_description: description,
+    ride_route_chip: routeChip
+  };
+}
+
 function getPostsByCategory(categoryId, options = "") {
   const category = db.prepare("SELECT * FROM categories WHERE id = ?").get(categoryId);
   const normalizedOptions = typeof options === "string" ? { keyword: options } : (options || {});
@@ -514,6 +542,10 @@ function getPostsByCategory(categoryId, options = "") {
   const area = String(normalizedOptions.area || "").trim();
   const tag = String(normalizedOptions.tag || "").trim();
   const sort = String(normalizedOptions.sort || "default").trim();
+  const rideType = String(normalizedOptions.rideType || "").trim();
+  const originKeyword = String(normalizedOptions.origin || "").trim();
+  const destinationKeyword = String(normalizedOptions.destination || "").trim();
+  const routeChip = String(normalizedOptions.routeChip || "").trim();
 
   const clauses = ["posts.category_id = @categoryId", "posts.status = 'active'"];
   const params = { categoryId };
@@ -543,7 +575,7 @@ function getPostsByCategory(categoryId, options = "") {
   const allCategoryRows = db.prepare(basePostQuery("WHERE posts.category_id = ? AND posts.status = 'active'")).all(categoryId);
   const normalizedAllPosts = allCategoryRows.map(normalizePost);
   const postRows = db.prepare(basePostQuery(`WHERE ${clauses.join(" AND ")}`, orderBy)).all(params);
-  const posts = postRows.map(normalizePost);
+  let posts = postRows.map(normalizePost);
 
   const presetTagsByCategory = {
     1034: ["面匠求职", "炒匠求职", "两口求职", "跑堂求职", "服务员求职", "洗碗求职"],
@@ -566,6 +598,35 @@ function getPostsByCategory(categoryId, options = "") {
     ...dynamicTags
   ])).slice(0, 8);
 
+  let rideData = null;
+  if (Number(categoryId) === 1038) {
+    const allRidePosts = normalizedAllPosts.map(normalizeRidePost);
+    posts = posts.map(normalizeRidePost);
+
+    if (rideType && rideType !== "全部") {
+      posts = posts.filter((post) => post.ride_type === rideType);
+    }
+    if (originKeyword) {
+      posts = posts.filter((post) => `${post.ride_origin} ${post.location} ${post.content}`.includes(originKeyword));
+    }
+    if (destinationKeyword) {
+      posts = posts.filter((post) => `${post.ride_destination} ${post.content}`.includes(destinationKeyword));
+    }
+    if (routeChip) {
+      posts = posts.filter((post) => post.ride_route_chip === routeChip);
+    }
+
+    const routeChips = Array.from(new Set(allRidePosts.map((post) => post.ride_route_chip))).slice(0, 6);
+    rideData = {
+      rideType,
+      originKeyword,
+      destinationKeyword,
+      routeChip,
+      rideTabs: ["全部", "车找人", "长期线路车", "人找车"],
+      routeChips
+    };
+  }
+
   return {
     category,
     banner: getCategoryBanner(categoryId),
@@ -585,7 +646,8 @@ function getPostsByCategory(categoryId, options = "") {
         { value: "likes", label: "点赞优先" },
         { value: "oldest", label: "最早发布" }
       ]
-    }
+    },
+    rideData
   };
 }
 
