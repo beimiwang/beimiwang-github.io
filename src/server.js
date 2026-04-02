@@ -15,6 +15,9 @@ const {
   getAdminOrders,
   getAdminPartnerApplications,
   getAdminPosts,
+  getAdminServiceConversation,
+  getAdminServiceConversations,
+  getAdminWithdrawRequests,
   getAdminSystemData,
   getAdminUsers,
   getCategoryBanner,
@@ -26,6 +29,8 @@ const {
   createNotice,
   createOrder,
   createPost,
+  createUserReport,
+  createServiceQuickReply,
   createWithdrawRequest,
   deletePost,
   deleteAdminUser,
@@ -33,14 +38,18 @@ const {
   deleteMembershipBenefit,
   deleteMembershipPlan,
   deleteNotice,
+  deleteServiceQuickReply,
   deleteUserSession,
   getHomeData,
   getPostById,
   getPostsByCategory,
   getPublishFormData,
   getRefreshSettings,
+  getServiceAgents,
+  getServiceQuickReplies,
   getUserBySession,
   getUserSettingsData,
+  getUserProfileEditData,
   getUserProfile,
   getUserWalletData,
   getWallet,
@@ -49,9 +58,14 @@ const {
   incrementViews,
   init,
   refreshPost,
+  recordUserHomepageView,
   togglePostStatus,
   topUpWallet,
+  toggleUserBlock,
+  toggleUserFollow,
   upsertCategoryBanner,
+  updateServiceAgent,
+  updateServiceQuickReply,
   updateOrderStatus,
   updateUserMembership,
   updateAdminUser,
@@ -62,19 +76,44 @@ const {
   getMembershipPlans,
   getMembershipCenterData,
   getMessageCenterData,
+  getMessageRelationData,
+  getMyCenterData,
+  getServiceMessagesAfter,
+  getMessageThreadData,
+  getUserUnreadSummary,
+  getUserAllOrdersData,
+  getUserCallLogsData,
+  getUserCommentsData,
+  getUserFavoritesData,
+  getUserFootprintsData,
+  getUserHomepageData,
+  getUserSubscriptionsData,
+  getUserVerificationData,
   getCheckinData,
   getMembershipPlanById,
   markOrderEffectApplied,
+  markAllServiceConversationsReadForUser,
   markMessagesRead,
+  markServiceConversationReadForAdmin,
   getPartnerCenterData,
+  getPartnerFansData,
+  getPartnerIncomeDetailsData,
+  getPartnerTrendData,
   createUserMessage,
   topUpUserWallet,
   signInToday,
+  assignServiceConversation,
+  sendAdminServiceReply,
+  sendServiceUserMessage,
   submitPartnerApplication,
+  updateServiceConversationStatus,
+  updateWithdrawRequestReview,
   updateMessageReadStatus,
   updatePartnerApplicationStatus,
   updateUserPhone,
+  updateUserPassword,
   updatePost,
+  updateUserProfileEdit,
   updateUserSettings,
   updateRefreshSettings
   ,
@@ -157,6 +196,14 @@ function requireAdmin(req, res) {
   }
   return session;
 }
+
+app.use((req, res, next) => {
+  const userSession = getUserSession(req);
+  res.locals.unreadSummary = userSession.loggedIn
+    ? getUserUnreadSummary(userSession.user.id)
+    : { message: 0, service: 0, chat: 0 };
+  next();
+});
 
 function xmlResult(message) {
   return `<?xml version="1.0" encoding="utf-8"?><root><![CDATA[${message}]]></root>`;
@@ -368,7 +415,7 @@ function renderPlugin(req, res) {
       return res.render("profile", {
         currentTab: "mine",
         pageTitle: "我的",
-        data: getUserProfile(userSession.user.id),
+        data: getMyCenterData(userSession.user.id),
         message: msg
       });
     }
@@ -422,8 +469,160 @@ function renderPlugin(req, res) {
       return res.render("settings", {
         currentTab: "mine",
         pageTitle: "个人设置",
+        settingsView: String(req.query.view || "").trim(),
         data: getUserSettingsData(userSession.user.id),
         message: msg
+      });
+    }
+
+    if (ac === "profile_edit") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      return res.render("profile-edit", {
+        currentTab: "mine",
+        pageTitle: "个人资料",
+        data: getUserProfileEditData(userSession.user.id),
+        message: ""
+      });
+    }
+
+    if (ac === "homepage") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      const targetUserId = Number(req.query.uid || userSession.user.id);
+      const homepageTab = String(req.query.tab || "posts").trim();
+      recordUserHomepageView(targetUserId, userSession.user.id);
+      return res.render("user-homepage", {
+        currentTab: "mine",
+        pageTitle: "个人主页",
+        data: getUserHomepageData(targetUserId, userSession.user.id, homepageTab),
+        message: msg
+      });
+    }
+
+    if (ac === "homepage_follow") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      const targetUserId = Number(req.query.uid || 0);
+      toggleUserFollow(userSession.user.id, targetUserId);
+      return res.redirect(`/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=${encodeURIComponent(targetUserId)}`);
+    }
+
+    if (ac === "homepage_block") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      const targetUserId = Number(req.query.uid || 0);
+      const result = toggleUserBlock(userSession.user.id, targetUserId);
+      return redirectWithMessage(
+        res,
+        `/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=${encodeURIComponent(targetUserId)}`,
+        result.blocked ? "已加入黑名单" : "已取消拉黑"
+      );
+    }
+
+    if (ac === "homepage_report") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      const targetUserId = Number(req.query.uid || 0);
+      createUserReport(userSession.user.id, targetUserId, "举报个人主页");
+      return redirectWithMessage(
+        res,
+        `/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=${encodeURIComponent(targetUserId)}`,
+        "举报已提交"
+      );
+    }
+
+    if (ac === "orders") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      return res.render("user-orders", {
+        currentTab: "mine",
+        pageTitle: "我的订单",
+        data: getUserAllOrdersData(userSession.user.id),
+        message: msg
+      });
+    }
+
+    if (ac === "subscriptions") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      return res.render("user-list-page", {
+        currentTab: "mine",
+        pageTitle: "我的订阅",
+        message: msg,
+        listType: "subscriptions",
+        data: getUserSubscriptionsData(userSession.user.id)
+      });
+    }
+
+    if (ac === "verify") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      return res.render("verification-center", {
+        currentTab: "mine",
+        pageTitle: "认证中心",
+        message: msg,
+        data: getUserVerificationData(userSession.user.id)
+      });
+    }
+
+    if (ac === "comments") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      return res.render("user-list-page", {
+        currentTab: "mine",
+        pageTitle: "我的评论",
+        message: msg,
+        listType: "comments",
+        data: getUserCommentsData(userSession.user.id)
+      });
+    }
+
+    if (ac === "favorites") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      return res.render("user-list-page", {
+        currentTab: "mine",
+        pageTitle: "收藏/关注",
+        message: msg,
+        listType: "favorites",
+        data: getUserFavoritesData(userSession.user.id)
+      });
+    }
+
+    if (ac === "footprints") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      return res.render("user-list-page", {
+        currentTab: "mine",
+        pageTitle: "我的足迹",
+        message: msg,
+        listType: "footprints",
+        data: getUserFootprintsData(userSession.user.id)
+      });
+    }
+
+    if (ac === "call_logs") {
+      if (!userSession.loggedIn) {
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      return res.render("user-list-page", {
+        currentTab: "mine",
+        pageTitle: "来电记录",
+        message: msg,
+        listType: "call_logs",
+        data: getUserCallLogsData(userSession.user.id)
       });
     }
 
@@ -493,10 +692,46 @@ function renderPlugin(req, res) {
     if (!userSession.loggedIn) {
       return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
     }
+    if (ac === "chat_poll") {
+      const thread = getMessageThreadData(userSession.user.id, String(req.query.channel || "martin"));
+      if (!thread) {
+        return res.json({ ok: false, message: "not_found" });
+      }
+      const items = getServiceMessagesAfter(thread.channel.conversationId, Number(req.query.after_id || 0));
+      if (items.some((item) => item.sender_type === "agent" || item.sender_type === "system")) {
+        getMessageThreadData(userSession.user.id, String(req.query.channel || "martin"));
+      }
+      return res.json({
+        ok: true,
+        conversationId: thread.channel.conversationId,
+        items
+      });
+    }
+    const type = String(req.query.type || "sx");
+    if (type === "follow" || type === "fans") {
+      return res.render("message-relations", {
+        currentTab: "chat",
+        pageTitle: type === "fans" ? "我的粉丝" : "我的关注",
+        data: getMessageRelationData(userSession.user.id, type)
+      });
+    }
+    if (type === "thread") {
+      const threadData = getMessageThreadData(userSession.user.id, String(req.query.channel || "martin"));
+      res.locals.unreadSummary = getUserUnreadSummary(userSession.user.id);
+      return res.render("message-thread", {
+        currentTab: "chat",
+        pageTitle: "消息详情",
+        message: req.query.msg || "",
+        data: threadData
+      });
+    }
     markMessagesRead(userSession.user.id);
+    markAllServiceConversationsReadForUser(userSession.user.id);
+    res.locals.unreadSummary = getUserUnreadSummary(userSession.user.id);
     return res.render("chat-center", {
       currentTab: "chat",
-      pageTitle: "消息中心",
+      pageTitle: "我的消息",
+      message: req.query.msg || "",
       data: getMessageCenterData(userSession.user.id)
     });
   }
@@ -505,10 +740,47 @@ function renderPlugin(req, res) {
     if (!userSession.loggedIn) {
       return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
     }
+    const view = String(req.query.view || "detail").trim();
+    if (view === "fans") {
+      return res.render("user-list-page", {
+        currentTab: "mine",
+        pageTitle: "我的粉丝",
+        backHref: "/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5",
+        message: req.query.msg || "",
+        listType: "partner_fans",
+        data: getPartnerFansData(userSession.user.id)
+      });
+    }
+    if (view === "income") {
+      return res.render("user-list-page", {
+        currentTab: "mine",
+        pageTitle: "收入明细",
+        backHref: "/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5",
+        message: req.query.msg || "",
+        listType: "partner_income",
+        data: getPartnerIncomeDetailsData(userSession.user.id)
+      });
+    }
+    if (view === "trend") {
+      return res.render("user-list-page", {
+        currentTab: "mine",
+        pageTitle: "收入趋势",
+        backHref: "/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5",
+        message: req.query.msg || "",
+        listType: "partner_trend",
+        data: getPartnerTrendData(userSession.user.id)
+      });
+    }
+    if (view === "service") {
+      return res.redirect("/plugin.php?id=xigua_lt&type=thread&channel=martin&mobile=2&high=3");
+    }
     return res.render("partner", {
       currentTab: "mine",
       pageTitle: "加盟合伙人",
-      data: getPartnerCenterData(userSession.user.id)
+      data: {
+        ...getPartnerCenterData(userSession.user.id),
+        mode: view === "privilege" || view === "rules" ? "privilege" : "detail"
+      }
     });
   }
 
@@ -575,7 +847,7 @@ app.get("/admin/posts", (req, res) => {
   res.render("admin/posts", {
     pageTitle: "帖子管理",
     token: session.username,
-    data: getAdminPosts(req.query.keyword || "", req.query.status || "")
+    data: getAdminPosts(req.query.keyword || "", req.query.status || "", Number(req.query.user_id || 0))
   });
 });
 
@@ -603,6 +875,21 @@ app.get("/admin/orders", (req, res) => {
   });
 });
 
+app.get("/admin/withdraws", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  res.render("admin/withdraws", {
+    pageTitle: "提现审核",
+    token: session.username,
+    data: {
+      keyword: req.query.keyword || "",
+      status: req.query.status || "",
+      requests: getAdminWithdrawRequests(req.query.keyword || "", req.query.status || "")
+    },
+    msg: req.query.msg || ""
+  });
+});
+
 app.get("/admin/checkins", (req, res) => {
   const session = requireAdmin(req, res);
   if (!session) return;
@@ -622,6 +909,86 @@ app.get("/admin/messages", (req, res) => {
     token: session.username,
     data: getAdminMessages(req.query.keyword || "", req.query.type || ""),
     msg: req.query.msg || ""
+  });
+});
+
+app.get("/admin/service", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  res.render("admin/service-list", {
+    pageTitle: "客服会话",
+    token: session.username,
+    data: {
+      keyword: req.query.keyword || "",
+      status: req.query.status || "",
+      unreadOnly: req.query.unread === "1",
+      conversations: getAdminServiceConversations(req.query.keyword || "", req.query.status || "", req.query.unread === "1")
+    },
+    msg: req.query.msg || ""
+  });
+});
+
+app.get("/admin/service/:id", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  const data = getAdminServiceConversation(Number(req.params.id));
+  if (!data) {
+    return res.redirect("/admin/service?msg=" + encodeURIComponent("会话不存在"));
+  }
+  assignServiceConversation(Number(req.params.id), session.username);
+  markServiceConversationReadForAdmin(Number(req.params.id));
+  res.render("admin/service-thread", {
+    pageTitle: "客服会话详情",
+    token: session.username,
+    data,
+    conversationList: getAdminServiceConversations("", "", false),
+    quickReplies: getServiceQuickReplies(),
+    msg: req.query.msg || ""
+  });
+});
+
+app.get("/admin/service/:id/user", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  const detail = getAdminServiceConversation(Number(req.params.id));
+  if (!detail) {
+    return res.redirect("/admin/service?msg=" + encodeURIComponent("会话不存在"));
+  }
+  res.render("admin/service-user-preview", {
+    pageTitle: "用户主页预览",
+    token: session.username,
+    data: {
+      conversation: detail.conversation,
+      profile: getUserProfile(detail.conversation.user_id)
+    }
+  });
+});
+
+app.get("/admin/service/:id/posts", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  const detail = getAdminServiceConversation(Number(req.params.id));
+  if (!detail) {
+    return res.redirect("/admin/service?msg=" + encodeURIComponent("会话不存在"));
+  }
+  return res.redirect(`/admin/posts?user_id=${encodeURIComponent(detail.conversation.user_id)}`);
+});
+
+app.get("/admin/service/:id/poll", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return res.status(401).json({ ok: false, message: "unauthorized" });
+  const conversationId = Number(req.params.id);
+  const detail = getAdminServiceConversation(conversationId);
+  if (!detail) return res.status(404).json({ ok: false, message: "not_found" });
+  const items = getServiceMessagesAfter(conversationId, Number(req.query.after_id || 0));
+  if (items.some((item) => item.sender_type === "user")) {
+    markServiceConversationReadForAdmin(conversationId);
+  }
+  return res.json({
+    ok: true,
+    status: detail.conversation.status,
+    assignedAdmin: detail.conversation.assigned_admin || "",
+    items
   });
 });
 
@@ -839,6 +1206,47 @@ app.post("/admin/system/home-links/:key", (req, res) => {
   res.redirect("/admin/system?msg=" + encodeURIComponent("首页入口已更新"));
 });
 
+app.post("/admin/system/service-agents/:key", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  updateServiceAgent(String(req.params.key || "martin"), {
+    name: String(req.body.name || "").trim() || "客服",
+    avatar: String(req.body.avatar || "").trim() || "/wj/lamian21.png",
+    status: String(req.body.status || "online").trim() || "online"
+  });
+  res.redirect("/admin/system?msg=" + encodeURIComponent("客服资料已更新"));
+});
+
+app.post("/admin/system/service-quick-replies", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  const content = String(req.body.content || "").trim();
+  if (!content) {
+    return res.redirect("/admin/system?msg=" + encodeURIComponent("快捷回复内容不能为空"));
+  }
+  createServiceQuickReply({
+    content,
+    sortOrder: Number(req.body.sort_order || 0),
+    enabled: req.body.enabled === "1"
+  });
+  res.redirect("/admin/system?msg=" + encodeURIComponent("快捷回复已新增"));
+});
+
+app.post("/admin/system/service-quick-replies/:id", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  if (req.body.action === "delete") {
+    deleteServiceQuickReply(Number(req.params.id));
+    return res.redirect("/admin/system?msg=" + encodeURIComponent("快捷回复已删除"));
+  }
+  updateServiceQuickReply(Number(req.params.id), {
+    content: String(req.body.content || "").trim(),
+    sortOrder: Number(req.body.sort_order || 0),
+    enabled: req.body.enabled === "1"
+  });
+  res.redirect("/admin/system?msg=" + encodeURIComponent("快捷回复已更新"));
+});
+
 app.post("/admin/system/category-banners/:id", (req, res) => {
   const session = requireAdmin(req, res);
   if (!session) return;
@@ -882,6 +1290,56 @@ app.post("/admin/upload", (req, res, next) => {
   });
 });
 
+app.post("/profile-edit-save", (req, res) => {
+  const session = requireUser(req, res);
+  if (!session) return;
+  upload.single("avatar")(req, res, (error) => {
+    const wantsJson = req.get("x-requested-with") === "XMLHttpRequest" || req.body.ajax === "1";
+    if (error) {
+      if (wantsJson) {
+        return res.status(400).json({ ok: false, message: "头像上传失败，请重试" });
+      }
+      return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=profile_edit&high=4", "头像上传失败，请重试");
+    }
+    const current = getUserProfileEditData(session.user.id);
+    const nickname = String(req.body.nickname || "").trim() || current?.user?.nickname || session.user.nickname;
+    const gender = ["male", "female", "secret"].includes(String(req.body.gender || "")) ? String(req.body.gender) : "secret";
+    const year = String(req.body.birthday_year || "").trim();
+    const month = String(req.body.birthday_month || "").trim();
+    const day = String(req.body.birthday_day || "").trim();
+    const birthday = year && month && day
+      ? `${year.padStart(4, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
+      : "";
+    const avatar = req.file
+      ? `/uploads/${req.file.filename}`
+      : String(req.body.avatar_current || current?.user?.avatar || "").trim();
+    updateUserProfileEdit(session.user.id, {
+      nickname,
+      avatar,
+      gender,
+      birthday
+    });
+    const nextPassword = String(req.body.password || "").trim();
+    if (nextPassword) {
+      if (nextPassword.length < 6) {
+        if (wantsJson) {
+          return res.status(400).json({ ok: false, message: "新密码至少 6 位" });
+        }
+        return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=profile_edit&high=4", "新密码至少 6 位");
+      }
+      updateUserPassword(session.user.id, nextPassword);
+    }
+    if (wantsJson) {
+      return res.json({
+        ok: true,
+        message: "个人资料已保存",
+        user: getUserProfileEditData(session.user.id)?.user || null
+      });
+    }
+    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=profile_edit&high=4", "个人资料已保存");
+  });
+});
+
 app.post("/admin/orders", (req, res) => {
   const session = requireAdmin(req, res);
   if (!session) return;
@@ -910,6 +1368,28 @@ app.post("/admin/orders/:id/status", (req, res) => {
   res.redirect("/admin/orders?msg=" + encodeURIComponent("订单状态已更新"));
 });
 
+app.post("/admin/withdraws/:id/status", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  const requestId = Number(req.params.id);
+  const status = String(req.body.status || "pending");
+  const reviewNote = String(req.body.review_note || "").trim();
+  const request = updateWithdrawRequestReview(requestId, {
+    status,
+    reviewNote,
+    reviewedBy: session.username
+  });
+  if (request) {
+    createUserMessage(request.user_id, {
+      type: "wallet",
+      title: "提现审核通知",
+      content: status === "approved" ? "您的提现申请已审核通过。" : (status === "rejected" ? `您的提现申请未通过：${reviewNote || "请联系平台客服"}` : "您的提现申请状态已更新。"),
+      href: "/plugin.php?id=xigua_hb&ac=qianbao"
+    });
+  }
+  res.redirect("/admin/withdraws?msg=" + encodeURIComponent("提现状态已更新"));
+});
+
 app.post("/admin/users/:id/membership", (req, res) => {
   const session = requireAdmin(req, res);
   if (!session) return;
@@ -926,6 +1406,33 @@ app.post("/admin/messages/:id/read", (req, res) => {
   if (!session) return;
   updateMessageReadStatus(Number(req.params.id), req.body.is_read === "1");
   res.redirect("/admin/messages?msg=" + encodeURIComponent("消息状态已更新"));
+});
+
+app.post("/admin/service/:id/reply", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  const result = sendAdminServiceReply(Number(req.params.id), session.username, String(req.body.content || ""));
+  const target = `/admin/service/${encodeURIComponent(req.params.id)}`;
+  const wantsJson = req.get("x-requested-with") === "XMLHttpRequest" || req.body.ajax === "1";
+  if (!result.ok) {
+    if (wantsJson) {
+      return res.status(400).json(result);
+    }
+    return res.redirect(`${target}?msg=${encodeURIComponent(result.message)}`);
+  }
+  if (wantsJson) {
+    return res.json(result);
+  }
+  res.redirect(`${target}?msg=${encodeURIComponent("回复已发送")}`);
+});
+
+app.post("/admin/service/:id/status", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  const status = String(req.body.status || "open");
+  updateServiceConversationStatus(Number(req.params.id), status);
+  assignServiceConversation(Number(req.params.id), session.username);
+  res.redirect(`/admin/service/${encodeURIComponent(req.params.id)}?msg=${encodeURIComponent("会话状态已更新")}`);
 });
 
 app.post("/admin/partners/:id/status", (req, res) => {
@@ -1017,6 +1524,18 @@ app.post("/plugin.php", (req, res) => {
     return res.type("application/xml").send(xmlResult("success|自动刷新已开启"));
   }
 
+  if (id === "xigua_lt" && ac === "chat_send") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    const channel = String(req.query.channel || "martin");
+    const result = sendServiceUserMessage(session.user.id, channel, String(req.body.content || ""));
+    const target = `/plugin.php?id=xigua_lt&type=thread&channel=${encodeURIComponent(channel)}&mobile=2&high=3`;
+    if (!result.ok) {
+      return redirectWithMessage(res, target, result.message);
+    }
+    return res.redirect(target);
+  }
+
   if (id === "xigua_hb" && ac === "sendsms") {
     return res.type("application/xml").send(xmlResult("success|验证码已发送（演示环境）"));
   }
@@ -1091,7 +1610,48 @@ app.post("/plugin.php", (req, res) => {
       notifyComment: req.body.notify_comment === "1",
       notifyMessage: req.body.notify_message === "1"
     });
-    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4", "个人资料已保存");
+    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4&view=profile", "个人资料已保存");
+  }
+
+  if (id === "xigua_hb" && ac === "settings" && action === "notifications") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    const current = getUserSettingsData(session.user.id);
+    updateUserSettings(session.user.id, {
+      nickname: current.user.nickname,
+      city: current.user.city || "",
+      bio: current.user.bio || "",
+      avatar: current.user.avatar || "",
+      backgroundImage: current.user.background_image || "",
+      notifyComment: req.body.notify_comment === "1",
+      notifyMessage: req.body.notify_message === "1"
+    });
+    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4&view=notifications", "提醒设置已保存");
+  }
+
+  if (id === "xigua_hb" && ac === "settings" && action === "background") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    return upload.single("background_image_file")(req, res, (error) => {
+      if (error) {
+        return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4&view=background", "背景图上传失败，请重试");
+      }
+      const current = getUserSettingsData(session.user.id);
+      const currentUser = current?.user || session.user || {};
+      const backgroundImage = req.file
+        ? `/uploads/${req.file.filename}`
+        : String(req.body.background_image_current || currentUser.background_image || "").trim();
+      updateUserSettings(session.user.id, {
+        nickname: currentUser.nickname || session.user.nickname,
+        city: currentUser.city || "",
+        bio: currentUser.bio || "",
+        avatar: currentUser.avatar || "",
+        backgroundImage,
+        notifyComment: Number(currentUser.notify_comment) === 1,
+        notifyMessage: Number(currentUser.notify_message) === 1
+      });
+      return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4&view=background", "个人主页背景已保存");
+    });
   }
 
   if (id === "xigua_hb" && ac === "settings" && action === "address") {
@@ -1102,29 +1662,55 @@ app.post("/plugin.php", (req, res) => {
       phone: String(req.body.address_phone || "").trim(),
       address: String(req.body.address || "").trim()
     });
-    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4", "收货地址已保存");
+    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4&view=address", "收货地址已保存");
   }
 
   if (id === "xigua_hb" && ac === "settings" && action === "withdraw_profile") {
     const session = requireUser(req, res);
     if (!session) return;
-    upsertUserWithdrawProfile(session.user.id, {
-      accountName: String(req.body.account_name || "").trim(),
-      accountType: String(req.body.account_type || "wechat").trim(),
-      accountNo: String(req.body.account_no || "").trim()
+    return upload.single("wechat_qr_file")(req, res, (error) => {
+      if (error) {
+        return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4&view=withdraw", "收款码上传失败，请重试");
+      }
+      const current = getUserSettingsData(session.user.id);
+      const existing = current.withdrawProfile || {};
+      const realName = String(req.body.real_name || "").trim();
+      const wechatQrImage = req.file
+        ? `/uploads/${req.file.filename}`
+        : String(req.body.wechat_qr_current || existing.wechat_qr_image || existing.account_no || "").trim();
+      upsertUserWithdrawProfile(session.user.id, {
+        accountName: realName,
+        accountType: "wechat",
+        accountNo: wechatQrImage,
+        realName,
+        wechatQrImage
+      });
+      return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4&view=withdraw", "提现设置已保存");
     });
-    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4", "提现设置已保存");
   }
 
   if (id === "xigua_hb" && ac === "settings" && action === "bind_phone") {
     const session = requireUser(req, res);
     if (!session) return;
     const phone = String(req.body.phone || "").trim();
+    const code = String(req.body.code || "").trim();
+    const nextView = String(req.body.next || "bind_phone").trim();
     if (!/^1\d{10}$/.test(phone)) {
-      return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4", "请输入正确手机号");
+      return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4&view=bind_phone", "请输入正确手机号");
+    }
+    if (code !== "123456") {
+      return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4&view=bind_phone", "请输入正确验证码");
     }
     updateUserPhone(session.user.id, phone);
-    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=settings&high=4", "手机号已绑定");
+    return redirectWithMessage(res, `/plugin.php?id=xigua_hb&ac=settings&high=4&view=${encodeURIComponent(nextView)}`, "手机号已绑定");
+  }
+
+  if (id === "xigua_hb" && ac === "homepage_follow") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    const targetUserId = Number(req.body.target_user_id || req.query.uid || 0);
+    toggleUserFollow(session.user.id, targetUserId);
+    return res.redirect(`/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=${encodeURIComponent(targetUserId)}`);
   }
 
   if (id === "xigua_wr" && action === "sign") {
@@ -1145,6 +1731,35 @@ app.post("/plugin.php", (req, res) => {
     }
     const result = submitPartnerApplication(session.user.id, { city, phone, intro });
     return redirectWithMessage(res, "/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5", result.message);
+  }
+
+  if (id === "xigua_hh" && (ac === "join" || action === "join")) {
+    const session = requireUser(req, res);
+    if (!session) return;
+    const planKey = String(req.body.plan_key || "").trim();
+    const planMap = {
+      gold_month: { name: "金牌合伙人", amount: 69, note: "合伙人订单：金牌合伙人 1个月/69元" },
+      gold_lifetime: { name: "金牌合伙人", amount: 99, note: "合伙人订单：金牌合伙人 永久/99元" }
+    };
+    const plan = planMap[planKey];
+    if (!plan) {
+      return redirectWithMessage(res, "/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5", "请选择有效套餐");
+    }
+    createOrder({
+      userId: session.user.id,
+      orderType: "partner",
+      planId: null,
+      amount: plan.amount,
+      status: "pending",
+      note: plan.note
+    });
+    createUserMessage(session.user.id, {
+      type: "partner",
+      title: "合伙人订单已创建",
+      content: `${plan.name}${plan.amount === 69 ? "1个月/69元" : "永久/99元"} 已提交，请等待平台处理。`,
+      href: "/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5"
+    });
+    return redirectWithMessage(res, "/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5", "已提交合伙人订单");
   }
 
   return res.type("application/xml").send(xmlResult("success|请求已接收"));

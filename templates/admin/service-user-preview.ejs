@@ -1,0 +1,156 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'service' }) %>
+<style>
+  .svc-user-preview {
+    display: grid;
+    gap: 18px;
+  }
+  .svc-user-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 22px;
+  }
+  .svc-user-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+  }
+  .svc-user-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .svc-user-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #e5e7eb;
+    background: #eef2f7;
+  }
+  .svc-user-name {
+    font-size: 26px;
+    font-weight: 800;
+    color: #111827;
+  }
+  .svc-user-sub {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #6b7280;
+  }
+  .svc-user-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .svc-user-stat {
+    padding: 16px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+  }
+  .svc-user-stat .k {
+    font-size: 12px;
+    color: #64748b;
+  }
+  .svc-user-stat .v {
+    margin-top: 8px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+  }
+  .svc-user-posts {
+    display: grid;
+    gap: 12px;
+  }
+  .svc-user-post {
+    display: block;
+    padding: 16px 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    background: #fbfcfd;
+  }
+  .svc-user-post:hover {
+    border-color: rgba(47, 201, 108, .28);
+    background: #f6fff8;
+  }
+  .svc-user-post h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #111827;
+  }
+  .svc-user-post p {
+    margin: 0;
+    line-height: 1.7;
+    color: #4b5563;
+  }
+  .svc-user-post .meta {
+    margin-top: 10px;
+  }
+</style>
+
+<div class="admin-topbar">
+  <div>
+    <h1>用户主页预览</h1>
+    <div class="meta">给客服快速查看用户资料、统计和最近发布。</div>
+  </div>
+  <div class="toolbar">
+    <a class="button ghost" href="/admin/service/<%= data.conversation.id %>">返回当前会话</a>
+    <a class="button primary" href="/admin/posts?user_id=<%= data.conversation.user_id %>">查看全部发布</a>
+  </div>
+</div>
+
+<div class="svc-user-preview">
+  <section class="svc-user-card">
+    <div class="svc-user-head">
+      <div class="svc-user-main">
+        <img class="svc-user-avatar" src="<%= data.profile.user.avatar || '/wj/lamian21.png' %>" alt="<%= data.profile.user.nickname %>">
+        <div>
+          <div class="svc-user-name"><%= data.profile.user.nickname %></div>
+          <div class="svc-user-sub"><%= data.profile.user.phone || '未绑定手机号' %> · <%= data.profile.user.city || '未设置城市' %></div>
+          <div class="svc-user-sub"><%= data.profile.user.bio || '这个用户还没有填写个人简介。' %></div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <a class="button ghost" href="/admin/users?keyword=<%= encodeURIComponent(data.profile.user.phone || data.profile.user.nickname) %>">用户管理定位</a>
+      </div>
+    </div>
+
+    <div class="svc-user-stats">
+      <div class="svc-user-stat">
+        <div class="k">总发布</div>
+        <div class="v"><%= data.profile.stats.totalPosts %></div>
+      </div>
+      <div class="svc-user-stat">
+        <div class="k">总浏览量</div>
+        <div class="v"><%= data.profile.stats.totalViews %></div>
+      </div>
+      <div class="svc-user-stat">
+        <div class="k">钱包余额</div>
+        <div class="v"><%= Number(data.profile.wallet.balance || 0).toFixed(2) %></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="svc-user-card">
+    <div class="panel-header" style="padding:0 0 14px;border:0;"><h2>最近发布</h2></div>
+    <div class="svc-user-posts">
+      <% if (!data.profile.posts.length) { %>
+        <div class="meta">这个用户暂时还没有发布内容。</div>
+      <% } %>
+      <% data.profile.posts.slice(0, 8).forEach((post) => { %>
+        <a class="svc-user-post" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= post.id %>" target="_blank">
+          <h3><%= post.title %></h3>
+          <p><%= post.summary || post.content || '暂无摘要' %></p>
+          <div class="meta"><%= post.location || '未设置地区' %> · <%= post.created_at %></div>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+</div>
+
+<%- include("./partials-shell-bottom") %>

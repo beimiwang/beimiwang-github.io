@@ -148,6 +148,9 @@ function init() {
       status TEXT NOT NULL,
       account_name TEXT,
       account_no TEXT,
+      review_note TEXT DEFAULT '',
+      reviewed_at TEXT DEFAULT '',
+      reviewed_by TEXT DEFAULT '',
       created_at TEXT NOT NULL
     );
 
@@ -163,7 +166,9 @@ function init() {
       user_id INTEGER PRIMARY KEY,
       account_name TEXT,
       account_type TEXT,
-      account_no TEXT
+      account_no TEXT,
+      real_name TEXT DEFAULT '',
+      wechat_qr_image TEXT DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS home_links (
@@ -197,6 +202,87 @@ function init() {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS user_subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      keyword TEXT DEFAULT '',
+      category_name TEXT DEFAULT '',
+      status TEXT DEFAULT 'active',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS verification_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      verify_type TEXT NOT NULL DEFAULT 'personal',
+      real_name TEXT DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'pending',
+      note TEXT DEFAULT '',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      post_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_favorites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      post_id INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_footprints (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      post_id INTEGER NOT NULL,
+      viewed_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_homepage_views (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      viewer_user_id INTEGER,
+      viewed_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_follows (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      follower_user_id INTEGER NOT NULL,
+      target_user_id INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_blocks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      target_user_id INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      target_user_id INTEGER NOT NULL,
+      report_type TEXT DEFAULT 'homepage',
+      content TEXT DEFAULT '',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS call_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      post_id INTEGER NOT NULL,
+      target_phone TEXT DEFAULT '',
+      duration_seconds INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS partner_applications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -206,14 +292,72 @@ function init() {
       status TEXT NOT NULL DEFAULT 'pending',
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS partner_commissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      fan_user_id INTEGER,
+      source_type TEXT DEFAULT 'publish',
+      amount REAL DEFAULT 0,
+      status TEXT DEFAULT 'settled',
+      note TEXT DEFAULT '',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS service_agents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      channel_key TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      avatar TEXT DEFAULT '',
+      status TEXT DEFAULT 'online'
+    );
+
+    CREATE TABLE IF NOT EXISTS service_conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      agent_id INTEGER NOT NULL,
+      channel_key TEXT NOT NULL,
+      last_message_at TEXT DEFAULT '',
+      last_message_preview TEXT DEFAULT '',
+      user_unread_count INTEGER DEFAULT 0,
+      agent_unread_count INTEGER DEFAULT 0,
+      assigned_admin TEXT DEFAULT '',
+      status TEXT DEFAULT 'open',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS service_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      conversation_id INTEGER NOT NULL,
+      sender_type TEXT NOT NULL,
+      sender_id INTEGER,
+      message_type TEXT DEFAULT 'text',
+      content TEXT NOT NULL,
+      is_read INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS service_quick_replies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      content TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      enabled INTEGER DEFAULT 1
+    );
   `);
+
+  const userColumns = db.prepare("PRAGMA table_info(users)").all().map((col) => col.name);
+  if (!userColumns.includes("gender")) {
+    db.exec("ALTER TABLE users ADD COLUMN gender TEXT DEFAULT 'secret'");
+  }
+  if (!userColumns.includes("birthday")) {
+    db.exec("ALTER TABLE users ADD COLUMN birthday TEXT DEFAULT ''");
+  }
 
   const count = db.prepare("SELECT COUNT(*) AS count FROM posts").get().count;
   if (count === 0) {
     seedDatabase();
   }
 
-  const userColumns = db.prepare("PRAGMA table_info(users)").all().map((col) => col.name);
   if (!userColumns.includes("membership_status")) {
     db.exec("ALTER TABLE users ADD COLUMN membership_status TEXT DEFAULT 'inactive'");
   }
@@ -258,6 +402,35 @@ function init() {
   if (!orderColumns.includes("effect_applied")) {
     db.exec("ALTER TABLE orders ADD COLUMN effect_applied INTEGER DEFAULT 0");
   }
+  const serviceConversationColumns = db.prepare("PRAGMA table_info(service_conversations)").all().map((col) => col.name);
+  if (!serviceConversationColumns.includes("assigned_admin")) {
+    db.exec("ALTER TABLE service_conversations ADD COLUMN assigned_admin TEXT DEFAULT ''");
+  }
+  const withdrawRequestColumns = db.prepare("PRAGMA table_info(withdraw_requests)").all().map((col) => col.name);
+  if (!withdrawRequestColumns.includes("review_note")) {
+    db.exec("ALTER TABLE withdraw_requests ADD COLUMN review_note TEXT DEFAULT ''");
+  }
+  if (!withdrawRequestColumns.includes("reviewed_at")) {
+    db.exec("ALTER TABLE withdraw_requests ADD COLUMN reviewed_at TEXT DEFAULT ''");
+  }
+  if (!withdrawRequestColumns.includes("reviewed_by")) {
+    db.exec("ALTER TABLE withdraw_requests ADD COLUMN reviewed_by TEXT DEFAULT ''");
+  }
+  const withdrawProfileColumns = db.prepare("PRAGMA table_info(user_withdraw_profiles)").all().map((col) => col.name);
+  if (!withdrawProfileColumns.includes("real_name")) {
+    db.exec("ALTER TABLE user_withdraw_profiles ADD COLUMN real_name TEXT DEFAULT ''");
+  }
+  if (!withdrawProfileColumns.includes("wechat_qr_image")) {
+    db.exec("ALTER TABLE user_withdraw_profiles ADD COLUMN wechat_qr_image TEXT DEFAULT ''");
+  }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS service_quick_replies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      content TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      enabled INTEGER DEFAULT 1
+    );
+  `);
   db.exec(`
     CREATE TABLE IF NOT EXISTS membership_benefits (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -379,6 +552,104 @@ function init() {
     insertMessage.run(18681, "system", "平台公告", "平台不能保证信息真实性，请勿提前支付任何费用", "", 0, "2026-03-22 09:30:00");
     insertMessage.run(18681, "wallet", "钱包通知", "您有一笔充值已到账，当前余额可用于刷新或会员开通。", "/plugin.php?id=xigua_hb&ac=qianbao", 0, "2026-03-21 10:15:00");
   }
+
+  if (db.prepare("SELECT COUNT(*) AS count FROM user_subscriptions WHERE user_id = 18681").get().count === 0) {
+    const insertSubscription = db.prepare(`
+      INSERT INTO user_subscriptions (user_id, title, keyword, category_name, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    insertSubscription.run(18681, "江浙沪招聘提醒", "面匠,招聘", "招聘", "active", "2026-03-24 10:20:00");
+    insertSubscription.run(18681, "西北顺风车提醒", "西安,兰州", "顺风车", "active", "2026-03-25 09:35:00");
+  }
+
+  if (db.prepare("SELECT COUNT(*) AS count FROM verification_requests WHERE user_id = 18681").get().count === 0) {
+    db.prepare(`
+      INSERT INTO verification_requests (user_id, verify_type, real_name, status, note, created_at)
+      VALUES (18681, 'personal', '王釜嵊', 'approved', '个人认证已通过', '2026-03-26 14:00:00')
+    `).run();
+  }
+
+  if (db.prepare("SELECT COUNT(*) AS count FROM user_comments WHERE user_id = 18681").get().count === 0) {
+    const insertComment = db.prepare(`
+      INSERT INTO user_comments (user_id, post_id, content, created_at)
+      VALUES (?, ?, ?, ?)
+    `);
+    insertComment.run(18681, 137036, "老板回复很及时，信息也比较清楚。", "2026-03-27 11:30:00");
+    insertComment.run(18681, 137010, "这条顺风车线路我已经联系过了。", "2026-03-28 08:45:00");
+  }
+
+  if (db.prepare("SELECT COUNT(*) AS count FROM user_favorites WHERE user_id = 18681").get().count === 0) {
+    const insertFavorite = db.prepare(`
+      INSERT INTO user_favorites (user_id, post_id, created_at)
+      VALUES (?, ?, ?)
+    `);
+    insertFavorite.run(18681, 137036, "2026-03-28 12:10:00");
+    insertFavorite.run(18681, 137021, "2026-03-28 12:15:00");
+  }
+
+  if (db.prepare("SELECT COUNT(*) AS count FROM user_footprints WHERE user_id = 18681").get().count === 0) {
+    const insertFootprint = db.prepare(`
+      INSERT INTO user_footprints (user_id, post_id, viewed_at)
+      VALUES (?, ?, ?)
+    `);
+    insertFootprint.run(18681, 137036, "2026-03-29 09:10:00");
+    insertFootprint.run(18681, 137010, "2026-03-29 09:16:00");
+    insertFootprint.run(18681, 137021, "2026-03-29 09:28:00");
+  }
+
+  if (db.prepare("SELECT COUNT(*) AS count FROM call_logs WHERE user_id = 18681").get().count === 0) {
+    const insertCallLog = db.prepare(`
+      INSERT INTO call_logs (user_id, post_id, target_phone, duration_seconds, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    insertCallLog.run(18681, 137036, "18300000001", 96, "2026-03-30 13:20:00");
+    insertCallLog.run(18681, 137010, "13900000002", 42, "2026-03-30 16:08:00");
+  }
+
+  db.prepare(`
+    INSERT OR IGNORE INTO service_agents (id, channel_key, name, avatar, status)
+    VALUES (1, 'martin', '马丁星钻', '/wj/lamian21.png', 'online')
+  `).run();
+
+  const martinAgent = db.prepare("SELECT * FROM service_agents WHERE channel_key = 'martin'").get();
+  const existingConversation = db.prepare(`
+    SELECT * FROM service_conversations
+    WHERE user_id = ? AND channel_key = 'martin'
+    LIMIT 1
+  `).get(18681);
+  if (!existingConversation && martinAgent) {
+    const inserted = db.prepare(`
+      INSERT INTO service_conversations (
+        user_id, agent_id, channel_key, last_message_at, last_message_preview,
+        user_unread_count, agent_unread_count, status, created_at
+      ) VALUES (?, ?, 'martin', ?, ?, 1, 0, 'open', ?)
+    `).run(
+      18681,
+      martinAgent.id,
+      "2026-03-31 20:40:00",
+      "您好，这里是马丁星钻客服，有需要可以直接给我留言。",
+      "2026-03-31 20:40:00"
+    );
+    const conversationId = inserted.lastInsertRowid;
+    const insertServiceMessage = db.prepare(`
+      INSERT INTO service_messages (conversation_id, sender_type, sender_id, message_type, content, is_read, created_at)
+      VALUES (?, ?, ?, 'text', ?, ?, ?)
+    `);
+    insertServiceMessage.run(conversationId, "system", martinAgent.id, "如遇无效、虚假、诈骗信息，请点此举报！", 1, "2026-03-31 20:38:00");
+    insertServiceMessage.run(conversationId, "system", martinAgent.id, "关注公众号，接收实时信息 点击关注", 1, "2026-03-31 20:39:00");
+    insertServiceMessage.run(conversationId, "agent", martinAgent.id, "您好，这里是马丁星钻客服，有需要可以直接给我留言。", 0, "2026-03-31 20:40:00");
+  }
+
+  if (db.prepare("SELECT COUNT(*) AS count FROM service_quick_replies").get().count === 0) {
+    const insertQuickReply = db.prepare(`
+      INSERT INTO service_quick_replies (content, sort_order, enabled)
+      VALUES (?, ?, 1)
+    `);
+    insertQuickReply.run("您好，已经收到您的消息，我这边马上帮您核实。", 10);
+    insertQuickReply.run("请把出发时间、人数和联系电话再发我一下。", 20);
+    insertQuickReply.run("好的，这边已经帮您记录，稍后会继续跟进。", 30);
+    insertQuickReply.run("如涉及费用或押金，请务必谨慎核实后再处理。", 40);
+  }
 }
 
 function seedDatabase() {
@@ -425,7 +696,7 @@ function getCategories() {
 }
 
 function getNotices() {
-  return db.prepare("SELECT * FROM notices ORDER BY sort_order ASC, id ASC").all();
+  return db.prepare("SELECT * FROM notices ORDER BY sort_order ASC, id DESC").all();
 }
 
 function buildHomeTickerItems(posts) {
@@ -658,15 +929,17 @@ function getCategoryBanner(categoryId) {
 function getUserProfile(userId = 18681) {
   const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
   const userPosts = db.prepare(basePostQuery("WHERE posts.user_id = ?")).all(userId).map(normalizePost);
-  const totalViews = userPosts.reduce((sum, post) => sum + Number(post.views || 0), 0);
+  const totalPosts = db.prepare("SELECT COUNT(*) AS count FROM posts").get().count;
+  const totalViews = db.prepare("SELECT COALESCE(SUM(views), 0) AS count FROM posts").get().count;
+  const myViews = db.prepare("SELECT COUNT(*) AS count FROM user_footprints WHERE user_id = ?").get(userId).count;
   return {
     user,
     posts: userPosts,
     wallet: getUserWallet(userId),
     stats: {
-      totalPosts: userPosts.length,
-      totalViews,
-      myViews: 0
+      totalPosts: Number(totalPosts || 0),
+      totalViews: Number(totalViews || 0),
+      myViews: Number(myViews || 0)
     }
   };
 }
@@ -700,6 +973,81 @@ function getUserById(userId) {
   return db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
 }
 
+function isUserFollowing(followerUserId, targetUserId) {
+  if (!followerUserId || !targetUserId || Number(followerUserId) === Number(targetUserId)) return false;
+  const row = db.prepare(`
+    SELECT id FROM user_follows
+    WHERE follower_user_id = ? AND target_user_id = ?
+    LIMIT 1
+  `).get(followerUserId, targetUserId);
+  return !!row;
+}
+
+function isUserBlocked(userId, targetUserId) {
+  if (!userId || !targetUserId || Number(userId) === Number(targetUserId)) return false;
+  const row = db.prepare(`
+    SELECT id FROM user_blocks
+    WHERE user_id = ? AND target_user_id = ?
+    LIMIT 1
+  `).get(userId, targetUserId);
+  return !!row;
+}
+
+function toggleUserFollow(followerUserId, targetUserId) {
+  if (!followerUserId || !targetUserId || Number(followerUserId) === Number(targetUserId)) {
+    return { ok: false, following: false };
+  }
+  const existing = db.prepare(`
+    SELECT id FROM user_follows
+    WHERE follower_user_id = ? AND target_user_id = ?
+    LIMIT 1
+  `).get(followerUserId, targetUserId);
+
+  if (existing) {
+    db.prepare("DELETE FROM user_follows WHERE id = ?").run(existing.id);
+    return { ok: true, following: false };
+  }
+
+  db.prepare(`
+    INSERT INTO user_follows (follower_user_id, target_user_id, created_at)
+    VALUES (?, ?, datetime('now', 'localtime'))
+  `).run(followerUserId, targetUserId);
+  return { ok: true, following: true };
+}
+
+function toggleUserBlock(userId, targetUserId) {
+  if (!userId || !targetUserId || Number(userId) === Number(targetUserId)) {
+    return { ok: false, blocked: false };
+  }
+  const existing = db.prepare(`
+    SELECT id FROM user_blocks
+    WHERE user_id = ? AND target_user_id = ?
+    LIMIT 1
+  `).get(userId, targetUserId);
+
+  if (existing) {
+    db.prepare("DELETE FROM user_blocks WHERE id = ?").run(existing.id);
+    return { ok: true, blocked: false };
+  }
+
+  db.prepare(`
+    INSERT INTO user_blocks (user_id, target_user_id, created_at)
+    VALUES (?, ?, datetime('now', 'localtime'))
+  `).run(userId, targetUserId);
+  return { ok: true, blocked: true };
+}
+
+function createUserReport(userId, targetUserId, content = "") {
+  if (!userId || !targetUserId || Number(userId) === Number(targetUserId)) {
+    return { ok: false };
+  }
+  db.prepare(`
+    INSERT INTO user_reports (user_id, target_user_id, report_type, content, created_at)
+    VALUES (?, ?, 'homepage', ?, datetime('now', 'localtime'))
+  `).run(userId, targetUserId, String(content || "举报个人主页").trim());
+  return { ok: true };
+}
+
 function getUserWallet(userId) {
   const user = getUserById(userId);
   return {
@@ -725,6 +1073,34 @@ function getUserWalletData(userId) {
     `).all(userId),
     withdrawProfile: db.prepare("SELECT * FROM user_withdraw_profiles WHERE user_id = ?").get(userId)
   };
+}
+
+function getAdminWithdrawRequests(keyword = "", status = "") {
+  const clauses = ["1=1"];
+  const params = {};
+  if (keyword && keyword.trim()) {
+    clauses.push("(users.nickname LIKE @keyword OR users.phone LIKE @keyword OR withdraw_requests.account_name LIKE @keyword OR withdraw_requests.reviewed_by LIKE @keyword)");
+    params.keyword = `%${keyword.trim()}%`;
+  }
+  if (status && status.trim()) {
+    clauses.push("withdraw_requests.status = @status");
+    params.status = status.trim();
+  }
+
+  return db.prepare(`
+    SELECT
+      withdraw_requests.*,
+      users.nickname,
+      users.phone,
+      profiles.real_name AS profile_real_name,
+      profiles.wechat_qr_image,
+      profiles.account_type
+    FROM withdraw_requests
+    JOIN users ON users.id = withdraw_requests.user_id
+    LEFT JOIN user_withdraw_profiles AS profiles ON profiles.user_id = withdraw_requests.user_id
+    WHERE ${clauses.join(" AND ")}
+    ORDER BY datetime(withdraw_requests.created_at) DESC, withdraw_requests.id DESC
+  `).all(params);
 }
 
 function getUserOrders(userId, orderType = "") {
@@ -755,6 +1131,257 @@ function getMembershipCenterData(userId) {
   };
 }
 
+function getServiceAgentByChannel(channelKey = "martin") {
+  return db.prepare("SELECT * FROM service_agents WHERE channel_key = ?").get(channelKey);
+}
+
+function getServiceAgents() {
+  return db.prepare("SELECT * FROM service_agents ORDER BY id ASC").all();
+}
+
+function updateServiceAgent(channelKey, { name, avatar, status }) {
+  db.prepare(`
+    UPDATE service_agents
+    SET name = ?, avatar = ?, status = ?
+    WHERE channel_key = ?
+  `).run(name, avatar, status || "online", channelKey);
+}
+
+function getOrCreateServiceConversation(userId, channelKey = "martin") {
+  const existing = db.prepare(`
+    SELECT service_conversations.*, service_agents.name AS agent_name, service_agents.avatar AS agent_avatar
+    FROM service_conversations
+    JOIN service_agents ON service_agents.id = service_conversations.agent_id
+    WHERE service_conversations.user_id = ? AND service_conversations.channel_key = ?
+    LIMIT 1
+  `).get(userId, channelKey);
+  if (existing) return existing;
+  const agent = getServiceAgentByChannel(channelKey);
+  if (!agent) return null;
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+  const inserted = db.prepare(`
+    INSERT INTO service_conversations (
+      user_id, agent_id, channel_key, last_message_at, last_message_preview,
+      user_unread_count, agent_unread_count, status, created_at
+    ) VALUES (?, ?, ?, ?, ?, 1, 0, 'open', ?)
+  `).run(userId, agent.id, channelKey, now, "您好，这里是客服，有需要可以直接留言。", now);
+  const conversationId = inserted.lastInsertRowid;
+  db.prepare(`
+    INSERT INTO service_messages (conversation_id, sender_type, sender_id, message_type, content, is_read, created_at)
+    VALUES (?, 'agent', ?, 'text', ?, 0, ?)
+  `).run(conversationId, agent.id, "您好，这里是客服，有需要可以直接留言。", now);
+  return db.prepare(`
+    SELECT service_conversations.*, service_agents.name AS agent_name, service_agents.avatar AS agent_avatar
+    FROM service_conversations
+    JOIN service_agents ON service_agents.id = service_conversations.agent_id
+    WHERE service_conversations.id = ?
+  `).get(conversationId);
+}
+
+function markServiceConversationReadForUser(userId, channelKey = "martin") {
+  const conversation = getOrCreateServiceConversation(userId, channelKey);
+  if (!conversation) return null;
+  db.prepare(`
+    UPDATE service_conversations
+    SET user_unread_count = 0
+    WHERE id = ?
+  `).run(conversation.id);
+  db.prepare(`
+    UPDATE service_messages
+    SET is_read = 1
+    WHERE conversation_id = ? AND sender_type IN ('agent', 'system')
+  `).run(conversation.id);
+  return conversation.id;
+}
+
+function markAllServiceConversationsReadForUser(userId) {
+  db.prepare(`
+    UPDATE service_conversations
+    SET user_unread_count = 0
+    WHERE user_id = ?
+  `).run(userId);
+  db.prepare(`
+    UPDATE service_messages
+    SET is_read = 1
+    WHERE conversation_id IN (
+      SELECT id FROM service_conversations WHERE user_id = ?
+    ) AND sender_type IN ('agent', 'system')
+  `).run(userId);
+}
+
+function getServiceConversationListForUser(userId) {
+  return db.prepare(`
+    SELECT
+      service_conversations.*,
+      service_agents.name AS agent_name,
+      service_agents.avatar AS agent_avatar,
+      service_agents.status AS agent_status
+    FROM service_conversations
+    JOIN service_agents ON service_agents.id = service_conversations.agent_id
+    WHERE service_conversations.user_id = ?
+    ORDER BY datetime(service_conversations.last_message_at) DESC, service_conversations.id DESC
+  `).all(userId);
+}
+
+function getServiceConversationThreadForUser(userId, channelKey = "martin") {
+  const conversation = getOrCreateServiceConversation(userId, channelKey);
+  if (!conversation) return null;
+  const messages = db.prepare(`
+    SELECT * FROM service_messages
+    WHERE conversation_id = ?
+    ORDER BY id ASC
+  `).all(conversation.id);
+  return {
+    conversation,
+    messages
+  };
+}
+
+function getServiceMessagesAfter(conversationId, afterId = 0) {
+  return db.prepare(`
+    SELECT * FROM service_messages
+    WHERE conversation_id = ? AND id > ?
+    ORDER BY id ASC
+  `).all(conversationId, Number(afterId || 0));
+}
+
+function sendServiceUserMessage(userId, channelKey, content) {
+  const conversation = getOrCreateServiceConversation(userId, channelKey);
+  if (!conversation) {
+    return { ok: false, message: "客服通道暂不可用" };
+  }
+  const text = String(content || "").trim();
+  if (!text) {
+    return { ok: false, message: "请输入聊天内容" };
+  }
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+  db.prepare(`
+    INSERT INTO service_messages (conversation_id, sender_type, sender_id, message_type, content, is_read, created_at)
+    VALUES (?, 'user', ?, 'text', ?, 0, ?)
+  `).run(conversation.id, userId, text, now);
+  db.prepare(`
+    UPDATE service_conversations
+    SET last_message_at = ?, last_message_preview = ?, agent_unread_count = agent_unread_count + 1
+    WHERE id = ?
+  `).run(now, text, conversation.id);
+  return { ok: true };
+}
+
+function getAdminServiceConversations(keyword = "", status = "", unreadOnly = false) {
+  const hasKeyword = String(keyword || "").trim();
+  const where = [];
+  const params = {};
+  if (hasKeyword) {
+    where.push("(users.nickname LIKE @keyword OR users.phone LIKE @keyword OR service_conversations.last_message_preview LIKE @keyword)");
+    params.keyword = `%${hasKeyword.trim()}%`;
+  }
+  if (status) {
+    where.push("service_conversations.status = @status");
+    params.status = status;
+  }
+  if (unreadOnly) {
+    where.push("service_conversations.agent_unread_count > 0");
+  }
+  return db.prepare(`
+    SELECT
+      service_conversations.*,
+      users.nickname,
+      users.phone,
+      users.avatar AS user_avatar,
+      service_agents.name AS agent_name,
+      service_agents.avatar AS agent_avatar
+    FROM service_conversations
+    JOIN users ON users.id = service_conversations.user_id
+    JOIN service_agents ON service_agents.id = service_conversations.agent_id
+    ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+    ORDER BY datetime(service_conversations.last_message_at) DESC, service_conversations.id DESC
+  `).all(params);
+}
+
+function getAdminServiceConversation(conversationId) {
+  const conversation = db.prepare(`
+    SELECT
+      service_conversations.*,
+      users.nickname,
+      users.phone,
+      users.avatar AS user_avatar,
+      users.city,
+      service_agents.name AS agent_name,
+      service_agents.avatar AS agent_avatar
+    FROM service_conversations
+    JOIN users ON users.id = service_conversations.user_id
+    JOIN service_agents ON service_agents.id = service_conversations.agent_id
+    WHERE service_conversations.id = ?
+  `).get(conversationId);
+  if (!conversation) return null;
+  const messages = db.prepare(`
+    SELECT * FROM service_messages
+    WHERE conversation_id = ?
+    ORDER BY id ASC
+  `).all(conversationId);
+  return { conversation, messages };
+}
+
+function markServiceConversationReadForAdmin(conversationId) {
+  db.prepare(`
+    UPDATE service_conversations
+    SET agent_unread_count = 0
+    WHERE id = ?
+  `).run(conversationId);
+  db.prepare(`
+    UPDATE service_messages
+    SET is_read = 1
+    WHERE conversation_id = ? AND sender_type = 'user'
+  `).run(conversationId);
+}
+
+function assignServiceConversation(conversationId, adminName) {
+  db.prepare(`
+    UPDATE service_conversations
+    SET assigned_admin = COALESCE(?, assigned_admin)
+    WHERE id = ?
+  `).run(adminName || "", conversationId);
+}
+
+function updateServiceConversationStatus(conversationId, status) {
+  db.prepare(`
+    UPDATE service_conversations
+    SET status = ?
+    WHERE id = ?
+  `).run(status, conversationId);
+}
+
+function sendAdminServiceReply(conversationId, adminName, content) {
+  const conversation = getAdminServiceConversation(conversationId);
+  if (!conversation) {
+    return { ok: false, message: "会话不存在" };
+  }
+  const text = String(content || "").trim();
+  if (!text) {
+    return { ok: false, message: "回复内容不能为空" };
+  }
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+  assignServiceConversation(conversationId, adminName);
+  db.prepare(`
+    INSERT INTO service_messages (conversation_id, sender_type, sender_id, message_type, content, is_read, created_at)
+    VALUES (?, 'agent', ?, 'text', ?, 0, ?)
+  `).run(conversationId, 1, text, now);
+  const item = db.prepare("SELECT * FROM service_messages WHERE id = last_insert_rowid()").get();
+  db.prepare(`
+    UPDATE service_conversations
+    SET last_message_at = ?, last_message_preview = ?, user_unread_count = user_unread_count + 1, assigned_admin = ?
+    WHERE id = ?
+  `).run(now, text, adminName || "", conversationId);
+  createUserMessage(conversation.conversation.user_id, {
+    type: "service",
+    title: `客服回复：${conversation.conversation.agent_name}`,
+    content: text,
+    href: `/plugin.php?id=xigua_lt&type=thread&channel=${conversation.conversation.channel_key}&mobile=2&high=3`
+  });
+  markServiceConversationReadForAdmin(conversationId);
+  return { ok: true, item };
+}
+
 function getMessageCenterData(userId) {
   const user = getUserById(userId);
   const messages = db.prepare(`
@@ -771,9 +1398,87 @@ function getMessageCenterData(userId) {
     href: `/plugin.php?id=xigua_hb&ac=view&pubid=${post.id}`,
     is_read: 0
   }));
+  const items = [...messages, ...dynamic]
+    .slice()
+    .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+  const serviceChannels = getServiceConversationListForUser(userId);
   return {
     user,
-    items: [...messages, ...dynamic]
+    shortcuts: [
+      { key: "follow", label: "我的关注", href: "/plugin.php?id=xigua_lt&type=follow&mobile=2&high=3", icon: "follow" },
+      { key: "fans", label: "我的粉丝", href: "/plugin.php?id=xigua_lt&type=fans&mobile=2&high=3", icon: "fans" },
+      { key: "settings", label: "提醒设置", href: "/plugin.php?id=xigua_hb&ac=settings&high=4", icon: "bell" },
+      { key: "profile", label: "个人中心", href: "/plugin.php?id=xigua_hb&ac=my&high=4", icon: "user" }
+    ],
+    channels: serviceChannels.map((item) => ({
+      key: item.channel_key,
+      name: item.agent_name,
+      avatar: item.agent_avatar,
+      href: `/plugin.php?id=xigua_lt&type=thread&channel=${item.channel_key}&mobile=2&high=3`,
+      unreadCount: Number(item.user_unread_count || 0),
+      latestText: item.last_message_preview || "点击开始聊天",
+      latestAt: item.last_message_at || ""
+    })),
+    items
+  };
+}
+
+function getMessageThreadData(userId, channel = "martin") {
+  const thread = getServiceConversationThreadForUser(userId, channel);
+  if (!thread) return null;
+  markServiceConversationReadForUser(userId, channel);
+  return {
+    user: getUserById(userId),
+    channel: {
+      key: thread.conversation.channel_key,
+      name: thread.conversation.agent_name,
+      avatar: thread.conversation.agent_avatar,
+      conversationId: thread.conversation.id
+    },
+    notices: [
+      { text: "如遇无效、虚假、诈骗信息，请点此举报！", accent: "#ff7a7a" },
+      { text: "关注公众号，接收实时信息 点击关注", accent: "#76b870" }
+    ],
+    items: thread.messages
+  };
+}
+
+function getMessageRelationData(userId, type = "follow") {
+  const users = db.prepare(`
+    SELECT id, nickname, avatar, city, bio, membership_status
+    FROM users
+    WHERE id != ?
+    ORDER BY id ASC
+    LIMIT 12
+  `).all(userId);
+  const list = (type === "fans" ? users.slice().reverse() : users).map((item, index) => ({
+    ...item,
+    tagline: type === "fans"
+      ? `${item.city || "本地用户"} · ${index < 3 ? "刚刚关注了你" : "近期访问过你的主页"}`
+      : `${item.city || "本地用户"} · ${index < 3 ? "你已关注" : "推荐关注"}`
+  }));
+  return {
+    title: type === "fans" ? "我的粉丝" : "我的关注",
+    type,
+    items: list
+  };
+}
+
+function getUserUnreadSummary(userId) {
+  const messageUnread = db.prepare(`
+    SELECT COUNT(*) AS count
+    FROM user_messages
+    WHERE user_id = ? AND is_read = 0
+  `).get(userId).count;
+  const serviceUnread = db.prepare(`
+    SELECT COALESCE(SUM(user_unread_count), 0) AS count
+    FROM service_conversations
+    WHERE user_id = ?
+  `).get(userId).count;
+  return {
+    message: Number(messageUnread || 0),
+    service: Number(serviceUnread || 0),
+    chat: Number(messageUnread || 0) + Number(serviceUnread || 0)
   };
 }
 
@@ -785,16 +1490,159 @@ function getPartnerCenterData(userId) {
     ORDER BY datetime(created_at) DESC, id DESC
     LIMIT 1
   `).get(userId);
+  const partnerOrders = db.prepare(`
+    SELECT *
+    FROM orders
+    WHERE user_id = ? AND order_type = 'partner'
+    ORDER BY datetime(created_at) DESC, id DESC
+  `).all(userId);
+  const fanCount = Number(
+    db.prepare("SELECT COUNT(*) AS count FROM user_follows WHERE target_user_id = ?").get(userId).count || 0
+  );
+  const todayIncome = Number(
+    db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) AS total
+      FROM partner_commissions
+      WHERE user_id = ?
+        AND date(created_at) = date('now', 'localtime')
+        AND status IN ('settled', 'paid')
+    `).get(userId).total || 0
+  );
+  const withdrawable = Number(
+    db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) AS total
+      FROM partner_commissions
+      WHERE user_id = ?
+        AND status IN ('settled', 'paid')
+    `).get(userId).total || 0
+  );
+  const totalCommission = Number(
+    db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) AS total
+      FROM partner_commissions
+      WHERE user_id = ?
+    `).get(userId).total || 0
+  );
+  const latestWithdrawEvent = db.prepare(`
+    SELECT withdraw_requests.amount, withdraw_requests.created_at, users.nickname
+    FROM withdraw_requests
+    JOIN users ON users.id = withdraw_requests.user_id
+    WHERE withdraw_requests.status = 'approved'
+    ORDER BY datetime(withdraw_requests.created_at) DESC, withdraw_requests.id DESC
+    LIMIT 1
+  `).get();
+  const latestOrder = partnerOrders[0] || null;
+  const latestOrderStatusLabel = latestOrder
+    ? latestOrder.status === "paid"
+      ? "已开通"
+      : latestOrder.status === "cancelled"
+        ? "已取消"
+        : "待支付"
+    : "未开通";
+  const plans = [
+    {
+      key: "gold_month",
+      name: "金牌合伙人",
+      feeLabel: "¥69/月",
+      detailFeeLabel: "¥69/月 (99元/永久)",
+      price: 69,
+      priceLabel: "1个月/69元",
+      ratio: "40%",
+      accountDays: "1天",
+      durationDays: 30
+    },
+    {
+      key: "gold_lifetime",
+      name: "金牌合伙人",
+      feeLabel: "99元/永久",
+      detailFeeLabel: "¥69/月 (99元/永久)",
+      price: 99,
+      priceLabel: "永久/99元",
+      ratio: "40%",
+      accountDays: "1天",
+      durationDays: 3650
+    }
+  ];
   return {
     user: profile.user,
     stats: profile.stats,
     wallet: profile.wallet,
     application,
-    benefits: [
-      "邀请好友加入后可建立城市群资源",
-      "优先获得平台活动与流量支持",
-      "后续可扩展佣金、分销和城市合伙人体系"
+    partnerOrders,
+    fanCount,
+    todayIncome,
+    withdrawable,
+    totalCommission,
+    latestOrder,
+    latestOrderStatusLabel,
+    latestEarningEvent: latestWithdrawEvent
+      ? {
+          nickname: latestWithdrawEvent.nickname || "平台用户",
+          createdAt: latestWithdrawEvent.created_at || "",
+          amount: Number(latestWithdrawEvent.amount || 0)
+        }
+      : null,
+    selectedLevel: "金牌合伙人",
+    plans,
+    cards: [
+      { title: "加入费用", value: plans[0].detailFeeLabel, icon: "💚" },
+      { title: "提成比例", value: "40%", icon: "💠" },
+      { title: "账期（天）", value: "1天", icon: "🔄" }
+    ],
+    introTitle: "金牌合伙人加入费用¥69/月 (99元/永久)",
+    introText: "您的粉丝付费发布、置顶、刷新、入驻商家、加入合伙人、购买商品、参与活动、等其他付费，您都可获得提成40%，躺着就能赚线钱。",
+    settleText: "收益账期为T+1，产生的收益会在1天后自动转入您的钱包。",
+    notes: [
+      "成为合伙人后，你自己或者你的粉丝付费发布信息你就有40%提成。",
+      "把平台任意界面分享给好友或拉面群或朋友圈，通过你的分享进入平台登录的用户就是你的粉丝。"
     ]
+  };
+}
+
+function getPartnerFansData(userId) {
+  return {
+    items: db.prepare(`
+      SELECT
+        users.id,
+        users.nickname,
+        users.city,
+        users.avatar,
+        user_follows.created_at
+      FROM user_follows
+      JOIN users ON users.id = user_follows.follower_user_id
+      WHERE user_follows.target_user_id = ?
+      ORDER BY datetime(user_follows.created_at) DESC, user_follows.id DESC
+    `).all(userId)
+  };
+}
+
+function getPartnerIncomeDetailsData(userId) {
+  return {
+    items: db.prepare(`
+      SELECT
+        partner_commissions.*,
+        users.nickname AS fan_nickname
+      FROM partner_commissions
+      LEFT JOIN users ON users.id = partner_commissions.fan_user_id
+      WHERE partner_commissions.user_id = ?
+      ORDER BY datetime(partner_commissions.created_at) DESC, partner_commissions.id DESC
+    `).all(userId)
+  };
+}
+
+function getPartnerTrendData(userId) {
+  return {
+    items: db.prepare(`
+      SELECT
+        substr(created_at, 1, 10) AS day,
+        COUNT(*) AS count,
+        COALESCE(SUM(amount), 0) AS total
+      FROM partner_commissions
+      WHERE user_id = ?
+      GROUP BY substr(created_at, 1, 10)
+      ORDER BY day DESC
+      LIMIT 14
+    `).all(userId)
   };
 }
 
@@ -980,15 +1828,20 @@ function createWithdrawRequest(userId, amount) {
     return { ok: false, message: "余额不足" };
   }
   const profile = db.prepare("SELECT * FROM user_withdraw_profiles WHERE user_id = ?").get(userId);
-  if (!profile || !profile.account_no) {
+  if (!profile || !String(profile.real_name || profile.account_name || "").trim() || !String(profile.wechat_qr_image || profile.account_no || "").trim()) {
     return { ok: false, message: "请先完善提现设置" };
   }
 
   db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(amount, userId);
   db.prepare(`
-    INSERT INTO withdraw_requests (user_id, amount, status, account_name, account_no, created_at)
-    VALUES (?, ?, 'pending', ?, ?, datetime('now', 'localtime'))
-  `).run(userId, amount, profile.account_name, profile.account_no);
+    INSERT INTO withdraw_requests (user_id, amount, status, account_name, account_no, created_at, review_note, reviewed_at, reviewed_by)
+    VALUES (?, ?, 'pending', ?, ?, datetime('now', 'localtime'), '', '', '')
+  `).run(
+    userId,
+    amount,
+    profile.real_name || profile.account_name,
+    profile.wechat_qr_image || profile.account_no
+  );
   db.prepare(`
     INSERT INTO wallet_transactions (user_id, type, amount, status, note, created_at)
     VALUES (?, 'withdraw', ?, 'pending', '提现申请', datetime('now', 'localtime'))
@@ -997,15 +1850,52 @@ function createWithdrawRequest(userId, amount) {
   return { ok: true, message: "提现申请已提交" };
 }
 
-function upsertUserWithdrawProfile(userId, { accountName, accountType, accountNo }) {
+function upsertUserWithdrawProfile(userId, { accountName, accountType, accountNo, realName, wechatQrImage }) {
   db.prepare(`
-    INSERT INTO user_withdraw_profiles (user_id, account_name, account_type, account_no)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO user_withdraw_profiles (user_id, account_name, account_type, account_no, real_name, wechat_qr_image)
+    VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
       account_name = excluded.account_name,
       account_type = excluded.account_type,
-      account_no = excluded.account_no
-  `).run(userId, accountName, accountType, accountNo);
+      account_no = excluded.account_no,
+      real_name = excluded.real_name,
+      wechat_qr_image = excluded.wechat_qr_image
+  `).run(userId, accountName, accountType, accountNo, realName || accountName || "", wechatQrImage || accountNo || "");
+}
+
+function updateWithdrawRequestReview(id, { status, reviewNote, reviewedBy }) {
+  const request = db.prepare("SELECT * FROM withdraw_requests WHERE id = ?").get(id);
+  if (!request) return null;
+  const nextStatus = String(status || "pending").trim();
+  db.prepare(`
+    UPDATE withdraw_requests
+    SET status = ?,
+        review_note = ?,
+        reviewed_at = datetime('now', 'localtime'),
+        reviewed_by = ?
+    WHERE id = ?
+  `).run(nextStatus, String(reviewNote || "").trim(), String(reviewedBy || "").trim(), id);
+
+  db.prepare(`
+    UPDATE wallet_transactions
+    SET status = ?
+    WHERE id = (
+      SELECT id FROM wallet_transactions
+      WHERE user_id = ? AND type = 'withdraw' AND amount = ? AND note = '提现申请'
+      ORDER BY id DESC
+      LIMIT 1
+    )
+  `).run(nextStatus, request.user_id, -Math.abs(Number(request.amount || 0)));
+
+  if (request.status !== "rejected" && nextStatus === "rejected") {
+    db.prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?").run(Number(request.amount || 0), request.user_id);
+    db.prepare(`
+      INSERT INTO wallet_transactions (user_id, type, amount, status, note, created_at)
+      VALUES (?, 'withdraw_refund', ?, 'success', '提现驳回退款', datetime('now', 'localtime'))
+    `).run(request.user_id, Math.abs(Number(request.amount || 0)));
+  }
+
+  return db.prepare("SELECT * FROM withdraw_requests WHERE id = ?").get(id);
 }
 
 function upsertUserAddress(userId, { contactName, phone, address }) {
@@ -1052,6 +1942,198 @@ function getUserSettingsData(userId) {
     user: getUserById(userId),
     address: db.prepare("SELECT * FROM user_addresses WHERE user_id = ?").get(userId),
     withdrawProfile: db.prepare("SELECT * FROM user_withdraw_profiles WHERE user_id = ?").get(userId)
+  };
+}
+
+function getUserProfileEditData(userId) {
+  const user = getUserById(userId);
+  if (!user) return null;
+  const [birthdayYear = "", birthdayMonth = "", birthdayDay = ""] = String(user.birthday || "").split("-");
+  return {
+    user: {
+      ...user,
+      gender: user.gender || "secret",
+      birthday: user.birthday || ""
+    },
+    birthdayYear,
+    birthdayMonth,
+    birthdayDay
+  };
+}
+
+function updateUserProfileEdit(userId, payload) {
+  db.prepare(`
+    UPDATE users
+    SET nickname = ?,
+        avatar = ?,
+        gender = ?,
+        birthday = ?
+    WHERE id = ?
+  `).run(
+    payload.nickname,
+    payload.avatar,
+    payload.gender || "secret",
+    payload.birthday || "",
+    userId
+  );
+  return getUserProfileEditData(userId);
+}
+
+function updateUserPassword(userId, password) {
+  db.prepare("UPDATE user_auth SET password = ? WHERE user_id = ?").run(password, userId);
+}
+
+function getMyCenterData(userId) {
+  const profile = getUserProfile(userId);
+  const postRows = db.prepare(basePostQuery("WHERE posts.status = 'active'")).all();
+  const latestNotice = getNotices()[0] || null;
+  const membershipOrders = getUserOrders(userId, "membership");
+  const allOrders = getUserOrders(userId);
+  const subscriptions = db.prepare(`
+    SELECT * FROM user_subscriptions
+    WHERE user_id = ?
+    ORDER BY datetime(created_at) DESC, id DESC
+  `).all(userId);
+  const verification = db.prepare(`
+    SELECT * FROM verification_requests
+    WHERE user_id = ?
+    ORDER BY datetime(created_at) DESC, id DESC
+    LIMIT 1
+  `).get(userId);
+  const commentCount = db.prepare("SELECT COUNT(*) AS count FROM user_comments WHERE user_id = ?").get(userId).count;
+  const favoriteCount = db.prepare("SELECT COUNT(*) AS count FROM user_favorites WHERE user_id = ?").get(userId).count;
+  const footprintCount = db.prepare("SELECT COUNT(*) AS count FROM user_footprints WHERE user_id = ?").get(userId).count;
+  const callCount = db.prepare("SELECT COUNT(*) AS count FROM call_logs WHERE user_id = ?").get(userId).count;
+  return {
+    ...profile,
+    latestNotice,
+    tickerItems: buildHomeTickerItems(postRows),
+    counts: {
+      messages: getUserUnreadSummary(userId).chat,
+      membershipOrders: membershipOrders.length,
+      orders: allOrders.length,
+      subscriptions: subscriptions.length,
+      comments: commentCount,
+      favorites: favoriteCount,
+      footprints: footprintCount,
+      callLogs: callCount
+    },
+    verification
+  };
+}
+
+function getUserHomepageData(userId, viewerUserId = null, tab = "posts") {
+  const profile = getUserProfile(userId);
+  const followers = db.prepare("SELECT COUNT(*) AS count FROM user_follows WHERE target_user_id = ?").get(userId).count;
+  const following = db.prepare("SELECT COUNT(*) AS count FROM user_follows WHERE follower_user_id = ?").get(userId).count;
+  const visitors = db.prepare(`
+    SELECT
+      user_homepage_views.*,
+      users.nickname,
+      users.avatar
+    FROM user_homepage_views
+    LEFT JOIN users ON users.id = user_homepage_views.viewer_user_id
+    WHERE user_homepage_views.user_id = ?
+      AND user_homepage_views.viewer_user_id IS NOT NULL
+      AND user_homepage_views.viewer_user_id != ?
+    ORDER BY datetime(user_homepage_views.viewed_at) DESC, user_homepage_views.id DESC
+    LIMIT 20
+  `).all(userId, userId);
+
+  const activeTab = ["posts", "visitors", "circles"].includes(tab) ? tab : "posts";
+  return {
+    user: profile.user,
+    stats: profile.stats,
+    posts: profile.posts.slice(0, 20),
+    followers: Number(followers || 0),
+    following: Number(following || 0),
+    visitors,
+    activeTab,
+    isSelf: viewerUserId && Number(viewerUserId) === Number(userId),
+    isFollowing: isUserFollowing(viewerUserId, userId),
+    isBlocked: isUserBlocked(viewerUserId, userId)
+  };
+}
+
+function recordUserHomepageView(userId, viewerUserId = null) {
+  db.prepare(`
+    INSERT INTO user_homepage_views (user_id, viewer_user_id, viewed_at)
+    VALUES (?, ?, datetime('now', 'localtime'))
+  `).run(userId, viewerUserId || null);
+}
+
+function getUserAllOrdersData(userId) {
+  return {
+    orders: getUserOrders(userId)
+  };
+}
+
+function getUserSubscriptionsData(userId) {
+  return {
+    items: db.prepare(`
+      SELECT * FROM user_subscriptions
+      WHERE user_id = ?
+      ORDER BY datetime(created_at) DESC, id DESC
+    `).all(userId)
+  };
+}
+
+function getUserVerificationData(userId) {
+  return {
+    record: db.prepare(`
+      SELECT * FROM verification_requests
+      WHERE user_id = ?
+      ORDER BY datetime(created_at) DESC, id DESC
+      LIMIT 1
+    `).get(userId)
+  };
+}
+
+function getUserCommentsData(userId) {
+  return {
+    items: db.prepare(`
+      SELECT user_comments.*, posts.title AS post_title
+      FROM user_comments
+      JOIN posts ON posts.id = user_comments.post_id
+      WHERE user_comments.user_id = ?
+      ORDER BY datetime(user_comments.created_at) DESC, user_comments.id DESC
+    `).all(userId)
+  };
+}
+
+function getUserFavoritesData(userId) {
+  return {
+    items: db.prepare(`
+      SELECT user_favorites.*, posts.title AS post_title, posts.location
+      FROM user_favorites
+      JOIN posts ON posts.id = user_favorites.post_id
+      WHERE user_favorites.user_id = ?
+      ORDER BY datetime(user_favorites.created_at) DESC, user_favorites.id DESC
+    `).all(userId)
+  };
+}
+
+function getUserFootprintsData(userId) {
+  return {
+    items: db.prepare(`
+      SELECT user_footprints.*, posts.title AS post_title, posts.location
+      FROM user_footprints
+      JOIN posts ON posts.id = user_footprints.post_id
+      WHERE user_footprints.user_id = ?
+      ORDER BY datetime(user_footprints.viewed_at) DESC, user_footprints.id DESC
+    `).all(userId)
+  };
+}
+
+function getUserCallLogsData(userId) {
+  return {
+    items: db.prepare(`
+      SELECT call_logs.*, posts.title AS post_title
+      FROM call_logs
+      JOIN posts ON posts.id = call_logs.post_id
+      WHERE call_logs.user_id = ?
+      ORDER BY datetime(call_logs.created_at) DESC, call_logs.id DESC
+    `).all(userId)
   };
 }
 
@@ -1145,12 +2227,16 @@ function getAdminDashboardData() {
   };
 }
 
-function getAdminPosts(keyword = "", status = "") {
+function getAdminPosts(keyword = "", status = "", userId = 0) {
   const clauses = [];
   const params = {};
   if (status) {
     clauses.push("posts.status = @status");
     params.status = status;
+  }
+  if (Number(userId || 0) > 0) {
+    clauses.push("posts.user_id = @userId");
+    params.userId = Number(userId);
   }
   if (keyword && keyword.trim()) {
     clauses.push("(posts.title LIKE @keyword OR users.nickname LIKE @keyword OR posts.location LIKE @keyword)");
@@ -1158,7 +2244,7 @@ function getAdminPosts(keyword = "", status = "") {
   }
   const whereClause = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "WHERE 1=1";
   const posts = db.prepare(basePostQuery(whereClause)).all(params).map(normalizePost);
-  return { posts, keyword, status };
+  return { posts, keyword, status, userId: Number(userId || 0) };
 }
 
 function getAdminUsers(keyword = "") {
@@ -1185,12 +2271,41 @@ function getAdminSystemData() {
     refreshSettings: getRefreshSettings(),
     categories: getCategories(),
     categoryBanners: getCategoryBanners(),
+    serviceAgents: getServiceAgents(),
+    serviceQuickReplies: getServiceQuickReplies(true),
     homeLinks: getHomeLinks(),
     membershipBenefits: getMembershipBenefits(),
     notices: getNotices(),
     plans: getMembershipPlans(),
     adminUsers: getAdminUsersList()
   };
+}
+
+function getServiceQuickReplies(includeDisabled = false) {
+  return db.prepare(`
+    SELECT * FROM service_quick_replies
+    ${includeDisabled ? "" : "WHERE enabled = 1"}
+    ORDER BY sort_order ASC, id ASC
+  `).all();
+}
+
+function createServiceQuickReply({ content, sortOrder, enabled }) {
+  db.prepare(`
+    INSERT INTO service_quick_replies (content, sort_order, enabled)
+    VALUES (?, ?, ?)
+  `).run(content, Number(sortOrder || 0), enabled ? 1 : 0);
+}
+
+function updateServiceQuickReply(id, { content, sortOrder, enabled }) {
+  db.prepare(`
+    UPDATE service_quick_replies
+    SET content = ?, sort_order = ?, enabled = ?
+    WHERE id = ?
+  `).run(content, Number(sortOrder || 0), enabled ? 1 : 0, id);
+}
+
+function deleteServiceQuickReply(id) {
+  db.prepare("DELETE FROM service_quick_replies WHERE id = ?").run(id);
 }
 
 function getCategoryBanners() {
@@ -1504,12 +2619,14 @@ module.exports = {
   createMembershipBenefit,
   createMembershipPlan,
   createNotice,
+  createServiceQuickReply,
   createUserMessage,
   deleteAdminUser,
   deleteCategory,
   deleteMembershipBenefit,
   deleteMembershipPlan,
   deleteNotice,
+  deleteServiceQuickReply,
   deleteUserSession,
   getAdminByCredentials,
   getAdminCheckins,
@@ -1518,6 +2635,9 @@ module.exports = {
   getAdminOrders,
   getAdminPartnerApplications,
   getAdminPosts,
+  getAdminServiceConversation,
+  getAdminServiceConversations,
+  getAdminWithdrawRequests,
   getAdminSystemData,
   getAdminUsers,
   getAdminUsersList,
@@ -1527,11 +2647,30 @@ module.exports = {
   getMembershipCenterData,
   getCheckinData,
   getMessageCenterData,
+  getMessageRelationData,
+  getMyCenterData,
+  getServiceMessagesAfter,
+  getMessageThreadData,
+  getUserAllOrdersData,
+  getUserCallLogsData,
+  getUserCommentsData,
+  getUserFavoritesData,
+  getUserFootprintsData,
+  getUserHomepageData,
+  getUserSubscriptionsData,
+  getUserUnreadSummary,
+  getUserVerificationData,
   getMembershipPlanById,
   markOrderEffectApplied,
+  markAllServiceConversationsReadForUser,
+  markServiceConversationReadForAdmin,
   getOrderById,
   getPartnerCenterData,
+  getPartnerFansData,
+  getPartnerIncomeDetailsData,
+  getPartnerTrendData,
   createPost,
+  createUserReport,
   createOrder,
   createWithdrawRequest,
   db,
@@ -1543,9 +2682,13 @@ module.exports = {
   getPostsByCategory,
   getPublishFormData,
   getRefreshSettings,
+  getServiceAgents,
+  getServiceQuickReplies,
   getUserBySession,
   getUserSettingsData,
+  getUserProfileEditData,
   getUserProfile,
+  recordUserHomepageView,
   getUserOrders,
   getUserWallet,
   getUserWalletData,
@@ -1556,16 +2699,27 @@ module.exports = {
   init,
   refreshPost,
   signInToday,
+  assignServiceConversation,
+  sendAdminServiceReply,
+  sendServiceUserMessage,
   submitPartnerApplication,
+  updateServiceConversationStatus,
+  updateWithdrawRequestReview,
   togglePostStatus,
   topUpUserWallet,
   topUpWallet,
+  toggleUserBlock,
+  toggleUserFollow,
   upsertCategoryBanner,
+  updateServiceAgent,
+  updateServiceQuickReply,
   updateOrderStatus,
   updateMessageReadStatus,
   updateUserPhone,
+  updateUserPassword,
   updateUserMembership,
   updateUserSettings,
+  updateUserProfileEdit,
   updateAdminUser,
   updatePartnerApplicationStatus,
   updateCategory,

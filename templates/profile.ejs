@@ -1,95 +1,417 @@
 <%- include("partials/head", { pageTitle, message }) %>
-<div class="app-header" style="padding-bottom:6.2rem;overflow:hidden;background-image:linear-gradient(rgba(50,200,106,.92), rgba(50,200,106,.92)), url('<%= data.user.background_image || "" %>');background-size:cover;background-position:center;">
-  <a class="right" href="/plugin.php?id=xigua_hb&ac=settings&high=4">设置</a>
-  <div style="display:flex;align-items:center;gap:.8rem;position:relative;z-index:1;">
-    <img src="<%= data.user.avatar %>" alt="<%= data.user.nickname %>" style="width:4rem;height:4rem;border-radius:50%;border:2px solid rgba(255,255,255,.8);object-fit:cover;">
-    <div>
-      <div style="font-size:1rem;font-weight:700;"><%= data.user.nickname %></div>
-      <div style="margin-top:.45rem;">
-        <a href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5" style="display:inline-flex;align-items:center;gap:.3rem;background:#25b35d;color:#fff;padding:.35rem .7rem;border-radius:999px;text-decoration:none;font-size:.68rem;">加盟合伙人</a>
+<style>
+  :root {
+    --mine-bg: #f5f5f7;
+    --mine-surface: rgba(255, 255, 255, .88);
+    --mine-card: #ffffff;
+    --mine-text: #111827;
+    --mine-subtle: #6b7280;
+    --mine-line: rgba(15, 23, 42, .08);
+    --mine-shadow: 0 .12rem .55rem rgba(15, 23, 42, .06);
+    --mine-radius: .9rem;
+    --mine-accent: #35c96d;
+  }
+
+  .mine-page {
+    min-height: 100vh;
+    padding: .7rem .6rem 4.8rem;
+    background:
+      radial-gradient(circle at top left, rgba(52, 200, 111, .1), transparent 28%),
+      linear-gradient(180deg, #fbfbfc, var(--mine-bg));
+  }
+
+  .mine-card {
+    background: var(--mine-card);
+    border: 1px solid rgba(255,255,255,.7);
+    border-radius: var(--mine-radius);
+    box-shadow: var(--mine-shadow);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .mine-hero {
+    padding: 1rem .95rem .92rem;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.06)),
+      linear-gradient(180deg, #35c96d, #35c96d);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mine-hero::before,
+  .mine-hero::after {
+    content: "";
+    position: absolute;
+    background: rgba(255,255,255,.12);
+    border-radius: 999px;
+    pointer-events: none;
+  }
+
+  .mine-hero::before {
+    width: 3rem;
+    height: .9rem;
+    right: -.4rem;
+    top: 1rem;
+    transform: rotate(-48deg);
+  }
+
+  .mine-hero::after {
+    width: .9rem;
+    height: .9rem;
+    left: .45rem;
+    top: .3rem;
+  }
+
+  .mine-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .7rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mine-user {
+    display: flex;
+    align-items: center;
+    gap: .78rem;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .mine-avatar {
+    width: 3.35rem;
+    height: 3.35rem;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.88);
+    object-fit: cover;
+    flex: 0 0 auto;
+    background: rgba(255,255,255,.14);
+  }
+
+  .mine-avatar-link {
+    display: inline-flex;
+    border-radius: 50%;
+    text-decoration: none;
+    flex: 0 0 auto;
+  }
+
+  .mine-copy {
+    min-width: 0;
+  }
+
+  .mine-name {
+    font-size: 1.08rem;
+    line-height: 1.24rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mine-subactions {
+    display: flex;
+    align-items: center;
+    gap: .38rem;
+    margin-top: .46rem;
+    flex-wrap: wrap;
+  }
+
+  .mine-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .24rem;
+    min-height: 1.28rem;
+    padding: 0 .62rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .14);
+    color: #fff;
+    text-decoration: none;
+    font-size: .62rem;
+    font-weight: 600;
+  }
+
+  .mine-setting {
+    color: #fff;
+    text-decoration: none;
+    font-size: .82rem;
+    font-weight: 700;
+    flex: 0 0 auto;
+    margin-top: .08rem;
+  }
+
+  .mine-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .35rem;
+    margin-top: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mine-stat {
+    padding: .62rem .35rem .54rem;
+    border-radius: .8rem;
+    background: rgba(255,255,255,.12);
+    text-align: center;
+  }
+
+  .mine-stat .v {
+    font-size: 1.02rem;
+    line-height: 1.16rem;
+    font-weight: 700;
+  }
+
+  .mine-stat .k {
+    margin-top: .18rem;
+    font-size: .64rem;
+    line-height: .88rem;
+    opacity: .96;
+  }
+
+  .mine-notice {
+    margin-top: .58rem;
+    padding: .68rem .8rem;
+    display: flex;
+    align-items: center;
+    gap: .42rem;
+    color: var(--mine-subtle);
+    font-size: .68rem;
+    line-height: .92rem;
+  }
+
+  .mine-notice strong {
+    color: var(--mine-accent);
+    flex: 0 0 auto;
+  }
+
+  .mine-notice-slider {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    height: .96rem;
+  }
+
+  .mine-notice .toutiao-track {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mine-notice .toutiao-item {
+    height: .96rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .mine-notice .toutiao-item a {
+    display: block;
+    min-width: 0;
+    color: var(--mine-subtle);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mine-section {
+    margin-top: .62rem;
+    padding: .88rem .82rem .74rem;
+  }
+
+  .mine-section-title {
+    margin: 0 0 .74rem;
+    font-size: .9rem;
+    line-height: 1.1rem;
+    color: var(--mine-text);
+    font-weight: 700;
+    letter-spacing: -.01em;
+  }
+
+  .mine-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .9rem .18rem;
+  }
+
+  .mine-item {
+    text-decoration: none;
+    color: var(--mine-text);
+    text-align: center;
+  }
+
+  .mine-item-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: .72rem;
+    margin: 0 auto .42rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.08rem;
+    background: linear-gradient(180deg, #f9fafb, #eef2f7);
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .05);
+  }
+
+  .mine-item-label {
+    font-size: .67rem;
+    line-height: .9rem;
+    letter-spacing: -.01em;
+  }
+
+  .mine-item-sub {
+    margin-top: .08rem;
+    font-size: .54rem;
+    line-height: .74rem;
+    color: #9aa3b2;
+  }
+
+  .mine-links {
+    margin-top: .62rem;
+    overflow: hidden;
+  }
+
+  .mine-link-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    padding: .84rem .84rem;
+    text-decoration: none;
+    color: var(--mine-text);
+    border-bottom: 1px solid #eff2f6;
+  }
+
+  .mine-link-row:last-child {
+    border-bottom: 0;
+  }
+
+  .mine-link-row .left {
+    font-size: .82rem;
+    font-weight: 600;
+  }
+
+  .mine-link-row .right {
+    font-size: .72rem;
+    color: #9aa3b2;
+    white-space: nowrap;
+  }
+</style>
+
+<div class="mine-page">
+  <section class="mine-card mine-hero">
+    <div class="mine-topbar">
+      <div class="mine-user">
+        <a class="mine-avatar-link" href="/plugin.php?id=xigua_hb&ac=profile_edit&high=4" aria-label="编辑个人资料">
+          <img class="mine-avatar" src="<%= data.user.avatar %>" alt="<%= data.user.nickname %>">
+        </a>
+        <div class="mine-copy">
+          <div class="mine-name"><%= data.user.nickname %></div>
+          <div class="mine-subactions">
+            <a class="mine-pill" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5">🤝 加盟合伙人</a>
+            <span class="mine-pill">UID:<%= data.user.id %></span>
+          </div>
+        </div>
       </div>
-      <div style="margin-top:.55rem;"><span class="mini-badge">UID:84691</span></div>
+      <a class="mine-setting" href="/plugin.php?id=xigua_hb&ac=settings&high=4">设置</a>
     </div>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);margin-top:1.5rem;position:relative;z-index:1;">
-    <div style="text-align:center;"><div style="font-size:1rem;font-weight:700;"><%= data.stats.totalPosts %></div><div style="font-size:.72rem;margin-top:.15rem;">总发布</div></div>
-    <div style="text-align:center;"><div style="font-size:1rem;font-weight:700;"><%= data.stats.totalViews %></div><div style="font-size:.72rem;margin-top:.15rem;">总浏览量</div></div>
-    <div style="text-align:center;"><div style="font-size:1rem;font-weight:700;"><%= data.wallet.balance.toFixed(2) %></div><div style="font-size:.72rem;margin-top:.15rem;">钱包余额</div></div>
-  </div>
-</div>
 
-<div class="soft-card pad" style="margin-top:-1.9rem;">
-  <div style="font-size:.72rem;color:#8a8a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-    <span style="color:#32c86a;font-weight:700;">平台公告</span>
-    平台不能保证信息真实性，请勿提前支付任何费用
-  </div>
-</div>
+    <div class="mine-stats">
+      <div class="mine-stat">
+        <div class="v"><%= data.stats.totalPosts %></div>
+        <div class="k">总发布</div>
+      </div>
+      <div class="mine-stat">
+        <div class="v"><%= data.stats.totalViews %></div>
+        <div class="k">总浏览量</div>
+      </div>
+      <div class="mine-stat">
+        <div class="v"><%= data.stats.myViews %></div>
+        <div class="k">我的浏览量</div>
+      </div>
+    </div>
+  </section>
 
-<div class="grid-panel">
-  <div class="tool-grid">
-    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=my_posts&high=4">
-      <div class="icon-wrap" style="background:#32c86a;">✈</div>
-      <div class="label">我的发布</div>
-      <div class="sub"><%= data.posts.length %>条</div>
-    </a>
-    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=qianbao">
-      <div class="icon-wrap" style="background:#32c86a;">💼</div>
-      <div class="label">我的钱包</div>
-    </a>
-    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=my&high=4">
-      <div class="icon-wrap" style="background:#32c86a;">👤</div>
-      <div class="label">个人主页</div>
-    </a>
-    <a class="tool-item" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3">
-      <div class="icon-wrap" style="background:#32c86a;">💬</div>
-      <div class="label">我的消息</div>
-    </a>
-    <a class="tool-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5">
-      <div class="icon-wrap" style="background:#32c86a;">🤝</div>
-      <div class="label">合伙人</div>
-    </a>
-  </div>
-</div>
+  <section class="mine-card mine-notice">
+    <strong>📢平台公告</strong>
+    <div class="mine-notice-slider" id="newsSlider" data-count="<%= (data.tickerItems || []).length %>">
+      <ul class="toutiao-track">
+        <% ((data.tickerItems && data.tickerItems.length) ? data.tickerItems : [{ text: "平台不能保证信息真实性，请勿提前支付任何费用", href: "" }]).forEach((item) => { %>
+          <li class="toutiao-item">
+            <a class="<%= item.href ? 'is-link' : '' %>" href="<%= item.href || 'javascript:;' %>"><%= item.text %></a>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+  </section>
 
-<div class="grid-panel">
-  <h3>我的订单</h3>
-  <div class="tool-grid">
-    <a class="tool-item" href="/plugin.php?id=xigua_hk&ac=join&idu=5&high=1">
-      <div class="icon-wrap" style="background:#2da7ff;">🎫</div>
-      <div class="label">会员卡订单</div>
-    </a>
-    <a class="tool-item" href="javascript:;">
-      <div class="icon-wrap" style="background:#2da7ff;">🧾</div>
-      <div class="label">我的订单</div>
-    </a>
-  </div>
-</div>
+  <section class="mine-card mine-section">
+    <div class="mine-grid">
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=my_posts&high=4">
+        <div class="mine-item-icon" style="color:#32c86a;">✈</div>
+        <div class="mine-item-label">我的发布</div>
+        <div class="mine-item-sub"><%= data.posts.length %>条</div>
+      </a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=qianbao">
+        <div class="mine-item-icon" style="color:#32c86a;">💼</div>
+        <div class="mine-item-label">我的钱包</div>
+      </a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=homepage&high=4">
+        <div class="mine-item-icon" style="color:#32c86a;">👤</div>
+        <div class="mine-item-label">个人主页</div>
+      </a>
+      <a class="mine-item" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3">
+        <div class="mine-item-icon" style="color:#32c86a;">💬</div>
+        <div class="mine-item-label">我的消息</div>
+      </a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5">
+        <div class="mine-item-icon" style="color:#32c86a;">🤝</div>
+        <div class="mine-item-label">合伙人</div>
+      </a>
+    </div>
+  </section>
 
-<div class="grid-panel">
-  <h3>我的工具</h3>
-  <div class="tool-grid">
-    <a class="tool-item" href="/plugin.php?id=xigua_wr&high=1"><div class="icon-wrap" style="background:#ff4d73;">📅</div><div class="label">每日签到</div></a>
-    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=coupons&high=4"><div class="icon-wrap" style="background:#ff4d73;">🎁</div><div class="label">我的兑换</div></a>
-    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#ffc229;">🔖</div><div class="label">我的订阅</div></a>
-    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="icon-wrap" style="background:#ff6f1f;">📍</div><div class="label">收货地址</div></a>
-    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#7ad391;">🛡</div><div class="label">认证中心</div></a>
-    <a class="tool-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="icon-wrap" style="background:#f59b18;">🟠</div><div class="label">提醒设置</div></a>
-    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#8c92ff;">💭</div><div class="label">我的评论</div></a>
-    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#31b6ff;">★</div><div class="label">收藏/关注</div></a>
-    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#28c76f;">👣</div><div class="label">我的足迹</div></a>
-    <a class="tool-item" href="javascript:;"><div class="icon-wrap" style="background:#28c76f;">📞</div><div class="label">来电记录</div></a>
-  </div>
-</div>
+  <section class="mine-card mine-section">
+    <h3 class="mine-section-title">我的订单</h3>
+    <div class="mine-grid">
+      <a class="mine-item" href="/plugin.php?id=xigua_hk&ac=join&idu=5&high=1">
+        <div class="mine-item-icon" style="color:#4fa7ff;">🎫</div>
+        <div class="mine-item-label">会员卡订单</div>
+      </a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=orders&high=4">
+        <div class="mine-item-icon" style="color:#4fa7ff;">🧾</div>
+        <div class="mine-item-label">我的订单</div>
+      </a>
+    </div>
+  </section>
 
-<div class="list-link">
-  <a href="javascript:;">
-    <span class="left-group"><span style="color:#7fc48f;">?</span><span>帮助中心</span></span>
-    <span style="color:#ccc;">›</span>
-  </a>
-  <a href="javascript:;">
-    <span class="left-group"><span style="color:#ff8f8f;">👤</span><span>联系客服</span></span>
-    <span style="color:#999;">有问题请找我 ›</span>
-  </a>
+  <section class="mine-card mine-section">
+    <h3 class="mine-section-title">我的工具</h3>
+    <div class="mine-grid">
+      <a class="mine-item" href="/plugin.php?id=xigua_wr&high=1"><div class="mine-item-icon" style="color:#ff557d;">📅</div><div class="mine-item-label">每日签到</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=coupons&high=4"><div class="mine-item-icon" style="color:#ff557d;">🎁</div><div class="mine-item-label">我的兑换</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=subscriptions&high=4"><div class="mine-item-icon" style="color:#ffbe2f;">🔖</div><div class="mine-item-label">我的订阅</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="mine-item-icon" style="color:#ff7b38;">📍</div><div class="mine-item-label">收货地址</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=verify&high=4"><div class="mine-item-icon" style="color:#76d395;">🛡</div><div class="mine-item-label">认证中心</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="mine-item-icon" style="color:#f49b1c;">🔔</div><div class="mine-item-label">提醒设置</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=comments&high=4"><div class="mine-item-icon" style="color:#8b90ff;">💭</div><div class="mine-item-label">我的评论</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=favorites&high=4"><div class="mine-item-icon" style="color:#34b6ff;">★</div><div class="mine-item-label">收藏/关注</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=footprints&high=4"><div class="mine-item-icon" style="color:#2ec16f;">👣</div><div class="mine-item-label">我的足迹</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=call_logs&high=4"><div class="mine-item-icon" style="color:#2ec16f;">📞</div><div class="mine-item-label">来电记录</div></a>
+    </div>
+  </section>
+
+  <section class="mine-card mine-links">
+    <a class="mine-link-row" href="javascript:;">
+      <span class="left">帮助中心</span>
+      <span class="right">›</span>
+    </a>
+    <a class="mine-link-row" href="/plugin.php?id=xigua_lt&type=thread&channel=martin&mobile=2&high=3">
+      <span class="left">联系客服</span>
+      <span class="right">有问题请找我 ›</span>
+    </a>
+  </section>
 </div>
 
 <%- include("partials/tabbar", { currentTab }) %>

@@ -1,0 +1,526 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<style>
+  :root {
+    --uph-green: #35c96d;
+    --uph-bg: #f6f7f9;
+    --uph-card: #ffffff;
+    --uph-text: #232a33;
+    --uph-subtle: #9aa1ad;
+    --uph-line: #eff1f5;
+  }
+
+  .uph-page {
+    min-height: 100vh;
+    background: var(--uph-bg);
+    padding-bottom: 4.7rem;
+  }
+
+  .uph-hero {
+    position: relative;
+    height: 11.6rem;
+    background:
+      linear-gradient(180deg, rgba(17, 24, 39, .1), rgba(17, 24, 39, .14)),
+      linear-gradient(135deg, rgba(29, 32, 43, .95), rgba(72, 52, 140, .92) 48%, rgba(255, 204, 112, .88));
+    overflow: hidden;
+  }
+
+  .uph-hero-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: .92;
+  }
+
+  .uph-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(8, 10, 14, .14), rgba(8, 10, 14, .24));
+  }
+
+  .uph-topbar {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .72rem .62rem 0;
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 600;
+  }
+
+  .uph-topbar a {
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .uph-dots {
+    letter-spacing: .12rem;
+    font-size: 1rem;
+  }
+
+  .uph-dot-trigger {
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font-size: 1rem;
+    letter-spacing: .12rem;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .uph-sheet {
+    margin-top: -2.4rem;
+    position: relative;
+    z-index: 3;
+    background: var(--uph-card);
+    border-radius: 1rem 1rem 0 0;
+    min-height: calc(100vh - 9.2rem);
+    box-shadow: 0 -.08rem .24rem rgba(15, 23, 42, .04);
+  }
+
+  .uph-summary {
+    padding: 0 .62rem .4rem;
+  }
+
+  .uph-summary-top {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: .72rem;
+    align-items: center;
+  }
+
+  .uph-avatar {
+    width: 4.05rem;
+    height: 4.05rem;
+    border-radius: .42rem;
+    border: 2px solid rgba(255,255,255,.95);
+    object-fit: cover;
+    margin-top: -1.7rem;
+    background: #eef1f5;
+  }
+
+  .uph-counters {
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    padding-top: .2rem;
+  }
+
+  .uph-counter .v {
+    font-size: 1rem;
+    line-height: 1.05rem;
+    font-weight: 600;
+    color: var(--uph-text);
+    text-align: center;
+  }
+
+  .uph-counter .k {
+    margin-top: .26rem;
+    font-size: .62rem;
+    color: var(--uph-subtle);
+    text-align: center;
+  }
+
+  .uph-counter {
+    min-width: 1.6rem;
+  }
+
+  .uph-actions {
+    display: flex;
+    align-items: center;
+    gap: .36rem;
+    justify-self: end;
+    align-self: center;
+  }
+
+  .uph-action,
+  .uph-action-alt {
+    min-width: 3.95rem;
+    height: 1.88rem;
+    border-radius: 999px;
+    border: 0;
+    padding: 0 .92rem;
+    font-size: .72rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .uph-action {
+    background: var(--uph-green);
+    color: #fff;
+  }
+
+  .uph-action-alt {
+    background: #f3f4f6;
+    color: #666;
+  }
+
+  .uph-name-row {
+    display: flex;
+    align-items: baseline;
+    gap: .42rem;
+    margin-top: .32rem;
+  }
+
+  .uph-name {
+    font-size: 1.04rem;
+    line-height: 1.16rem;
+    color: var(--uph-text);
+    font-weight: 600;
+  }
+
+  .uph-recent {
+    font-size: .66rem;
+    color: var(--uph-subtle);
+    font-weight: 500;
+  }
+
+  .uph-tabs {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .72rem .62rem .05rem;
+    border-bottom: 1px solid var(--uph-line);
+  }
+
+  .uph-tab {
+    position: relative;
+    padding-bottom: .55rem;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: .76rem;
+    font-weight: 600;
+  }
+
+  .uph-tab.active {
+    color: var(--uph-green);
+  }
+
+  .uph-tab.active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -.02rem;
+    height: .16rem;
+    border-radius: 999px;
+    background: var(--uph-green);
+  }
+
+  .uph-content {
+    padding: .82rem .62rem 0;
+  }
+
+  .uph-post-card {
+    background: #fff;
+    border-radius: .86rem;
+    box-shadow: 0 .08rem .3rem rgba(15, 23, 42, .04);
+    padding: .86rem .9rem;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    margin-bottom: .58rem;
+  }
+
+  .uph-post-card h3 {
+    margin: 0;
+    color: var(--uph-text);
+    font-size: .92rem;
+    line-height: 1.3rem;
+    font-weight: 600;
+  }
+
+  .uph-post-card p {
+    margin: .4rem 0 0;
+    color: #616a78;
+    font-size: .72rem;
+    line-height: 1.06rem;
+  }
+
+  .uph-post-meta {
+    margin-top: .44rem;
+    color: var(--uph-subtle);
+    font-size: .62rem;
+  }
+
+  .uph-visitor {
+    background: #fff;
+    border-radius: .86rem;
+    box-shadow: 0 .08rem .3rem rgba(15, 23, 42, .04);
+    padding: .78rem .82rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .72rem;
+    margin-bottom: .52rem;
+  }
+
+  .uph-visitor-main {
+    display: flex;
+    align-items: center;
+    gap: .68rem;
+    min-width: 0;
+  }
+
+  .uph-visitor-avatar {
+    width: 2.15rem;
+    height: 2.15rem;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #eef2f7;
+  }
+
+  .uph-visitor-name {
+    font-size: .76rem;
+    font-weight: 600;
+    color: var(--uph-text);
+  }
+
+  .uph-visitor-time {
+    margin-top: .12rem;
+    font-size: .62rem;
+    color: var(--uph-subtle);
+  }
+
+  .uph-empty {
+    text-align: center;
+    color: #d0d4da;
+    padding: 2.6rem 0 3rem;
+  }
+
+  .uph-empty .icon {
+    font-size: 2.3rem;
+    line-height: 1;
+    opacity: .72;
+  }
+
+  .uph-empty .text {
+    margin-top: .52rem;
+    font-size: .82rem;
+    font-weight: 500;
+  }
+
+  .uph-sheet-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, .48);
+    z-index: 40;
+    display: none;
+  }
+
+  .uph-sheet-mask.is-open {
+    display: block;
+  }
+
+  .uph-action-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 41;
+    background: #fff;
+    border-radius: 1rem 1rem 0 0;
+    box-shadow: 0 -.2rem .8rem rgba(15, 23, 42, .12);
+    padding: .4rem .6rem calc(.8rem + env(safe-area-inset-bottom));
+    transform: translateY(110%);
+    transition: transform .22s ease;
+  }
+
+  .uph-action-sheet.is-open {
+    transform: translateY(0);
+  }
+
+  .uph-action-sheet-btn {
+    width: 100%;
+    min-height: 2.45rem;
+    border: 0;
+    background: #fff;
+    border-radius: .72rem;
+    font-size: .84rem;
+    line-height: 1.1rem;
+    color: #2f343b;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-align: center;
+  }
+
+  .uph-action-sheet-btn.danger {
+    color: #ff6a6f;
+  }
+
+  .uph-action-sheet-divider {
+    height: .4rem;
+  }
+</style>
+
+<div class="uph-page">
+  <header class="uph-hero">
+    <% if (data.user.background_image) { %>
+      <img class="uph-hero-bg" src="<%= data.user.background_image %>" alt="<%= data.user.nickname %>">
+    <% } %>
+    <div class="uph-hero-overlay"></div>
+    <div class="uph-topbar">
+      <a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+      <div></div>
+      <button class="uph-dot-trigger" type="button" id="uphActionSheetOpen">···</button>
+    </div>
+  </header>
+
+  <section class="uph-sheet">
+    <div class="uph-summary">
+      <div class="uph-summary-top">
+        <img class="uph-avatar" src="<%= data.user.avatar %>" alt="<%= data.user.nickname %>">
+        <div class="uph-counters">
+          <div class="uph-counter">
+            <div class="v"><%= data.following %></div>
+            <div class="k">关注</div>
+          </div>
+          <div class="uph-counter">
+            <div class="v"><%= data.followers %></div>
+            <div class="k">粉丝</div>
+          </div>
+        </div>
+        <div class="uph-actions">
+          <% if (!data.isSelf) { %>
+            <a class="uph-action" href="/plugin.php?id=xigua_hb&ac=homepage_follow&high=4&uid=<%= data.user.id %>" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;"><%= data.isFollowing ? "已关注" : "关注" %></a>
+            <a class="uph-action-alt" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">消息</a>
+          <% } else { %>
+            <a class="uph-action" href="/plugin.php?id=xigua_hb&ac=profile_edit&high=4" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">编辑</a>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="uph-name-row">
+        <div class="uph-name"><%= data.user.nickname %></div>
+        <div class="uph-recent">刚刚来过</div>
+      </div>
+    </div>
+
+    <nav class="uph-tabs">
+      <a class="uph-tab <%= data.activeTab === 'posts' ? 'active' : '' %>" href="/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=<%= data.user.id %>&tab=posts">发布</a>
+      <a class="uph-tab <%= data.activeTab === 'visitors' ? 'active' : '' %>" href="/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=<%= data.user.id %>&tab=visitors">访客</a>
+      <a class="uph-tab <%= data.activeTab === 'circles' ? 'active' : '' %>" href="/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=<%= data.user.id %>&tab=circles">圈子</a>
+    </nav>
+
+    <div class="uph-content">
+      <% if (data.activeTab === 'posts') { %>
+        <% if (data.posts.length) { %>
+          <% data.posts.forEach((post) => { %>
+            <a class="uph-post-card" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= post.id %>">
+              <h3><%= post.title %></h3>
+              <p><%= post.summary || post.content || "暂无简介" %></p>
+              <div class="uph-post-meta"><%= post.location || "未设置地区" %> · <%= post.created_at %></div>
+            </a>
+          <% }) %>
+        <% } else { %>
+          <div class="uph-empty">
+            <div class="icon">🗒</div>
+            <div class="text">没有更多了</div>
+          </div>
+        <% } %>
+      <% } %>
+
+      <% if (data.activeTab === 'visitors') { %>
+        <% if (data.visitors.length) { %>
+          <% data.visitors.forEach((visitor) => { %>
+            <div class="uph-visitor">
+              <div class="uph-visitor-main">
+                <img class="uph-visitor-avatar" src="<%= visitor.avatar || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80' %>" alt="<%= visitor.nickname || '访客' %>">
+                <div>
+                  <div class="uph-visitor-name"><%= visitor.nickname || "匿名访客" %></div>
+                  <div class="uph-visitor-time"><%= visitor.viewed_at %></div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="uph-empty">
+            <div class="icon">🗒</div>
+            <div class="text">没有更多了</div>
+          </div>
+        <% } %>
+      <% } %>
+
+      <% if (data.activeTab === 'circles') { %>
+        <div class="uph-empty">
+          <div class="icon">🗒</div>
+          <div class="text">没有更多了</div>
+        </div>
+      <% } %>
+    </div>
+  </section>
+</div>
+
+<div class="uph-sheet-mask" id="uphActionSheetMask"></div>
+<div class="uph-action-sheet" id="uphActionSheet">
+  <button class="uph-action-sheet-btn" type="button" id="uphShareBtn">分享</button>
+  <form method="get" action="/plugin.php" style="margin:0;">
+    <input type="hidden" name="id" value="xigua_hb">
+    <input type="hidden" name="ac" value="homepage_report">
+    <input type="hidden" name="high" value="4">
+    <input type="hidden" name="uid" value="<%= data.user.id %>">
+    <button class="uph-action-sheet-btn danger" type="submit">举报</button>
+  </form>
+  <form method="get" action="/plugin.php" style="margin:0;">
+    <input type="hidden" name="id" value="xigua_hb">
+    <input type="hidden" name="ac" value="homepage_block">
+    <input type="hidden" name="high" value="4">
+    <input type="hidden" name="uid" value="<%= data.user.id %>">
+    <button class="uph-action-sheet-btn" type="submit"><%= data.isBlocked ? "取消拉黑" : "拉黑" %></button>
+  </form>
+  <div class="uph-action-sheet-divider"></div>
+  <button class="uph-action-sheet-btn" type="button" id="uphActionSheetClose">取消</button>
+</div>
+
+<script>
+  (() => {
+    const trigger = document.getElementById("uphActionSheetOpen");
+    const close = document.getElementById("uphActionSheetClose");
+    const mask = document.getElementById("uphActionSheetMask");
+    const sheet = document.getElementById("uphActionSheet");
+    const shareBtn = document.getElementById("uphShareBtn");
+    if (!trigger || !close || !mask || !sheet || !shareBtn) return;
+
+    const shareTitle = <%- JSON.stringify(data.user.nickname + "的个人主页") %>;
+    const shareUrl = <%- JSON.stringify(`http://127.0.0.1:3000/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=${data.user.id}`) %>;
+
+    function openSheet() {
+      mask.classList.add("is-open");
+      sheet.classList.add("is-open");
+    }
+
+    function closeSheet() {
+      mask.classList.remove("is-open");
+      sheet.classList.remove("is-open");
+    }
+
+    trigger.addEventListener("click", openSheet);
+    close.addEventListener("click", closeSheet);
+    mask.addEventListener("click", closeSheet);
+
+    shareBtn.addEventListener("click", async () => {
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: shareTitle, url: shareUrl });
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareUrl);
+          window.alert("主页链接已复制");
+        } else {
+          window.prompt("复制下面链接进行分享", shareUrl);
+        }
+      } catch (error) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareUrl);
+          window.alert("主页链接已复制");
+        }
+      } finally {
+        closeSheet();
+      }
+    });
+  })();
+</script>
+
+<%- include("partials/tabbar", { currentTab }) %>

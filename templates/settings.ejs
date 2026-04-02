@@ -1,61 +1,196 @@
 <%- include("partials/head", { pageTitle, message }) %>
-<div class="app-header simple">
-  <a class="left" href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
-  <div class="title">个人设置</div>
-  <a class="right" href="/plugin.php?id=xigua_hb&ac=my&high=4">我的</a>
-</div>
+<style>
+  .settings-shell { background:#f6f7fb; min-height:100vh; padding-bottom:4.6rem; }
+  .settings-header { height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .72rem; font-size:.8rem; font-weight:700; }
+  .settings-header a { color:#fff; text-decoration:none; }
+  .settings-wrap { padding:.62rem .38rem 0; }
+  .settings-panel { background:#fff; border-radius:.68rem; box-shadow:0 .08rem .28rem rgba(15,23,42,.04); overflow:hidden; margin-bottom:.66rem; }
+  .settings-row-link, .settings-logout-btn { width:100%; min-height:2.55rem; border:0; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .8rem; text-decoration:none; color:#2b3340; font-size:.84rem; font-weight:600; box-sizing:border-box; }
+  .settings-row-link + .settings-row-link { border-top:1px solid #f1f3f7; }
+  .settings-row-left { display:flex; align-items:center; gap:.52rem; }
+  .settings-row-icon { width:1rem; text-align:center; font-size:.92rem; line-height:1; }
+  .settings-row-arrow { color:#c8ced8; font-size:.92rem; }
+  .settings-form-panel { background:#fff; border-radius:.74rem; box-shadow:0 .08rem .28rem rgba(15,23,42,.04); padding:.82rem; margin-bottom:.66rem; }
+  .settings-form-title { margin:0 0 .68rem; color:#2b3340; font-size:.86rem; font-weight:700; }
+  .settings-input, .settings-textarea, .settings-select { width:100%; box-sizing:border-box; border:1px solid #edf1f6; border-radius:.56rem; background:#f8fafc; color:#2b3340; font-size:.75rem; padding:0 .72rem; margin-bottom:.56rem; }
+  .settings-input, .settings-select { height:2.2rem; }
+  .settings-textarea { min-height:4.6rem; padding:.68rem .72rem; resize:none; }
+  .settings-switch { display:flex; align-items:center; justify-content:space-between; min-height:2.2rem; padding:0 .1rem; font-size:.76rem; color:#4c5667; }
+  .settings-submit { width:100%; height:2.3rem; border:0; border-radius:.62rem; background:#35c96d; color:#fff; font-size:.84rem; font-weight:700; }
+  .settings-preview { width:100%; height:7rem; border-radius:.72rem; object-fit:cover; background:#eef3f8; margin-bottom:.62rem; display:block; }
+  .settings-helper { font-size:.64rem; line-height:.98rem; color:#95a0af; margin:-.18rem 0 .5rem; }
+  .settings-upload-label { width:100%; height:2.3rem; border:1px dashed rgba(53,201,109,.42); border-radius:.62rem; background:#f5fbf7; color:#35c96d; font-size:.78rem; font-weight:700; display:flex; align-items:center; justify-content:center; margin-bottom:.56rem; box-sizing:border-box; }
+  .settings-hidden-file { display:none; }
+</style>
 
-<div class="settings-section">
-  <div class="settings-title">个人资料</div>
-  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=profile">
-    <input class="settings-input" type="text" name="nickname" value="<%= data.user.nickname || '' %>" placeholder="昵称">
-    <input class="settings-input" type="text" name="city" value="<%= data.user.city || '' %>" placeholder="城市">
-    <input class="settings-input" type="text" name="avatar" value="<%= data.user.avatar || '' %>" placeholder="头像 URL">
-    <input class="settings-input" type="text" name="background_image" value="<%= data.user.background_image || '' %>" placeholder="个人主页背景 URL">
-    <textarea class="settings-textarea" name="bio" placeholder="个人简介"><%= data.user.bio || '' %></textarea>
-    <label class="switch-row"><span>评论提醒</span><input type="checkbox" name="notify_comment" value="1" <%= Number(data.user.notify_comment) === 1 ? 'checked' : '' %>></label>
-    <label class="switch-row"><span>消息提醒</span><input type="checkbox" name="notify_message" value="1" <%= Number(data.user.notify_message) === 1 ? 'checked' : '' %>></label>
-    <button class="settings-button" type="submit">保存个人资料</button>
-  </form>
-</div>
+<%
+  const currentView = typeof settingsView === "string" ? settingsView : "";
+  const renderIndex = !currentView;
+  const hasBoundPhone = !!(data.user && data.user.phone);
+  const activeWithdrawGate = currentView === "withdraw" && !hasBoundPhone;
+  const bindPhoneMode = currentView === "bind_phone" || activeWithdrawGate;
+  const headerTitle = bindPhoneMode ? "绑定手机" : (currentView === "withdraw" ? "提现设置" : "个人设置");
+  const headerRightText = bindPhoneMode || currentView === "withdraw" ? "钱包" : "我的";
+  const headerRightHref = bindPhoneMode || currentView === "withdraw" ? "/plugin.php?id=xigua_hb&ac=qianbao" : "/plugin.php?id=xigua_hb&ac=my&high=4";
+%>
 
-<div class="settings-section">
-  <div class="settings-title">绑定手机</div>
-  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=bind_phone">
-    <input class="settings-input" type="text" name="phone" value="<%= data.user.phone || '' %>" placeholder="手机号">
-    <button class="settings-button" type="submit">保存手机号</button>
-  </form>
-</div>
+<div class="settings-shell">
+  <div class="settings-header">
+    <a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+    <div><%= headerTitle %></div>
+    <a href="<%= headerRightHref %>"><%= headerRightText %></a>
+  </div>
 
-<div class="settings-section">
-  <div class="settings-title">收货地址</div>
-  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=address">
-    <input class="settings-input" type="text" name="contact_name" value="<%= data.address?.contact_name || '' %>" placeholder="联系人">
-    <input class="settings-input" type="text" name="address_phone" value="<%= data.address?.phone || '' %>" placeholder="联系电话">
-    <textarea class="settings-textarea" name="address" placeholder="收货地址"><%= data.address?.address || '' %></textarea>
-    <button class="settings-button" type="submit">保存地址</button>
-  </form>
-</div>
+  <div class="settings-wrap">
+    <% if (renderIndex) { %>
+      <div class="settings-panel">
+        <a class="settings-row-link" href="/plugin.php?id=xigua_hb&ac=settings&high=4&view=notifications">
+          <span class="settings-row-left"><span class="settings-row-icon" style="color:#7ec38a;">🕊</span><span>提醒设置</span></span>
+          <span class="settings-row-arrow">›</span>
+        </a>
+        <a class="settings-row-link" href="/plugin.php?id=xigua_hb&ac=settings&high=4&view=bind_phone">
+          <span class="settings-row-left"><span class="settings-row-icon" style="color:#ff7b72;">📱</span><span>绑定手机</span></span>
+          <span class="settings-row-arrow">›</span>
+        </a>
+        <a class="settings-row-link" href="/plugin.php?id=xigua_hb&ac=settings&high=4&view=address">
+          <span class="settings-row-left"><span class="settings-row-icon" style="color:#ff7b38;">📍</span><span>收货地址</span></span>
+          <span class="settings-row-arrow">›</span>
+        </a>
+        <a class="settings-row-link" href="/plugin.php?id=xigua_hb&ac=settings&high=4&view=withdraw">
+          <span class="settings-row-left"><span class="settings-row-icon" style="color:#5fa3e3;">💰</span><span>提现设置</span></span>
+          <span class="settings-row-arrow">›</span>
+        </a>
+        <a class="settings-row-link" href="/plugin.php?id=xigua_hb&ac=profile_edit&high=4">
+          <span class="settings-row-left"><span class="settings-row-icon" style="color:#f2a443;">📝</span><span>个人资料</span></span>
+          <span class="settings-row-arrow">›</span>
+        </a>
+        <a class="settings-row-link" href="/plugin.php?id=xigua_hb&ac=settings&high=4&view=background">
+          <span class="settings-row-left"><span class="settings-row-icon" style="color:#65b96b;">🖼</span><span>个人主页背景</span></span>
+          <span class="settings-row-arrow">›</span>
+        </a>
+      </div>
 
-<div class="settings-section">
-  <div class="settings-title">提现设置</div>
-  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=withdraw_profile">
-    <input class="settings-input" type="text" name="account_name" value="<%= data.withdrawProfile?.account_name || '' %>" placeholder="收款人姓名">
-    <select class="settings-input" name="account_type">
-      <option value="wechat" <%= data.withdrawProfile?.account_type === 'wechat' ? 'selected' : '' %>>微信</option>
-      <option value="alipay" <%= data.withdrawProfile?.account_type === 'alipay' ? 'selected' : '' %>>支付宝</option>
-      <option value="bank" <%= data.withdrawProfile?.account_type === 'bank' ? 'selected' : '' %>>银行卡</option>
-    </select>
-    <input class="settings-input" type="text" name="account_no" value="<%= data.withdrawProfile?.account_no || '' %>" placeholder="账号 / 卡号">
-    <button class="settings-button" type="submit">保存提现设置</button>
-  </form>
-</div>
+      <div class="settings-panel">
+        <form method="post" action="/plugin.php?id=xigua_hb&ac=auth&do=logout">
+          <button class="settings-logout-btn" type="submit">
+            <span class="settings-row-left"><span class="settings-row-icon" style="color:#b9bec8;">⇠</span><span>退出登录</span></span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+        </form>
+      </div>
+    <% } %>
 
-<div class="settings-section">
-  <div class="settings-title">登录管理</div>
-  <form method="post" action="/plugin.php?id=xigua_hb&ac=auth&do=logout">
-    <button class="settings-button danger" type="submit">退出登录</button>
-  </form>
+    <% if (currentView === "notifications") { %>
+      <div class="settings-form-panel">
+        <h3 class="settings-form-title">提醒设置</h3>
+        <form method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=notifications">
+          <label class="settings-switch"><span>评论提醒</span><input type="checkbox" name="notify_comment" value="1" <%= Number(data.user.notify_comment) === 1 ? 'checked' : '' %>></label>
+          <label class="settings-switch"><span>消息提醒</span><input type="checkbox" name="notify_message" value="1" <%= Number(data.user.notify_message) === 1 ? 'checked' : '' %>></label>
+          <button class="settings-submit" type="submit">保存提醒设置</button>
+        </form>
+      </div>
+    <% } %>
+
+    <% if (currentView === "bind_phone" || activeWithdrawGate) { %>
+      <div class="settings-form-panel">
+        <h3 class="settings-form-title" style="margin-bottom:.32rem;">一个手机号只能绑定一个帐号</h3>
+        <form method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=bind_phone">
+          <input type="hidden" name="next" value="<%= activeWithdrawGate ? 'withdraw' : 'bind_phone' %>">
+          <div style="display:grid;grid-template-columns:4.2rem 1fr auto;align-items:center;min-height:2.45rem;border-bottom:1px solid #eef1f4;">
+            <div style="font-size:.82rem;font-weight:700;color:#2b3340;">手机号</div>
+            <input class="settings-input" style="margin:0;border:0;background:transparent;padding:0 .2rem;height:auto;" type="text" name="phone" value="<%= data.user.phone || '' %>" placeholder="请填写手机号">
+            <button type="button" style="border:0;background:transparent;color:#35c96d;font-size:.8rem;font-weight:700;">重发(73)</button>
+          </div>
+          <div style="display:grid;grid-template-columns:4.2rem 1fr;align-items:center;min-height:2.45rem;border-bottom:1px solid #eef1f4;margin-top:.2rem;">
+            <div style="font-size:.82rem;font-weight:700;color:#2b3340;">验证码</div>
+            <input class="settings-input" style="margin:0;border:0;background:transparent;padding:0 .2rem;height:auto;" type="text" name="code" placeholder="请输入验证码">
+          </div>
+          <div class="settings-helper" style="margin:.5rem 0 1rem;line-height:1.15rem;">
+            根据《互联网跟帖评论服务管理规定》你需要绑定手机号后，才可以进行下一步操作。
+          </div>
+          <div style="height:17rem;"></div>
+          <button class="settings-submit" type="submit">确定</button>
+        </form>
+      </div>
+    <% } %>
+
+    <% if (currentView === "withdraw" && hasBoundPhone) { %>
+      <div class="settings-form-panel">
+        <h3 class="settings-form-title" style="margin-bottom:.42rem;">请添加常用提现方式</h3>
+        <% if (data.withdrawProfile?.wechat_qr_image || data.withdrawProfile?.account_no) { %>
+          <img id="withdrawQrPreview" class="settings-preview" src="<%= data.withdrawProfile?.wechat_qr_image || data.withdrawProfile?.account_no %>" alt="微信收款码" style="height:8.2rem;margin-bottom:.7rem;">
+        <% } else { %>
+          <img id="withdrawQrPreview" class="settings-preview" src="" alt="微信收款码" style="display:none;height:8.2rem;margin-bottom:.7rem;">
+        <% } %>
+        <form method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=withdraw_profile" enctype="multipart/form-data">
+          <input class="settings-input" type="text" name="real_name" value="<%= data.withdrawProfile?.real_name || data.withdrawProfile?.account_name || '' %>" placeholder="请填写真实姓名">
+          <div style="border:1px solid #f0f2f5;border-radius:.72rem;padding:.72rem .72rem .82rem;margin-bottom:.8rem;background:#fff;">
+            <div style="font-size:.8rem;font-weight:700;color:#2b3340;margin-bottom:.58rem;">请上传微信收款码（仅首次需要）</div>
+            <input type="hidden" name="wechat_qr_current" value="<%= data.withdrawProfile?.wechat_qr_image || data.withdrawProfile?.account_no || '' %>">
+            <input id="withdrawQrInput" class="settings-hidden-file" type="file" name="wechat_qr_file" accept="image/*">
+            <label for="withdrawQrInput" style="width:4rem;height:4rem;border-radius:.2rem;background:#f3f4f7;display:flex;align-items:center;justify-content:center;color:#c7ccd6;font-size:2rem;">＋</label>
+          </div>
+          <button class="settings-submit" type="submit">确定</button>
+        </form>
+      </div>
+    <% } %>
+
+    <% if (currentView === "address") { %>
+      <div class="settings-form-panel">
+        <h3 class="settings-form-title">收货地址</h3>
+        <form method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=address">
+          <input class="settings-input" type="text" name="contact_name" value="<%= data.address?.contact_name || '' %>" placeholder="联系人">
+          <input class="settings-input" type="text" name="address_phone" value="<%= data.address?.phone || '' %>" placeholder="联系电话">
+          <textarea class="settings-textarea" name="address" placeholder="收货地址"><%= data.address?.address || '' %></textarea>
+          <button class="settings-submit" type="submit">保存地址</button>
+        </form>
+      </div>
+    <% } %>
+
+    <% if (currentView === "background") { %>
+      <div class="settings-form-panel">
+        <h3 class="settings-form-title">个人主页背景</h3>
+        <% if (data.user.background_image) { %>
+          <img id="settingsBackgroundPreview" class="settings-preview" src="<%= data.user.background_image %>" alt="个人主页背景">
+        <% } else { %>
+          <img id="settingsBackgroundPreview" class="settings-preview" src="" alt="个人主页背景" style="display:none;">
+        <% } %>
+        <form method="post" action="/plugin.php?id=xigua_hb&ac=settings&do=background" enctype="multipart/form-data">
+          <input type="hidden" name="background_image_current" value="<%= data.user.background_image || '' %>">
+          <input id="settingsBackgroundInput" class="settings-hidden-file" type="file" name="background_image_file" accept="image/*">
+          <label class="settings-upload-label" for="settingsBackgroundInput">点击选取手机里的照片</label>
+          <div class="settings-helper">保存后会同步更新个人主页的顶部背景图。</div>
+          <button class="settings-submit" type="submit">保存背景图</button>
+        </form>
+      </div>
+    <% } %>
+  </div>
 </div>
 
 <%- include("partials/tabbar", { currentTab: "mine" }) %>
+<script>
+  (() => {
+    const input = document.getElementById("settingsBackgroundInput");
+    const preview = document.getElementById("settingsBackgroundPreview");
+    if (!input || !preview) return;
+    input.addEventListener("change", () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const objectUrl = URL.createObjectURL(file);
+      preview.src = objectUrl;
+      preview.style.display = "block";
+    });
+  })();
+  (() => {
+    const input = document.getElementById("withdrawQrInput");
+    const preview = document.getElementById("withdrawQrPreview");
+    if (!input || !preview) return;
+    input.addEventListener("change", () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const objectUrl = URL.createObjectURL(file);
+      preview.src = objectUrl;
+      preview.style.display = "block";
+    });
+  })();
+</script>

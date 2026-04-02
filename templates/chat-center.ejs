@@ -1,24 +1,80 @@
-<%- include("partials/head", { pageTitle }) %>
-<div class="app-header simple">
-  <a class="left" href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
-  <div class="title">消息中心</div>
-</div>
+<%- include("partials/head", { pageTitle, message: "" }) %>
+<style>
+  .msg-page { background:#f7f7f7; min-height:100vh; padding-bottom:4.4rem; }
+  .msg-header {
+    height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center;
+    justify-content:space-between; padding:0 .7rem; font-size:.78rem; font-weight:600;
+  }
+  .msg-header a { color:#fff; text-decoration:none; }
+  .msg-header .title { font-size:.82rem; font-weight:700; }
+  .msg-shortcuts {
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:.2rem; background:#fff;
+    padding:.8rem .45rem .55rem; border-bottom:1px solid #f1f1f1;
+  }
+  .msg-shortcut { text-decoration:none; color:#565656; text-align:center; }
+  .msg-shortcut .icon {
+    width:1.28rem; height:1.28rem; margin:0 auto .38rem; border-radius:.35rem;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 .08rem .24rem rgba(0,0,0,.08);
+  }
+  .msg-shortcut .label { font-size:.65rem; line-height:.9rem; }
+  .msg-list { background:#fff; margin-top:.18rem; }
+  .msg-row {
+    display:flex; align-items:center; gap:.65rem; padding:.72rem .8rem; text-decoration:none;
+    color:#3f3f3f; border-bottom:1px solid #f4f4f4;
+  }
+  .msg-row .avatar { width:1.52rem; height:1.52rem; border-radius:50%; object-fit:cover; background:#f3f3f3; flex:0 0 1.52rem; }
+  .msg-row .name { font-size:.74rem; color:#555; }
+  .msg-row .meta { font-size:.58rem; color:#aaa; margin-top:.12rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .msg-row .arrow { margin-left:auto; color:#c9c9c9; font-size:.86rem; }
+  .msg-badge {
+    min-width:.82rem; height:.82rem; padding:0 .22rem; border-radius:999px; background:#ff6f8c;
+    color:#fff; font-size:.5rem; display:inline-flex; align-items:center; justify-content:center; margin-left:.35rem;
+  }
+  .msg-empty {
+    min-height:9rem; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#d6d6d6; font-size:.72rem; gap:.22rem; background:#fff;
+  }
+  .msg-empty .icon { font-size:2rem; line-height:1; color:#e4e4e4; }
+</style>
 
-<div class="grid-panel">
-  <h3>消息列表</h3>
-  <% if (data.items.length) { %>
-    <% data.items.forEach((item) => { %>
-      <a href="<%= item.href || 'javascript:;' %>" class="wallet-row" style="text-decoration:none;color:inherit;">
-        <div>
-          <div class="wallet-title"><%= item.title %></div>
-          <div class="wallet-meta"><%= item.content %></div>
-        </div>
-        <div class="wallet-meta"><%= item.created_at ? item.created_at.slice(5, 16) : '系统' %></div>
+<div class="msg-page">
+  <div class="msg-header">
+    <a href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
+    <div class="title">我的消息</div>
+    <span></span>
+  </div>
+
+  <div class="msg-shortcuts">
+    <% const shortcutColors = { follow: '#f5a25e', fans: '#7b89ff', settings: '#d85ce9', profile: '#62b5ff' }; %>
+    <% const shortcutGlyph = { follow: '✣', fans: '♥', settings: '🔔', profile: '👤' }; %>
+    <% (data.shortcuts || []).forEach((item) => { %>
+      <a class="msg-shortcut" href="<%= item.href %>">
+        <div class="icon" style="background:<%= shortcutColors[item.key] || '#35c96d' %>;"><span style="color:#fff;font-size:.72rem;"><%= shortcutGlyph[item.key] || '•' %></span></div>
+        <div class="label"><%= item.label %></div>
       </a>
     <% }) %>
-  <% } else { %>
-    <div class="empty-state" style="padding:2rem 1rem;">暂无消息</div>
-  <% } %>
+  </div>
+
+  <div class="msg-list">
+    <% (data.channels || []).forEach((item) => { %>
+      <a class="msg-row" href="<%= item.href %>">
+        <img class="avatar" src="<%= item.avatar %>" alt="<%= item.name %>">
+        <div style="min-width:0;">
+          <div class="name">
+            <%= item.name %>
+            <% if (item.unreadCount) { %><span class="msg-badge"><%= item.unreadCount > 99 ? '99+' : item.unreadCount %></span><% } %>
+          </div>
+          <% if (item.latestText) { %><div class="meta"><%= item.latestText %></div><% } %>
+        </div>
+        <div class="arrow">›</div>
+      </a>
+    <% }) %>
+  </div>
+
+  <div class="msg-empty">
+    <div class="icon">🗎</div>
+    <div>没有更多了</div>
+  </div>
 </div>
 
 <%- include("partials/tabbar", { currentTab }) %>

@@ -1,0 +1,56 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<style>
+  .ulp-shell { background:#f6f7fb; min-height:100vh; padding-bottom:4.4rem; }
+  .ulp-header { height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .7rem; font-size:.78rem; font-weight:600; }
+  .ulp-header a { color:#fff; text-decoration:none; }
+  .ulp-list { margin:.7rem .6rem 0; display:grid; gap:.55rem; }
+  .ulp-card { background:#fff; border-radius:.82rem; box-shadow:0 .1rem .32rem rgba(15,23,42,.05); padding:.8rem; }
+  .ulp-card h3 { margin:0 0 .26rem; font-size:.82rem; line-height:1.12rem; color:#233042; }
+  .ulp-card p { margin:0; font-size:.68rem; line-height:1rem; color:#606a7b; }
+  .ulp-meta { margin-top:.32rem; display:flex; gap:.42rem; flex-wrap:wrap; font-size:.58rem; color:#9aa4b2; }
+</style>
+<div class="ulp-shell">
+  <div class="ulp-header"><a href="<%= typeof backHref !== 'undefined' ? backHref : '/plugin.php?id=xigua_hb&ac=my&high=4' %>">‹ 返回</a><div><%= pageTitle %></div><span></span></div>
+  <div class="ulp-list">
+    <% const items = data.items || []; %>
+    <% if (!items.length) { %><div class="ulp-card">暂无内容</div><% } %>
+    <% items.forEach((item) => { %>
+      <div class="ulp-card">
+        <% if (listType === 'subscriptions') { %>
+          <h3><%= item.title %></h3>
+          <p>关键词：<%= item.keyword || '未设置' %></p>
+          <div class="ulp-meta"><span><%= item.category_name || '全部类目' %></span><span><%= item.status === 'active' ? '订阅中' : '已暂停' %></span><span><%= item.created_at %></span></div>
+        <% } else if (listType === 'comments') { %>
+          <h3><%= item.post_title %></h3>
+          <p><%= item.content %></p>
+          <div class="ulp-meta"><span><%= item.created_at %></span></div>
+        <% } else if (listType === 'favorites') { %>
+          <h3><%= item.post_title %></h3>
+          <p>已收藏信息，地区：<%= item.location || '未设置' %></p>
+          <div class="ulp-meta"><span><%= item.created_at %></span></div>
+        <% } else if (listType === 'footprints') { %>
+          <h3><%= item.post_title %></h3>
+          <p>浏览地区：<%= item.location || '未设置' %></p>
+          <div class="ulp-meta"><span><%= item.viewed_at %></span></div>
+        <% } else if (listType === 'call_logs') { %>
+          <h3><%= item.post_title %></h3>
+          <p>联系号码：<%= item.target_phone || '未记录' %></p>
+          <div class="ulp-meta"><span>通话 <%= Math.floor(Number(item.duration_seconds || 0) / 60) %> 分 <%= Number(item.duration_seconds || 0) % 60 %> 秒</span><span><%= item.created_at %></span></div>
+        <% } else if (listType === 'partner_fans') { %>
+          <h3><%= item.nickname || '未命名用户' %></h3>
+          <p>城市：<%= item.city || '未设置' %></p>
+          <div class="ulp-meta"><span>关注时间 <%= item.created_at %></span></div>
+        <% } else if (listType === 'partner_income') { %>
+          <h3><%= item.note || '合伙人收益' %></h3>
+          <p>来源粉丝：<%= item.fan_nickname || '匿名用户' %></p>
+          <div class="ulp-meta"><span>收益 ¥<%= Number(item.amount || 0).toFixed(2) %></span><span><%= item.status === 'settled' || item.status === 'paid' ? '已结算' : '处理中' %></span><span><%= item.created_at %></span></div>
+        <% } else if (listType === 'partner_trend') { %>
+          <h3><%= item.day %></h3>
+          <p>当日收益 ¥<%= Number(item.total || 0).toFixed(2) %></p>
+          <div class="ulp-meta"><span>收益笔数 <%= item.count || 0 %></span></div>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<%- include("partials/tabbar", { currentTab }) %>

@@ -1,0 +1,548 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'service' }) %>
+<% const sideConversations = (typeof conversationList !== "undefined" && conversationList) ? conversationList : []; %>
+<% const replyPresets = (typeof quickReplies !== "undefined" && quickReplies) ? quickReplies : []; %>
+<style>
+  .svc-admin-shell {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 20px;
+    height: calc(100vh - 120px);
+  }
+  .svc-admin-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .svc-sidebar-head,
+  .svc-chat-head {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .svc-sidebar-head h2,
+  .svc-chat-head h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+  .svc-sidebar-body {
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+    max-height: calc(100vh - 220px);
+    overflow: auto;
+  }
+  .svc-conv-item {
+    display: block;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #f8fafc;
+    transition: .18s ease;
+  }
+  .svc-conv-item.active {
+    background: #ecfff4;
+    border-color: rgba(47, 201, 108, .28);
+    box-shadow: inset 0 0 0 1px rgba(47, 201, 108, .05);
+  }
+  .svc-conv-item:hover {
+    transform: translateY(-1px);
+  }
+  .svc-conv-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .svc-conv-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+  }
+  .svc-conv-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(15, 23, 42, .08);
+    background: #eef2f7;
+    flex: 0 0 auto;
+  }
+  .svc-conv-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .svc-conv-phone {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .svc-conv-meta {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .svc-conv-preview {
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #6b7280;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .svc-conv-time {
+    font-size: 12px;
+    line-height: 1.2;
+    color: #64748b;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .svc-chat-card {
+    display: grid;
+    grid-template-rows: auto auto auto minmax(360px, 1fr) auto;
+    height: 100%;
+    min-height: 0;
+  }
+  .svc-chat-user {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .svc-chat-user-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+  .svc-chat-user-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(15, 23, 42, .08);
+    background: #eef2f7;
+    flex: 0 0 auto;
+  }
+  .svc-chat-user h3 {
+    margin: 0;
+    font-size: 22px;
+  }
+  .svc-chat-user p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #6b7280;
+  }
+  .svc-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .svc-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: #334155;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .svc-action-btn:hover {
+    border-color: rgba(47, 201, 108, .28);
+    color: #167a40;
+  }
+  .svc-chat-tools {
+    padding: 4px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: #fbfcfd;
+  }
+  .svc-chat-tools .meta {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  .svc-chat-tools .select,
+  .svc-chat-tools .button {
+    min-height: 34px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+  .svc-chat-stream {
+    padding: 18px 20px;
+    padding-bottom: 72px;
+    background: #f5f7fb;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .svc-chat-stream::-webkit-scrollbar,
+  .svc-sidebar-body::-webkit-scrollbar {
+    width: 10px;
+  }
+  .svc-chat-stream::-webkit-scrollbar-track,
+  .svc-sidebar-body::-webkit-scrollbar-track {
+    background: #eef2f7;
+    border-radius: 999px;
+  }
+  .svc-chat-stream::-webkit-scrollbar-thumb,
+  .svc-sidebar-body::-webkit-scrollbar-thumb {
+    background: #c8d2df;
+    border-radius: 999px;
+    border: 2px solid #eef2f7;
+  }
+  .svc-msg-row {
+    display: flex;
+  }
+  .svc-msg-row.user {
+    justify-content: flex-start;
+  }
+  .svc-msg-row.agent,
+  .svc-msg-row.system {
+    justify-content: flex-end;
+  }
+  .svc-msg-bubble {
+    max-width: min(72%, 720px);
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(15, 23, 42, .05);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .04);
+  }
+  .svc-msg-bubble.user {
+    background: #fff;
+  }
+  .svc-msg-bubble.agent {
+    background: #dcf7e7;
+  }
+  .svc-msg-bubble.system {
+    background: #fff8ea;
+  }
+  .svc-msg-author {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-bottom: 6px;
+  }
+  .svc-msg-content {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #111827;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .svc-chat-compose {
+    padding: 16px 20px 20px;
+    border-top: 1px solid var(--line);
+    background: #fff;
+    display: grid;
+    gap: 12px;
+    position: sticky;
+    bottom: 0;
+  }
+  .svc-quick-wrap {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .svc-quick-btn {
+    border: 0;
+    border-radius: 999px;
+    background: #eef6f0;
+    color: #167a40;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .svc-compose-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+  }
+  .svc-compose-box {
+    min-height: 132px;
+    resize: vertical;
+  }
+  @media (max-width: 1100px) {
+    .svc-admin-shell {
+      grid-template-columns: 1fr;
+      height: auto;
+    }
+    .svc-sidebar-body {
+      max-height: 320px;
+    }
+    .svc-chat-card {
+      height: auto;
+    }
+  }
+</style>
+
+<div class="admin-topbar">
+  <div>
+    <h1>客服会话详情</h1>
+    <div class="meta">把这一页整理成更适合客服持续处理消息的工作台。</div>
+  </div>
+  <a class="button primary" href="/admin/service">返回会话列表</a>
+</div>
+
+<% if (msg) { %>
+  <div class="notice"><%= msg %></div>
+<% } %>
+
+<div class="svc-admin-shell">
+  <aside class="svc-admin-card">
+    <div class="svc-sidebar-head">
+      <h2>会话队列</h2>
+      <div class="meta"><%= sideConversations.length %> 个</div>
+    </div>
+    <div class="svc-sidebar-body">
+      <% sideConversations.forEach((item) => { %>
+        <a href="/admin/service/<%= item.id %>" class="svc-conv-item <%= item.id === data.conversation.id ? 'active' : '' %>">
+          <div class="svc-conv-top">
+            <div class="svc-conv-main">
+              <img class="svc-conv-avatar" src="<%= item.user_avatar || '/wj/lamian21.png' %>" alt="<%= item.nickname %>">
+              <div>
+                <div class="svc-conv-name"><%= item.nickname %></div>
+                <div class="svc-conv-phone"><%= item.phone || '-' %></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+              <div class="svc-conv-time"><%= item.last_message_at ? String(item.last_message_at).slice(5, 16) : '-' %></div>
+              <% if (Number(item.agent_unread_count) > 0) { %>
+                <span class="badge ended"><%= item.agent_unread_count %></span>
+              <% } %>
+            </div>
+          </div>
+          <div class="svc-conv-meta">
+            <span class="badge <%= item.status === 'closed' ? 'ended' : 'active' %>"><%= ({ open: '待跟进', pending: '处理中', closed: '已关闭' }[item.status] || item.status) %></span>
+            <span class="meta"><%= item.assigned_admin || '未认领' %></span>
+          </div>
+          <div class="svc-conv-preview"><%= item.last_message_preview || '暂无消息' %></div>
+        </a>
+      <% }) %>
+    </div>
+  </aside>
+
+  <section class="svc-admin-card svc-chat-card">
+    <div class="svc-chat-head">
+      <h2>当前会话</h2>
+      <div class="meta">客服：<%= data.conversation.agent_name %></div>
+    </div>
+
+    <div class="svc-chat-user">
+      <div class="svc-chat-user-main">
+        <img class="svc-chat-user-avatar" src="<%= data.conversation.user_avatar || '/wj/lamian21.png' %>" alt="<%= data.conversation.nickname %>">
+        <div>
+          <h3><%= data.conversation.nickname %></h3>
+          <p><%= data.conversation.phone || '未绑定手机号' %> · <%= data.conversation.city || '未设置城市' %> · 当前认领：<%= data.conversation.assigned_admin || '未认领' %></p>
+        </div>
+      </div>
+      <div class="svc-chat-actions">
+        <button class="svc-action-btn" type="button" id="copyPhoneBtn" data-phone="<%= data.conversation.phone || '' %>">复制手机号</button>
+        <a class="svc-action-btn" href="/admin/service/<%= data.conversation.id %>/user" target="_blank">打开用户主页</a>
+        <a class="svc-action-btn" href="/admin/service/<%= data.conversation.id %>/posts" target="_blank">查看用户发布</a>
+        <span class="badge <%= data.conversation.status === 'closed' ? 'ended' : 'active' %>"><%= ({ open: '待跟进', pending: '处理中', closed: '已关闭' }[data.conversation.status] || data.conversation.status) %></span>
+        <span class="meta">客服未读：<%= data.conversation.agent_unread_count %></span>
+      </div>
+    </div>
+
+    <div class="svc-chat-tools">
+      <form class="toolbar" method="post" action="/admin/service/<%= data.conversation.id %>/status">
+        <select class="select" name="status">
+          <option value="open" <%= data.conversation.status === 'open' ? 'selected' : '' %>>待跟进</option>
+          <option value="pending" <%= data.conversation.status === 'pending' ? 'selected' : '' %>>处理中</option>
+          <option value="closed" <%= data.conversation.status === 'closed' ? 'selected' : '' %>>已关闭</option>
+        </select>
+        <button class="button primary" type="submit">更新状态</button>
+      </form>
+      <div class="meta">新消息会自动刷新到当前窗口</div>
+    </div>
+
+    <div id="adminChatStream" class="svc-chat-stream">
+      <% data.messages.forEach((item) => { %>
+        <% const senderClass = item.sender_type === 'user' ? 'user' : (item.sender_type === 'system' ? 'system' : 'agent'); %>
+        <div class="svc-msg-row <%= senderClass %>">
+          <div class="svc-msg-bubble <%= senderClass %>">
+            <div class="svc-msg-author">
+              <%= item.sender_type === 'user' ? data.conversation.nickname : (item.sender_type === 'system' ? '系统提示' : data.conversation.agent_name) %>
+              · <%= item.created_at %>
+            </div>
+            <div class="svc-msg-content"><%= item.content %></div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <div class="svc-chat-compose">
+      <div class="svc-quick-wrap">
+        <% replyPresets.forEach((item) => { %>
+          <button class="svc-quick-btn quick-reply" type="button" data-text="<%= item.content %>"><%= item.content %></button>
+        <% }) %>
+      </div>
+      <form method="post" action="/admin/service/<%= data.conversation.id %>/reply">
+        <input type="hidden" name="ajax" value="1">
+        <div class="svc-compose-row">
+          <textarea id="replyBox" class="input svc-compose-box" name="content" rows="5" placeholder="输入客服回复内容，支持多行文本"></textarea>
+          <button class="button primary" type="submit">发送回复</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+
+<script>
+  var copyPhoneBtn = document.getElementById('copyPhoneBtn');
+  if (copyPhoneBtn) {
+    copyPhoneBtn.addEventListener('click', async function() {
+      var phone = copyPhoneBtn.getAttribute('data-phone') || '';
+      if (!phone) return;
+      try {
+        await navigator.clipboard.writeText(phone);
+        copyPhoneBtn.textContent = '已复制';
+        setTimeout(function() {
+          copyPhoneBtn.textContent = '复制手机号';
+        }, 1400);
+      } catch (_error) {
+        window.prompt('复制手机号', phone);
+      }
+    });
+  }
+
+  document.querySelectorAll('.quick-reply').forEach(function(button) {
+    button.addEventListener('click', function() {
+      var box = document.getElementById('replyBox');
+      if (!box) return;
+      box.value = button.getAttribute('data-text') || '';
+      box.focus();
+    });
+  });
+
+  (function() {
+    var stream = document.getElementById('adminChatStream');
+    if (!stream) return;
+    var lastId = <%= data.messages.length ? Math.max.apply(null, data.messages.map(function(item) { return item.id; })) : 0 %>;
+    var replyForm = document.querySelector('.svc-chat-compose form');
+    var replyBox = document.getElementById('replyBox');
+
+    function scrollToLatest() {
+      stream.scrollTop = stream.scrollHeight;
+    }
+
+    function renderMessage(item) {
+      var senderClass = item.sender_type === 'user' ? 'user' : (item.sender_type === 'system' ? 'system' : 'agent');
+      var row = document.createElement('div');
+      row.className = 'svc-msg-row ' + senderClass;
+
+      var bubble = document.createElement('div');
+      bubble.className = 'svc-msg-bubble ' + senderClass;
+
+      var author = document.createElement('div');
+      author.className = 'svc-msg-author';
+      author.textContent =
+        (item.sender_type === 'user' ? '<%= data.conversation.nickname %>' : (item.sender_type === 'system' ? '系统提示' : '<%= data.conversation.agent_name %>')) +
+        ' · ' + item.created_at;
+
+      var content = document.createElement('div');
+      content.className = 'svc-msg-content';
+      content.textContent = item.content;
+
+      bubble.appendChild(author);
+      bubble.appendChild(content);
+      row.appendChild(bubble);
+      stream.appendChild(row);
+      scrollToLatest();
+    }
+
+    function pollMessages() {
+      fetch('/admin/service/<%= data.conversation.id %>/poll?after_id=' + lastId, { credentials: 'same-origin' })
+        .then(function(res) { return res.ok ? res.json() : null; })
+        .then(function(data) {
+          if (!data || !data.ok || !data.items || !data.items.length) return;
+          data.items.forEach(function(item) {
+            renderMessage(item);
+            lastId = item.id;
+          });
+        })
+        .catch(function() {});
+    }
+
+    if (replyForm && replyBox) {
+      replyBox.addEventListener('keydown', function(event) {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+          event.preventDefault();
+          replyForm.requestSubmit();
+        }
+      });
+      replyForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        var content = replyBox.value.trim();
+        if (!content) {
+          replyBox.focus();
+          return;
+        }
+        var submitButton = replyForm.querySelector('button[type="submit"]');
+        if (submitButton) submitButton.disabled = true;
+        var body = new URLSearchParams(new FormData(replyForm));
+        fetch(replyForm.action, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: body.toString()
+        })
+          .then(function(res) { return res.ok ? res.json() : null; })
+          .then(function(data) {
+            if (!data || !data.ok) {
+              alert((data && data.message) || '发送失败，请重试');
+              return;
+            }
+            if (data.item) {
+              renderMessage(data.item);
+              lastId = data.item.id;
+            } else {
+              pollMessages();
+            }
+            replyBox.value = '';
+            replyBox.focus();
+          })
+          .catch(function() {
+            alert('发送失败，请重试');
+          })
+          .finally(function() {
+            if (submitButton) submitButton.disabled = false;
+          });
+      });
+    }
+
+    scrollToLatest();
+    setInterval(pollMessages, 4000);
+  })();
+</script>
+<%- include("./partials-shell-bottom") %>

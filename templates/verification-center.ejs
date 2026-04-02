@@ -1,0 +1,29 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<style>
+  .vc-shell { background:#f6f7fb; min-height:100vh; padding-bottom:4.4rem; }
+  .vc-header { height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .7rem; font-size:.78rem; font-weight:600; }
+  .vc-header a { color:#fff; text-decoration:none; }
+  .vc-card { margin:.7rem .6rem 0; background:#fff; border-radius:.82rem; box-shadow:0 .1rem .32rem rgba(15,23,42,.05); padding:.9rem; }
+  .vc-title { font-size:.96rem; color:#233042; font-weight:700; }
+  .vc-status { margin-top:.45rem; display:inline-flex; padding:.22rem .62rem; border-radius:999px; background:#ecfff4; color:#2ea85d; font-size:.62rem; font-weight:700; }
+  .vc-desc { margin-top:.55rem; font-size:.7rem; line-height:1.05rem; color:#647084; }
+  .vc-meta { margin-top:.7rem; display:grid; gap:.42rem; font-size:.66rem; color:#7a8597; }
+</style>
+<div class="vc-shell">
+  <div class="vc-header"><a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a><div>认证中心</div><span></span></div>
+  <div class="vc-card">
+    <div class="vc-title">个人认证</div>
+    <% if (data.record) { %>
+      <div class="vc-status"><%= ({ approved:'已认证', pending:'审核中', rejected:'未通过' }[data.record.status] || data.record.status) %></div>
+      <div class="vc-desc"><%= data.record.note || '认证状态已同步到系统。' %></div>
+      <div class="vc-meta">
+        <div>认证类型：<%= data.record.verify_type === 'personal' ? '个人认证' : data.record.verify_type %></div>
+        <div>认证姓名：<%= data.record.real_name || '未填写' %></div>
+        <div>申请时间：<%= data.record.created_at %></div>
+      </div>
+    <% } else { %>
+      <div class="vc-desc">你当前还没有提交认证申请。</div>
+    <% } %>
+  </div>
+</div>
+<%- include("partials/tabbar", { currentTab }) %>

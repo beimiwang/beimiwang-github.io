@@ -1,0 +1,290 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<style>
+  .svc-page {
+    position: fixed;
+    inset: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f6f7fb;
+    overflow: hidden;
+  }
+  .svc-header {
+    height: 2.2rem;
+    flex: 0 0 2.2rem;
+    background: #35c96d;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 .7rem;
+    font-size: .78rem;
+    font-weight: 600;
+  }
+  .svc-header a {
+    color: #fff;
+    text-decoration: none;
+  }
+  .svc-main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: #f6f7fb;
+  }
+  .svc-notices {
+    flex: 0 0 auto;
+    padding: .16rem .65rem .06rem;
+    background: #fff;
+  }
+  .svc-tip {
+    text-align: center;
+    font-size: .56rem;
+    line-height: .86rem;
+    color: #a4acb8;
+    margin: 0;
+  }
+  .svc-tip + .svc-tip {
+    margin-top: .04rem;
+  }
+  .svc-tip .accent {
+    color: var(--accent-color, #ff7b7b);
+    font-weight: 600;
+  }
+  .svc-stream-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: .5rem .65rem .2rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    overscroll-behavior: contain;
+  }
+  .svc-stream-wrap::-webkit-scrollbar {
+    width: 6px;
+  }
+  .svc-stream-wrap::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, .35);
+    border-radius: 999px;
+  }
+  .svc-stream {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: .58rem;
+  }
+  .svc-bubble-row {
+    display: flex;
+  }
+  .svc-bubble-row.user {
+    justify-content: flex-end;
+  }
+  .svc-bubble-row.agent {
+    justify-content: flex-start;
+  }
+  .svc-bubble-row.system {
+    justify-content: center;
+  }
+  .svc-bubble-stack {
+    max-width: 80%;
+  }
+  .svc-bubble {
+    border-radius: .76rem;
+    padding: .62rem .74rem;
+    font-size: .7rem;
+    line-height: 1rem;
+    word-break: break-word;
+    box-shadow: 0 .06rem .18rem rgba(15, 23, 42, .05);
+  }
+  .svc-bubble.user {
+    background: #35c96d;
+    color: #fff;
+    border-bottom-right-radius: .22rem;
+  }
+  .svc-bubble.agent {
+    background: #fff;
+    color: #3b4555;
+    border-bottom-left-radius: .22rem;
+  }
+  .svc-bubble.system {
+    max-width: 92%;
+    background: #fff8ea;
+    color: #d08b28;
+    font-size: .58rem;
+    line-height: .88rem;
+    box-shadow: none;
+  }
+  .svc-meta {
+    font-size: .52rem;
+    line-height: .76rem;
+    color: #b0b7c3;
+    margin-top: .12rem;
+    padding: 0 .06rem;
+  }
+  .svc-empty {
+    margin: auto 0;
+    text-align: center;
+    color: #cfd5de;
+    font-size: .72rem;
+    padding-bottom: 1.4rem;
+  }
+  .svc-composer {
+    flex: 0 0 auto;
+    background: #fff;
+    border-top: 1px solid #eceff4;
+    padding: .34rem .46rem calc(.34rem + env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: .36rem;
+    box-sizing: border-box;
+  }
+  .svc-composer .back {
+    color: #444;
+    text-decoration: none;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 .12rem;
+  }
+  .svc-input {
+    flex: 1;
+    height: 1.56rem;
+    border: none;
+    border-radius: 999px;
+    background: #f4f5f7;
+    padding: 0 .72rem;
+    font-size: .62rem;
+    color: #555;
+    outline: none;
+  }
+  .svc-icon {
+    width: 1.34rem;
+    height: 1.34rem;
+    border-radius: 50%;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    color: #666;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .82rem;
+    flex: 0 0 auto;
+  }
+  .svc-send {
+    min-width: 2.02rem;
+    height: 1.56rem;
+    border: none;
+    border-radius: 999px;
+    background: #79d78e;
+    color: #fff;
+    font-size: .64rem;
+    font-weight: 700;
+    flex: 0 0 auto;
+  }
+</style>
+
+<div class="svc-page">
+  <div class="svc-header">
+    <a href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3">‹ 返回</a>
+    <div><%= data.channel.name %></div>
+    <span></span>
+  </div>
+
+  <div class="svc-main">
+    <div class="svc-notices">
+      <% (data.notices || []).forEach((item) => { %>
+        <div class="svc-tip" style="--accent-color:<%= item.accent %>;">
+          <span class="accent"><%= item.text %></span>
+        </div>
+      <% }) %>
+    </div>
+
+    <div id="svcStreamWrap" class="svc-stream-wrap">
+      <div id="svcStream" class="svc-stream">
+        <% if ((data.items || []).length) { %>
+          <% data.items.forEach((item) => { %>
+            <% const senderClass = item.sender_type === 'user' ? 'user' : (item.sender_type === 'agent' ? 'agent' : 'system'); %>
+            <div class="svc-bubble-row <%= senderClass %>">
+              <div class="svc-bubble-stack">
+                <div class="svc-bubble <%= senderClass %>"><%= item.content %></div>
+                <% if (senderClass !== 'system') { %>
+                  <div class="svc-meta"><%= item.created_at ? item.created_at.slice(5, 16) : '刚刚' %></div>
+                <% } %>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="svc-empty">暂无会话内容</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <form class="svc-composer" method="post" action="/plugin.php?id=xigua_lt&ac=chat_send&channel=<%= data.channel.key %>">
+    <a class="back" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3">‹</a>
+    <input class="svc-input" type="text" name="content" placeholder="请输入聊天内容">
+    <span class="svc-icon">☺</span>
+    <span class="svc-icon">＋</span>
+    <button class="svc-send" type="submit">发送</button>
+  </form>
+</div>
+
+<script>
+  (function() {
+    var streamWrap = document.getElementById('svcStreamWrap');
+    var stream = document.getElementById('svcStream');
+    if (!streamWrap || !stream) return;
+
+    var lastId = <%= data.items.length ? Math.max.apply(null, data.items.map(function(item) { return item.id; })) : 0 %>;
+
+    function scrollToLatest() {
+      streamWrap.scrollTop = streamWrap.scrollHeight;
+    }
+
+    function ensureEmptyStateRemoved() {
+      var empty = stream.querySelector('.svc-empty');
+      if (empty) empty.remove();
+    }
+
+    function appendMessage(item) {
+      ensureEmptyStateRemoved();
+      var senderClass = item.sender_type === 'user' ? 'user' : (item.sender_type === 'agent' ? 'agent' : 'system');
+      var row = document.createElement('div');
+      row.className = 'svc-bubble-row ' + senderClass;
+
+      var stack = document.createElement('div');
+      stack.className = 'svc-bubble-stack';
+
+      var bubble = document.createElement('div');
+      bubble.className = 'svc-bubble ' + senderClass;
+      bubble.textContent = item.content;
+      stack.appendChild(bubble);
+
+      if (senderClass !== 'system') {
+        var meta = document.createElement('div');
+        meta.className = 'svc-meta';
+        meta.textContent = (item.created_at || '').slice(5, 16) || '刚刚';
+        stack.appendChild(meta);
+      }
+
+      row.appendChild(stack);
+      stream.appendChild(row);
+      scrollToLatest();
+    }
+
+    setTimeout(scrollToLatest, 50);
+
+    setInterval(function() {
+      fetch('/plugin.php?id=xigua_lt&ac=chat_poll&channel=<%= data.channel.key %>&after_id=' + lastId, { credentials: 'same-origin' })
+        .then(function(res) { return res.ok ? res.json() : null; })
+        .then(function(data) {
+          if (!data || !data.ok || !data.items || !data.items.length) return;
+          data.items.forEach(function(item) {
+            appendMessage(item);
+            lastId = item.id;
+          });
+        })
+        .catch(function() {});
+    }, 4000);
+  })();
+</script>

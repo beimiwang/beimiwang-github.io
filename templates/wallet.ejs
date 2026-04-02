@@ -1,79 +1,379 @@
 <%- include("partials/head", { pageTitle, message }) %>
-<div class="app-header" style="padding-bottom:5.8rem;">
-  <a class="left" href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
-  <div class="title">我的钱包</div>
-  <a class="right" href="/plugin.php?id=xigua_hb&ac=settings&high=4">提现设置</a>
-</div>
+<style>
+  :root {
+    --wallet-green: #35c96d;
+    --wallet-bg: #f6f7f8;
+    --wallet-card: #ffffff;
+    --wallet-text: #2f343b;
+    --wallet-subtle: #9aa0a6;
+    --wallet-line: #eef0f2;
+    --wallet-shadow: 0 .14rem .6rem rgba(15, 23, 42, .08);
+  }
 
-<div class="app-panel" style="padding:1rem;">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;align-items:center;">
-    <div style="text-align:center;">
-      <div style="font-size:.85rem;color:#666;">我的金币</div>
-      <div style="font-size:1.25rem;font-weight:700;color:#333;margin-top:.55rem;"><%= data.wallet.gold %></div>
-      <div style="font-size:.72rem;color:#3a7bd5;margin-top:.25rem;">可用于前端功能扩展</div>
+  .wallet-page {
+    min-height: 100vh;
+    background: var(--wallet-bg);
+    padding-bottom: 4.7rem;
+  }
+
+  .wallet-hero {
+    background: var(--wallet-green);
+    padding: .78rem .65rem 3.8rem;
+    color: #fff;
+  }
+
+  .wallet-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: .78rem;
+    font-weight: 600;
+  }
+
+  .wallet-nav a {
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .wallet-nav .title {
+    font-size: .86rem;
+    font-weight: 700;
+  }
+
+  .wallet-summary {
+    margin: -2.4rem .62rem 0;
+    background: var(--wallet-card);
+    border-radius: .72rem;
+    box-shadow: var(--wallet-shadow);
+    padding: .95rem .9rem .78rem;
+  }
+
+  .wallet-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: .75rem;
+    align-items: center;
+  }
+
+  .wallet-metric {
+    text-align: center;
+  }
+
+  .wallet-metric .label {
+    font-size: .74rem;
+    color: #555;
+  }
+
+  .wallet-metric .value {
+    margin-top: .56rem;
+    font-size: 1.18rem;
+    line-height: 1.28rem;
+    color: var(--wallet-text);
+    font-weight: 700;
+  }
+
+  .wallet-withdraw-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    padding: 0 .9rem;
+    border-radius: .52rem;
+    background: #ff666f;
+    color: #fff;
+    text-decoration: none;
+    font-size: .78rem;
+    font-weight: 700;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .wallet-tabs {
+    margin: .68rem .62rem 0;
+    background: var(--wallet-card);
+    border-radius: .72rem;
+    box-shadow: 0 .08rem .32rem rgba(15, 23, 42, .05);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+  }
+
+  .wallet-tab {
+    position: relative;
+    padding: .95rem 0 .88rem;
+    text-align: center;
+    color: #555;
+    font-size: .78rem;
+    font-weight: 700;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .wallet-tab.is-active {
+    color: var(--wallet-green);
+  }
+
+  .wallet-tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: .45rem;
+    transform: translateX(-50%);
+    width: .82rem;
+    height: .28rem;
+    border-radius: 999px;
+    background: rgba(53, 201, 109, .18);
+  }
+
+  .wallet-panel {
+    display: none;
+    margin: .62rem;
+  }
+
+  .wallet-panel.is-active {
+    display: block;
+  }
+
+  .wallet-box {
+    background: var(--wallet-card);
+    border-radius: .72rem;
+    box-shadow: 0 .08rem .32rem rgba(15, 23, 42, .05);
+    padding: .9rem;
+  }
+
+  .wallet-form {
+    display: grid;
+    gap: .62rem;
+  }
+
+  .wallet-input {
+    width: 100%;
+    height: 2.5rem;
+    border-radius: .58rem;
+    border: 1px solid #edf0f4;
+    background: #f8f9fb;
+    padding: 0 .85rem;
+    font-size: .78rem;
+    color: var(--wallet-text);
+    box-sizing: border-box;
+    outline: none;
+  }
+
+  .wallet-input:focus {
+    border-color: rgba(53, 201, 109, .35);
+    background: #fff;
+  }
+
+  .wallet-submit {
+    height: 2.55rem;
+    border-radius: .58rem;
+    border: 0;
+    background: var(--wallet-green);
+    color: #fff;
+    font-size: .84rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .wallet-submit.danger {
+    background: #ff666f;
+  }
+
+  .wallet-list {
+    display: grid;
+    gap: .62rem;
+  }
+
+  .wallet-row {
+    background: var(--wallet-card);
+    border-radius: .72rem;
+    box-shadow: 0 .08rem .32rem rgba(15, 23, 42, .05);
+    padding: .84rem .9rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+  }
+
+  .wallet-title {
+    font-size: .78rem;
+    line-height: 1.08rem;
+    color: var(--wallet-text);
+    font-weight: 600;
+  }
+
+  .wallet-meta {
+    margin-top: .18rem;
+    font-size: .63rem;
+    color: var(--wallet-subtle);
+  }
+
+  .wallet-amount {
+    font-size: .84rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .wallet-amount.plus {
+    color: var(--wallet-green);
+  }
+
+  .wallet-amount.minus {
+    color: #ff666f;
+  }
+
+  .wallet-empty {
+    text-align: center;
+    color: #d4d6da;
+    padding: 2.1rem 0 2.6rem;
+  }
+
+  .wallet-empty .icon {
+    font-size: 2.3rem;
+    line-height: 1;
+    opacity: .72;
+  }
+
+  .wallet-empty .text {
+    margin-top: .52rem;
+    font-size: .82rem;
+    font-weight: 600;
+  }
+
+  .wallet-note {
+    margin-top: .55rem;
+    font-size: .64rem;
+    line-height: .94rem;
+    color: var(--wallet-subtle);
+  }
+</style>
+
+<div class="wallet-page">
+  <header class="wallet-hero">
+    <div class="wallet-nav">
+      <a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+      <div class="title">我的钱包</div>
+      <a href="/plugin.php?id=xigua_hb&ac=settings&high=4&view=withdraw">提现设置</a>
     </div>
-    <div style="text-align:center;">
-      <div style="font-size:.85rem;color:#666;">账户余额</div>
-      <div style="font-size:1.25rem;font-weight:700;color:#333;margin-top:.55rem;"><%= data.wallet.balance.toFixed(2) %>元</div>
-      <div style="font-size:.72rem;color:#999;margin-top:.25rem;">充值、提现都记入流水</div>
-    </div>
-  </div>
-</div>
+  </header>
 
-<div class="settings-section" style="margin-top:0;">
-  <div class="settings-title">余额充值</div>
-  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=qianbao&do=topup">
-    <input class="settings-input" type="number" min="0.01" step="0.01" name="amount" placeholder="输入充值金额">
-    <button class="settings-button" type="submit">立即充值</button>
-  </form>
-</div>
-
-<div class="settings-section">
-  <div class="settings-title">申请提现</div>
-  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hb&ac=qianbao&do=withdraw">
-    <input class="settings-input" type="number" min="0.01" step="0.01" name="amount" placeholder="输入提现金额">
-    <button class="settings-button danger" type="submit">提交提现</button>
-  </form>
-</div>
-
-<div class="settings-section">
-  <div class="settings-title">钱包流水</div>
-  <% if (!data.transactions.length) { %>
-    <div class="empty-state" style="padding:1.5rem 1rem 2rem;">
-      <div class="icon">🧾</div>
-      <div style="margin-top:.7rem;">暂无流水记录</div>
-    </div>
-  <% } %>
-  <% data.transactions.forEach((item) => { %>
-    <div class="wallet-row">
-      <div>
-        <div class="wallet-title"><%= item.note || item.type %></div>
-        <div class="wallet-meta"><%= item.created_at %> · <%= item.status %></div>
+  <section class="wallet-summary">
+    <div class="wallet-summary-grid">
+      <div class="wallet-metric">
+        <div class="label">我的金币</div>
+        <div class="value"><%= data.wallet.gold %></div>
       </div>
-      <div class="wallet-amount <%= Number(item.amount) >= 0 ? 'plus' : 'minus' %>">
-        <%= Number(item.amount) >= 0 ? '+' : '' %><%= Number(item.amount).toFixed(2) %>
+      <div class="wallet-metric">
+        <div class="label">账户余额</div>
+        <div class="value"><%= data.wallet.balance.toFixed(2) %><span style="font-size:.72rem;">元</span></div>
+      </div>
+      <button class="wallet-withdraw-btn" type="button" data-wallet-tab-target="withdraw">提现</button>
+    </div>
+  </section>
+
+  <section class="wallet-tabs" aria-label="钱包标签">
+    <button class="wallet-tab is-active" type="button" data-wallet-tab="records">记录</button>
+    <button class="wallet-tab" type="button" data-wallet-tab="withdraw">提现</button>
+  </section>
+
+  <section class="wallet-panel is-active" data-wallet-panel="records">
+    <div class="wallet-box">
+      <form class="wallet-form" method="post" action="/plugin.php?id=xigua_hb&ac=qianbao&do=topup">
+        <input class="wallet-input" type="number" min="0.01" step="0.01" name="amount" placeholder="输入充值金额">
+        <button class="wallet-submit" type="submit">立即充值</button>
+      </form>
+    </div>
+
+    <% if (data.transactions.length) { %>
+      <div class="wallet-list" style="margin-top:.62rem;">
+        <% data.transactions.forEach((item) => { %>
+          <div class="wallet-row">
+            <div>
+              <div class="wallet-title"><%= item.note || item.type %></div>
+              <div class="wallet-meta"><%= item.created_at %> · <%= item.status %></div>
+            </div>
+            <div class="wallet-amount <%= Number(item.amount) >= 0 ? 'plus' : 'minus' %>">
+              <%= Number(item.amount) >= 0 ? '+' : '' %><%= Number(item.amount).toFixed(2) %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="wallet-box" style="margin-top:.62rem;">
+        <div class="wallet-empty">
+          <div class="icon">🧾</div>
+          <div class="text">没有更多了</div>
+        </div>
+      </div>
+    <% } %>
+  </section>
+
+  <section class="wallet-panel" data-wallet-panel="withdraw">
+    <div class="wallet-box">
+      <form class="wallet-form" method="post" action="/plugin.php?id=xigua_hb&ac=qianbao&do=withdraw">
+        <input class="wallet-input" type="number" min="0.01" step="0.01" name="amount" placeholder="输入提现金额">
+        <button class="wallet-submit danger" type="submit">提交提现</button>
+      </form>
+      <div class="wallet-note">
+        <% if (data.withdrawProfile && data.withdrawProfile.account_name) { %>
+          当前提现账户：<%= data.withdrawProfile.account_name %> · <%= data.withdrawProfile.account_type || "未设置类型" %>
+        <% } else { %>
+          暂未设置提现账户，请先前往“提现设置”完善资料。
+        <% } %>
       </div>
     </div>
-  <% }) %>
+
+    <% if (data.withdrawRequests.length) { %>
+      <div class="wallet-list" style="margin-top:.62rem;">
+        <% data.withdrawRequests.forEach((item) => { %>
+          <div class="wallet-row">
+            <div>
+              <div class="wallet-title">提现到 <%= item.account_name || "未命名账户" %></div>
+              <div class="wallet-meta"><%= item.created_at %> · <%= item.status %></div>
+            </div>
+            <div class="wallet-amount minus">-<%= Number(item.amount).toFixed(2) %></div>
+          </div>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <div class="wallet-box" style="margin-top:.62rem;">
+        <div class="wallet-empty">
+          <div class="icon">🧾</div>
+          <div class="text">没有更多了</div>
+        </div>
+      </div>
+    <% } %>
+  </section>
 </div>
 
-<div class="settings-section">
-  <div class="settings-title">提现记录</div>
-  <% if (!data.withdrawRequests.length) { %>
-    <div class="empty-state" style="padding:1.5rem 1rem 2rem;">
-      <div class="icon">💸</div>
-      <div style="margin-top:.7rem;">暂无提现记录</div>
-    </div>
-  <% } %>
-  <% data.withdrawRequests.forEach((item) => { %>
-    <div class="wallet-row">
-      <div>
-        <div class="wallet-title">提现到 <%= item.account_name || '未命名账户' %></div>
-        <div class="wallet-meta"><%= item.created_at %> · <%= item.status %></div>
-      </div>
-      <div class="wallet-amount minus">-<%= Number(item.amount).toFixed(2) %></div>
-    </div>
-  <% }) %>
-</div>
+<script>
+  (function () {
+    const tabs = Array.from(document.querySelectorAll("[data-wallet-tab]"));
+    const panels = Array.from(document.querySelectorAll("[data-wallet-panel]"));
+    const shortcuts = Array.from(document.querySelectorAll("[data-wallet-tab-target]"));
+
+    function activate(name) {
+      tabs.forEach((tab) => {
+        tab.classList.toggle("is-active", tab.dataset.walletTab === name);
+      });
+      panels.forEach((panel) => {
+        panel.classList.toggle("is-active", panel.dataset.walletPanel === name);
+      });
+    }
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", function () {
+        activate(tab.dataset.walletTab);
+      });
+    });
+
+    shortcuts.forEach((button) => {
+      button.addEventListener("click", function () {
+        activate(button.dataset.walletTabTarget);
+      });
+    });
+  })();
+</script>
 
 <%- include("partials/tabbar", { currentTab }) %>

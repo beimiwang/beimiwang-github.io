@@ -1,0 +1,82 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'service' }) %>
+<div class="admin-topbar">
+  <div>
+    <h1>客服会话</h1>
+    <div class="meta">查看用户与“马丁星钻”客服的对话、未读数和最后活跃时间。</div>
+  </div>
+</div>
+
+<% if (msg) { %>
+  <div class="notice"><%= msg %></div>
+<% } %>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>筛选</h2>
+  </div>
+  <div class="panel-body">
+    <form class="toolbar" method="get" action="/admin/service">
+      <input class="input" type="text" name="keyword" value="<%= data.keyword %>" placeholder="搜索昵称 / 手机 / 最后一条消息">
+      <select class="select" name="status">
+        <option value="">全部状态</option>
+        <option value="open" <%= data.status === 'open' ? 'selected' : '' %>>待跟进</option>
+        <option value="pending" <%= data.status === 'pending' ? 'selected' : '' %>>处理中</option>
+        <option value="closed" <%= data.status === 'closed' ? 'selected' : '' %>>已关闭</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563;">
+        <input type="checkbox" name="unread" value="1" <%= data.unreadOnly ? 'checked' : '' %>>
+        仅看客服未读
+      </label>
+      <button class="button primary" type="submit">查询</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-header">
+    <h2>会话列表</h2>
+    <div class="meta"><%= data.conversations.length %> 个会话</div>
+  </div>
+  <div class="panel-body" style="padding-top:0;">
+    <table>
+      <thead>
+        <tr>
+          <th>编号</th>
+          <th>用户</th>
+          <th>客服</th>
+          <th>最后消息</th>
+          <th>用户未读</th>
+          <th>客服未读</th>
+          <th>状态</th>
+          <th>认领客服</th>
+          <th>最后活跃</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.conversations.forEach((item) => { %>
+          <tr>
+            <td><%= item.id %></td>
+            <td>
+              <div><strong><%= item.nickname %></strong></div>
+              <div style="font-size:12px;color:#6b7280;"><%= item.phone || '-' %></div>
+            </td>
+            <td><%= item.agent_name %></td>
+            <td style="max-width:320px;color:#6b7280;"><%= item.last_message_preview || '-' %></td>
+            <td><span class="badge <%= Number(item.user_unread_count) > 0 ? 'active' : '' %>"><%= item.user_unread_count %></span></td>
+            <td><span class="badge <%= Number(item.agent_unread_count) > 0 ? 'ended' : '' %>"><%= item.agent_unread_count %></span></td>
+            <td>
+              <span class="badge <%= item.status === 'closed' ? 'ended' : 'active' %>">
+                <%= ({ open: '待跟进', pending: '处理中', closed: '已关闭' }[item.status] || item.status) %>
+              </span>
+            </td>
+            <td><%= item.assigned_admin || '-' %></td>
+            <td><%= item.last_message_at || item.created_at %></td>
+            <td><a class="button primary" href="/admin/service/<%= item.id %>">进入会话</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include("./partials-shell-bottom") %>

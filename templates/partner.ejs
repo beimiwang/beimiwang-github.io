@@ -1,44 +1,605 @@
-<%- include("partials/head", { pageTitle }) %>
-<div class="app-header simple">
-  <a class="left" href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
-  <div class="title">加盟合伙人</div>
-</div>
+<%- include("partials/head", { pageTitle, message: "" }) %>
+<%
+  const isPrivilege = data.mode === "privilege";
+  const nickname = data.user?.nickname || "用户";
+  const latestEvent = data.latestEarningEvent;
+  const latestEventTime = latestEvent?.createdAt ? latestEvent.createdAt.replace(/-/g, "-") : "";
+%>
+<style>
+  .partner-shell {
+    min-height: 100vh;
+    background: #f6f7fb;
+    padding-bottom: 5rem;
+  }
 
-<div class="soft-card pad">
-  <div style="display:flex;align-items:center;gap:.7rem;">
-    <img src="<%= data.user.avatar %>" alt="<%= data.user.nickname %>" style="width:3rem;height:3rem;border-radius:50%;object-fit:cover;">
-    <div>
-      <div style="font-size:.9rem;font-weight:700;color:#333;"><%= data.user.nickname %></div>
-      <div style="font-size:.64rem;color:#999;margin-top:.15rem;">城市：<%= data.user.city || '未设置' %></div>
+  .partner-header {
+    height: 2.2rem;
+    background: #35c96d;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 .7rem;
+    font-size: .8rem;
+    font-weight: 600;
+  }
+
+  .partner-header a,
+  .partner-header span {
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .partner-header-center {
+    flex: 1;
+    text-align: center;
+    font-weight: 700;
+    font-size: .78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 .4rem;
+  }
+
+  .partner-detail-hero {
+    position: relative;
+    background: #5fd37f;
+    overflow: hidden;
+    color: #fff;
+    padding: .9rem .8rem 1rem;
+  }
+
+  .partner-detail-hero::before,
+  .partner-detail-hero::after {
+    content: "";
+    position: absolute;
+    background: rgba(255, 255, 255, .12);
+    border-radius: 999px;
+    transform: rotate(35deg);
+  }
+
+  .partner-detail-hero::before {
+    right: .55rem;
+    top: .45rem;
+    width: .8rem;
+    height: 2rem;
+  }
+
+  .partner-detail-hero::after {
+    left: .2rem;
+    top: .3rem;
+    width: .5rem;
+    height: .5rem;
+  }
+
+  .partner-income-main {
+    text-align: center;
+    padding-top: .25rem;
+  }
+
+  .partner-income-main .money {
+    font-size: 1.2rem;
+    line-height: 1.35rem;
+    font-weight: 300;
+    letter-spacing: .01em;
+  }
+
+  .partner-income-main .label {
+    margin-top: .12rem;
+    font-size: .66rem;
+    opacity: .95;
+  }
+
+  .partner-income-sub {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .4rem;
+    text-align: center;
+  }
+
+  .partner-income-sub .value {
+    font-size: .82rem;
+    line-height: 1rem;
+    font-weight: 500;
+  }
+
+  .partner-income-sub .caption {
+    margin-top: .08rem;
+    font-size: .62rem;
+    opacity: .95;
+  }
+
+  .partner-latest {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    height: 1.7rem;
+    background: #fff;
+    padding: 0 .65rem;
+    border-bottom: 1px solid #eff2f6;
+    font-size: .68rem;
+    color: #5f6977;
+  }
+
+  .partner-latest strong {
+    color: #58c56f;
+    font-weight: 700;
+  }
+
+  .partner-latest .amount {
+    color: #ff6666;
+    font-weight: 700;
+  }
+
+  .partner-menu {
+    margin-top: .35rem;
+    background: #fff;
+  }
+
+  .partner-menu-item {
+    height: 2.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 .72rem;
+    border-bottom: 1px solid #f1f3f6;
+    color: #2d3746;
+    text-decoration: none;
+    font-size: .82rem;
+  }
+
+  .partner-menu-item:last-child {
+    border-bottom: 0;
+  }
+
+  .partner-menu-left {
+    display: inline-flex;
+    align-items: center;
+    gap: .34rem;
+  }
+
+  .partner-menu-icon {
+    width: .88rem;
+    text-align: center;
+    font-size: .72rem;
+  }
+
+  .partner-menu-right {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    color: #8a95a5;
+    font-size: .74rem;
+  }
+
+  .partner-menu-right .accent {
+    color: #58c56f;
+    font-weight: 600;
+  }
+
+  .partner-menu-right .warn {
+    color: #ff6767;
+    font-weight: 600;
+  }
+
+  .partner-menu-right .arrow {
+    color: #c3cad4;
+    font-size: .9rem;
+  }
+
+  .partner-banner {
+    margin: 0;
+    height: 9rem;
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(0deg, rgba(235, 214, 91, .95), rgba(235, 214, 91, .95)),
+      radial-gradient(circle at 20% 28%, rgba(255,255,255,.18), transparent 16%);
+  }
+
+  .partner-banner::before {
+    content: "";
+    position: absolute;
+    left: -8%;
+    right: -8%;
+    top: 1rem;
+    height: 1rem;
+    background: #d93e45;
+    border-top: .12rem solid #473533;
+    border-bottom: .12rem solid #473533;
+    transform: rotate(-5deg);
+  }
+
+  .partner-banner::after {
+    content: "";
+    position: absolute;
+    left: -10%;
+    right: -10%;
+    bottom: 1.55rem;
+    height: .95rem;
+    background: #d93e45;
+    border-top: .12rem solid #473533;
+    border-bottom: .12rem solid #473533;
+    transform: rotate(-4deg);
+  }
+
+  .partner-poster {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .2rem;
+    z-index: 1;
+  }
+
+  .partner-poster-main {
+    padding: .2rem .75rem;
+    background: #d98946;
+    border: .12rem solid #5f412d;
+    color: #fff;
+    font-size: 1.22rem;
+    line-height: 1.4rem;
+    font-weight: 900;
+    letter-spacing: .03em;
+    text-align: center;
+    box-shadow: 0 .12rem 0 rgba(79, 52, 39, .45);
+    transform: rotate(-4deg);
+    text-shadow: 0 .08rem 0 rgba(77, 56, 45, .55);
+  }
+
+  .partner-poster-sub {
+    margin-top: .25rem;
+    padding: .08rem .72rem;
+    background: #58d0e6;
+    border: .12rem solid #3a3d3d;
+    color: #1e2732;
+    font-size: .74rem;
+    line-height: 1rem;
+    font-weight: 900;
+    transform: rotate(-2deg);
+  }
+
+  .partner-poster-dot {
+    width: .8rem;
+    height: .18rem;
+    border-radius: 999px;
+    background: #7bd487;
+    margin-top: .28rem;
+  }
+
+  .partner-body {
+    padding: .58rem .58rem 0;
+  }
+
+  .partner-label {
+    color: #8f99aa;
+    font-size: .66rem;
+    line-height: .95rem;
+    margin-bottom: .36rem;
+  }
+
+  .partner-level-card,
+  .partner-note-box,
+  .partner-cta {
+    background: #fff;
+    border-radius: .78rem;
+    box-shadow: 0 .1rem .32rem rgba(15, 23, 42, .05);
+  }
+
+  .partner-level-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .86rem .9rem;
+    color: #273142;
+    font-size: .88rem;
+    font-weight: 700;
+  }
+
+  .partner-level-card .arrow {
+    color: #c2c8d2;
+    font-size: .96rem;
+  }
+
+  .partner-grid-label {
+    margin-top: .68rem;
+    margin-bottom: .34rem;
+    color: #8f99aa;
+    font-size: .66rem;
+  }
+
+  .partner-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: #fff;
+    border-radius: .88rem;
+    overflow: hidden;
+    box-shadow: 0 .1rem .32rem rgba(15, 23, 42, .05);
+  }
+
+  .partner-metric {
+    min-height: 5.7rem;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: .6rem .22rem;
+    border-right: 1px solid #edf1f6;
+  }
+
+  .partner-metric:last-child {
+    border-right: 0;
+  }
+
+  .partner-metric-icon {
+    font-size: 1rem;
+    line-height: 1;
+    margin-bottom: .2rem;
+  }
+
+  .partner-metric-title {
+    color: #8d97a9;
+    font-size: .68rem;
+    line-height: .95rem;
+  }
+
+  .partner-metric-value {
+    color: #35c96d;
+    font-size: .74rem;
+    line-height: 1rem;
+    font-weight: 700;
+    margin-top: .12rem;
+  }
+
+  .partner-copy {
+    margin-top: .64rem;
+    color: #434d5c;
+    font-size: .76rem;
+    line-height: 1.28rem;
+  }
+
+  .partner-copy strong {
+    color: #35c96d;
+    font-weight: 800;
+  }
+
+  .partner-note-box {
+    margin-top: .5rem;
+    border: 1px solid rgba(53, 201, 109, .68);
+    padding: .72rem .78rem;
+    color: #576170;
+    font-size: .7rem;
+    line-height: 1.14rem;
+  }
+
+  .partner-cta {
+    margin-top: .88rem;
+    width: 100%;
+    border: 0;
+    background: #35c96d;
+    color: #fff;
+    height: 2.45rem;
+    font-size: .94rem;
+    font-weight: 800;
+    border-radius: .78rem;
+  }
+
+  .partner-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 160;
+    display: none;
+  }
+
+  .partner-sheet.is-open {
+    display: block;
+  }
+
+  .partner-sheet-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 14, 24, .42);
+  }
+
+  .partner-sheet-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 .62rem calc(.72rem + env(safe-area-inset-bottom));
+  }
+
+  .partner-sheet-title {
+    height: 2.55rem;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    border-radius: .96rem .96rem 0 0;
+    color: #ff766f;
+    font-size: .84rem;
+    font-weight: 800;
+    box-shadow: 0 -.12rem .42rem rgba(15, 23, 42, .08);
+  }
+
+  .partner-sheet-actions {
+    background: #f7f8fb;
+    padding: .5rem 0 0;
+    border-radius: 0 0 .96rem .96rem;
+  }
+
+  .partner-sheet-form {
+    margin: 0;
+  }
+
+  .partner-sheet-option,
+  .partner-sheet-cancel {
+    width: 100%;
+    height: 2.45rem;
+    border: 0;
+    background: #fff;
+    color: #263141;
+    font-size: .9rem;
+    font-weight: 700;
+    margin-bottom: .45rem;
+    border-radius: .66rem;
+  }
+
+  .partner-sheet-cancel {
+    margin-top: .1rem;
+  }
+</style>
+
+<div class="partner-shell">
+  <% if (!isPrivilege) { %>
+    <div class="partner-header">
+      <a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+      <div class="partner-header-center">金牌合伙人-<%= nickname %></div>
+      <a href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=privilege">等级特权</a>
     </div>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:.9rem;text-align:center;">
-    <div><div style="font-size:.9rem;font-weight:700;"><%= data.stats.totalPosts %></div><div style="font-size:.62rem;color:#999;">累计发布</div></div>
-    <div><div style="font-size:.9rem;font-weight:700;"><%= data.stats.totalViews %></div><div style="font-size:.62rem;color:#999;">累计浏览</div></div>
-    <div><div style="font-size:.9rem;font-weight:700;"><%= data.wallet.balance.toFixed(2) %></div><div style="font-size:.62rem;color:#999;">钱包余额</div></div>
-  </div>
-</div>
 
-<div class="grid-panel">
-  <h3>合伙人权益</h3>
-  <div style="display:grid;gap:.55rem;">
-    <% data.benefits.forEach((benefit) => { %>
-      <div style="font-size:.68rem;line-height:1rem;color:#555;background:#f7faf8;border-radius:.6rem;padding:.7rem .8rem;"><%= benefit %></div>
-    <% }) %>
-  </div>
-</div>
+    <div class="partner-detail-hero">
+      <div class="partner-income-main">
+        <div class="money">¥<%= Number(data.todayIncome || 0).toFixed(2) %></div>
+        <div class="label">今日收入</div>
+      </div>
+      <div class="partner-income-sub">
+        <div>
+          <div class="value">¥<%= Number(data.withdrawable || 0).toFixed(2) %></div>
+          <div class="caption">可提现</div>
+        </div>
+        <div>
+          <div class="value">¥<%= Number(data.totalCommission || 0).toFixed(2) %></div>
+          <div class="caption">累计提成</div>
+        </div>
+      </div>
+    </div>
 
-<div class="settings-section">
-  <div class="settings-title">提交申请</div>
-  <% if (data.application) { %>
-    <div style="font-size:.68rem;color:#666;line-height:1rem;margin-bottom:.8rem;">当前申请状态：<span class="main_color"><%= data.application.status %></span>，提交时间 <%= data.application.created_at %></div>
+    <div class="partner-latest">
+      <strong>最新收益</strong>
+      <% if (latestEvent) { %>
+        <span><%= latestEvent.nickname %> <%= latestEventTime %> 提现</span>
+        <span class="amount"><%= Number(latestEvent.amount || 0) %>元</span>
+      <% } else { %>
+        <span>暂无最新收益</span>
+      <% } %>
+    </div>
+
+    <div class="partner-menu">
+      <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=privilege">
+        <span class="partner-menu-left"><span class="partner-menu-icon">💞</span><span>金牌合伙人</span></span>
+        <span class="partner-menu-right"><span class="<%= data.latestOrderStatusLabel === '待支付' ? 'warn' : 'accent' %>"><%= data.latestOrderStatusLabel %></span><span class="arrow">›</span></span>
+      </a>
+      <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=fans">
+        <span class="partner-menu-left"><span class="partner-menu-icon">👥</span><span>我的粉丝</span></span>
+        <span class="partner-menu-right"><span class="accent"><%= Number(data.fanCount || 0) %></span><span class="arrow">›</span></span>
+      </a>
+      <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=income">
+        <span class="partner-menu-left"><span class="partner-menu-icon">🪙</span><span>收入明细</span></span>
+        <span class="partner-menu-right"><span class="arrow">›</span></span>
+      </a>
+      <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=trend">
+        <span class="partner-menu-left"><span class="partner-menu-icon">📈</span><span>收入趋势</span></span>
+        <span class="partner-menu-right"><span class="arrow">›</span></span>
+      </a>
+      <a class="partner-menu-item" href="/plugin.php?id=xigua_hb&ac=qianbao">
+        <span class="partner-menu-left"><span class="partner-menu-icon">💼</span><span>我的钱包</span></span>
+        <span class="partner-menu-right"><span>¥<%= Number(data.wallet?.balance || 0).toFixed(2) %></span><span class="arrow">›</span></span>
+      </a>
+      <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=rules">
+        <span class="partner-menu-left"><span class="partner-menu-icon">❔</span><span>规则说明</span></span>
+        <span class="partner-menu-right"><span class="arrow">›</span></span>
+      </a>
+      <a class="partner-menu-item" href="/plugin.php?id=xigua_lt&type=thread&channel=martin&mobile=2&high=3">
+        <span class="partner-menu-left"><span class="partner-menu-icon">📞</span><span>联系客服</span></span>
+        <span class="partner-menu-right"><span>有问题请找我</span><span class="arrow">›</span></span>
+      </a>
+    </div>
+  <% } else { %>
+    <div class="partner-header">
+      <a href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5">‹ 返回</a>
+      <div class="partner-header-center">等级特权</div>
+      <span></span>
+    </div>
+
+    <div class="partner-banner">
+      <div class="partner-poster">
+        <div class="partner-poster-main">一次加入<br>永久收益</div>
+        <div class="partner-poster-sub">加入合伙人躺着就能赚钱</div>
+        <div class="partner-poster-dot"></div>
+      </div>
+    </div>
+
+    <div class="partner-body">
+      <div class="partner-label">请选择合伙人等级</div>
+      <button id="partnerLevelTrigger" class="partner-level-card" type="button">
+        <span><%= data.selectedLevel %></span>
+        <span class="arrow">›</span>
+      </button>
+
+      <div class="partner-grid-label">费用及等级特权</div>
+      <div class="partner-metrics">
+        <% data.cards.forEach((item) => { %>
+          <div class="partner-metric">
+            <div class="partner-metric-icon"><%= item.icon %></div>
+            <div class="partner-metric-title"><%= item.title %></div>
+            <div class="partner-metric-value"><%= item.value %></div>
+          </div>
+        <% }) %>
+      </div>
+
+      <div class="partner-copy">
+        <strong><%= data.introTitle %></strong><br>
+        <%= data.introText %><br>
+        <strong><%= data.settleText %></strong>
+      </div>
+
+      <% data.notes.forEach((note) => { %>
+        <div class="partner-note-box"><%= note %></div>
+      <% }) %>
+
+      <button id="partnerJoinTrigger" class="partner-cta" type="button">立即成为合伙人</button>
+    </div>
+
+    <div id="partnerSheet" class="partner-sheet" aria-hidden="true">
+      <div class="partner-sheet-mask" data-partner-close></div>
+      <div class="partner-sheet-panel">
+        <div class="partner-sheet-title"><%= data.selectedLevel %></div>
+        <div class="partner-sheet-actions">
+          <% data.plans.forEach((plan) => { %>
+            <form class="partner-sheet-form" method="post" action="/plugin.php?id=xigua_hh&ac=join">
+              <input type="hidden" name="plan_key" value="<%= plan.key %>">
+              <button class="partner-sheet-option" type="submit"><%= plan.priceLabel %></button>
+            </form>
+          <% }) %>
+          <button class="partner-sheet-cancel" type="button" data-partner-close>取消</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const sheet = document.getElementById("partnerSheet");
+        const openButtons = [document.getElementById("partnerJoinTrigger"), document.getElementById("partnerLevelTrigger")].filter(Boolean);
+        const closeButtons = Array.from(document.querySelectorAll("[data-partner-close]"));
+        if (!sheet || !openButtons.length) return;
+
+        const openSheet = () => {
+          sheet.classList.add("is-open");
+          sheet.setAttribute("aria-hidden", "false");
+        };
+
+        const closeSheet = () => {
+          sheet.classList.remove("is-open");
+          sheet.setAttribute("aria-hidden", "true");
+        };
+
+        openButtons.forEach((button) => button.addEventListener("click", openSheet));
+        closeButtons.forEach((button) => button.addEventListener("click", closeSheet));
+      })();
+    </script>
   <% } %>
-  <form class="settings-form" method="post" action="/plugin.php?id=xigua_hh&ac=apply">
-    <input class="settings-input" type="text" name="city" placeholder="所在城市" value="<%= data.user.city || '' %>">
-    <input class="settings-input" type="text" name="phone" placeholder="联系电话" value="<%= data.user.phone || '' %>">
-    <textarea class="settings-textarea" name="intro" placeholder="请简单介绍你的资源、城市和合作意向"><%= data.application?.intro || '' %></textarea>
-    <button class="settings-button" type="submit">提交合伙人申请</button>
-  </form>
 </div>
 
 <%- include("partials/tabbar", { currentTab }) %>

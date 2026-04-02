@@ -1,3 +1,4 @@
+<% const chatUnread = (typeof unreadSummary !== "undefined" && unreadSummary && unreadSummary.chat) ? unreadSummary.chat : 0; %>
 <div class="cl footer_fix"></div>
 <div class="weui-tabbar" style="padding-bottom: env(safe-area-inset-bottom);">
   <a href="/plugin.php?id=xigua_hb&mobile=2&high=0" class="weui-tabbar__item <%= currentTab === 'home' ? 'weui-bar__item_on' : '' %>">
@@ -32,6 +33,7 @@
         <path d="M5.5 7.5c0-1.7 1.3-3 3-3h7c1.7 0 3 1.3 3 3v5.4c0 1.7-1.3 3-3 3H11l-4.5 3v-3H8.5c-1.7 0-3-1.3-3-3V7.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
       </svg>
     </span>
+    <% if (chatUnread > 0) { %><span class="tabbar-badge"><%= chatUnread > 99 ? '99+' : chatUnread %></span><% } %>
     <p class="weui-tabbar__label">消息</p>
   </a>
   <a href="/plugin.php?id=xigua_hb&ac=my&high=4" class="weui-tabbar__item <%= currentTab === 'mine' ? 'weui-bar__item_on' : '' %>">

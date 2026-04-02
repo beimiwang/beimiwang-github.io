@@ -1,0 +1,32 @@
+<%- include("partials/head", { pageTitle, message }) %>
+<style>
+  .uo-shell { background:#f6f7fb; min-height:100vh; padding-bottom:4.4rem; }
+  .uo-header { height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .7rem; font-size:.78rem; font-weight:600; }
+  .uo-header a { color:#fff; text-decoration:none; }
+  .uo-list { margin:.7rem .6rem 0; display:grid; gap:.55rem; }
+  .uo-card { background:#fff; border-radius:.82rem; box-shadow:0 .1rem .32rem rgba(15,23,42,.05); padding:.8rem; }
+  .uo-top { display:flex; justify-content:space-between; gap:.6rem; }
+  .uo-top h3 { margin:0; font-size:.82rem; line-height:1.12rem; color:#233042; }
+  .uo-top .price { font-size:.9rem; font-weight:700; color:#2fc96c; }
+  .uo-meta { margin-top:.28rem; display:flex; gap:.4rem; flex-wrap:wrap; font-size:.6rem; color:#98a2b2; }
+</style>
+<div class="uo-shell">
+  <div class="uo-header"><a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a><div>我的订单</div><span></span></div>
+  <div class="uo-list">
+    <% if (!data.orders.length) { %><div class="uo-card">暂无订单记录</div><% } %>
+    <% data.orders.forEach((item) => { %>
+      <div class="uo-card">
+        <div class="uo-top">
+          <h3><%= item.plan_name || item.note || item.order_type %></h3>
+          <div class="price">¥<%= Number(item.amount || 0).toFixed(2) %></div>
+        </div>
+        <div class="uo-meta">
+          <span><%= ({ membership:'会员开通', wallet_topup:'钱包充值', partner:'合伙人订单' }[item.order_type] || item.order_type) %></span>
+          <span><%= ({ paid:'已支付', pending:'待支付', cancelled:'已取消' }[item.status] || item.status) %></span>
+          <span><%= item.created_at %></span>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+<%- include("partials/tabbar", { currentTab }) %>

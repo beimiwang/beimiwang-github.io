@@ -49,6 +49,72 @@
   </div>
 
   <div class="panel">
+    <div class="panel-header"><h2>客服资料</h2></div>
+    <div class="panel-body">
+      <div class="meta" style="margin-bottom:16px;">这里可以修改前台客服聊天里显示的客服名字、头像和在线状态。</div>
+      <table>
+        <thead>
+          <tr><th>客服通道</th><th>资料配置</th></tr>
+        </thead>
+        <tbody>
+          <% (data.serviceAgents || []).forEach((agent) => { %>
+            <tr>
+              <td style="white-space:nowrap;"><%= agent.channel_key %></td>
+              <td>
+                <form class="toolbar" method="post" action="/admin/system/service-agents/<%= agent.channel_key %>" style="flex-wrap:wrap;">
+                  <input class="input" type="text" name="name" value="<%= agent.name %>" placeholder="客服名称">
+                  <input class="input" type="text" name="avatar" value="<%= agent.avatar || '' %>" placeholder="头像 URL" style="min-width:260px;">
+                  <select class="select" name="status">
+                    <option value="online" <%= agent.status === 'online' ? 'selected' : '' %>>在线</option>
+                    <option value="busy" <%= agent.status === 'busy' ? 'selected' : '' %>>忙碌</option>
+                    <option value="offline" <%= agent.status === 'offline' ? 'selected' : '' %>>离线</option>
+                  </select>
+                  <button class="button primary" type="submit">保存</button>
+                </form>
+                <% if (agent.avatar) { %>
+                  <div style="margin-top:10px;">
+                    <img src="<%= agent.avatar %>" alt="<%= agent.name %>" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:1px solid #e5e7eb;">
+                  </div>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header"><h2>客服快捷回复</h2></div>
+    <div class="panel-body">
+      <div class="meta" style="margin-bottom:16px;">这里维护客服会话详情页里的快捷回复按钮，支持排序和显示开关。</div>
+      <form class="toolbar" method="post" action="/admin/system/service-quick-replies" style="margin-bottom:16px;flex-wrap:wrap;">
+        <input class="input" type="text" name="content" placeholder="新增快捷回复内容" style="min-width:420px;">
+        <input class="input" type="number" name="sort_order" placeholder="排序" style="max-width:110px;">
+        <select class="select" name="enabled">
+          <option value="1">显示</option>
+          <option value="0">隐藏</option>
+        </select>
+        <button class="button primary" type="submit">新增快捷回复</button>
+      </form>
+      <div class="stack">
+        <% (data.serviceQuickReplies || []).forEach((item) => { %>
+          <form class="toolbar" method="post" action="/admin/system/service-quick-replies/<%= item.id %>" style="flex-wrap:wrap;">
+            <input class="input" type="text" name="content" value="<%= item.content %>" style="flex:1;min-width:420px;">
+            <input class="input" type="number" name="sort_order" value="<%= item.sort_order || 0 %>" style="max-width:110px;">
+            <select class="select" name="enabled">
+              <option value="1" <%= Number(item.enabled) === 1 ? 'selected' : '' %>>显示</option>
+              <option value="0" <%= Number(item.enabled) === 0 ? 'selected' : '' %>>隐藏</option>
+            </select>
+            <button class="button primary" type="submit">保存</button>
+            <button class="button danger" type="submit" name="action" value="delete" onclick="return confirm('删除这条快捷回复？');">删除</button>
+          </form>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
     <div class="panel-header"><h2>图片上传</h2></div>
     <div class="panel-body">
       <form class="toolbar" method="post" action="/admin/upload" enctype="multipart/form-data" style="margin-bottom:16px;flex-wrap:wrap;">

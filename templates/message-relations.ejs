@@ -1,0 +1,46 @@
+<%- include("partials/head", { pageTitle, message: "" }) %>
+<style>
+  .relation-page { background:#f7f7f7; min-height:100vh; padding-bottom:4.4rem; }
+  .relation-header {
+    height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center;
+    justify-content:space-between; padding:0 .7rem; font-size:.78rem; font-weight:600;
+  }
+  .relation-header a { color:#fff; text-decoration:none; }
+  .relation-list { padding:.55rem; }
+  .relation-item {
+    display:flex; align-items:center; gap:.65rem; background:#fff; border-radius:.72rem;
+    padding:.72rem .78rem; margin-bottom:.48rem; text-decoration:none; color:#444;
+    box-shadow:0 .08rem .28rem rgba(0,0,0,.04);
+  }
+  .relation-item img { width:1.9rem; height:1.9rem; border-radius:50%; object-fit:cover; }
+  .relation-item .name { font-size:.74rem; font-weight:700; }
+  .relation-item .tagline { font-size:.6rem; color:#9f9f9f; margin-top:.14rem; }
+  .relation-item .badge { margin-left:auto; font-size:.56rem; color:#35c96d; }
+</style>
+
+<div class="relation-page">
+  <div class="relation-header">
+    <a href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3">‹ 返回</a>
+    <div><%= data.title %></div>
+    <span></span>
+  </div>
+
+  <div class="relation-list">
+    <% if ((data.items || []).length) { %>
+      <% data.items.forEach((item) => { %>
+        <a class="relation-item" href="/plugin.php?id=xigua_hb&ac=my&high=4">
+          <img src="<%= item.avatar %>" alt="<%= item.nickname %>">
+          <div>
+            <div class="name"><%= item.nickname %></div>
+            <div class="tagline"><%= item.tagline %></div>
+          </div>
+          <div class="badge"><%= data.type === 'fans' ? '粉丝' : '已关注' %></div>
+        </a>
+      <% }) %>
+    <% } else { %>
+      <div class="relation-item" style="justify-content:center;color:#bbb;">暂无内容</div>
+    <% } %>
+  </div>
+</div>
+
+<%- include("partials/tabbar", { currentTab }) %>
