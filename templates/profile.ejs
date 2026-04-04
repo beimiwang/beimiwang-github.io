@@ -357,6 +357,35 @@
     color: #9aa3b2;
     white-space: nowrap;
   }
+
+  .mine-link-row .left-group {
+    display: inline-flex;
+    align-items: center;
+    gap: .56rem;
+    min-width: 0;
+  }
+
+  .mine-link-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: .98rem;
+    height: .98rem;
+    flex: 0 0 auto;
+    font-size: .9rem;
+    line-height: 1;
+  }
+
+  .mine-link-icon .iconfont {
+    font-size: .86rem;
+    line-height: 1;
+    color: currentColor;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .mine-link-icon.forest { color: #6db583; }
+  .mine-link-icon.pink { color: #f28aa4; }
 </style>
 
 <div class="mine-page">
@@ -473,12 +502,18 @@
   </section>
 
   <section class="mine-card mine-links">
-    <a class="mine-link-row" href="javascript:;">
-      <span class="left">帮助中心</span>
+    <a class="mine-link-row" href="/plugin.php?id=xigua_hb&ac=about&mobile=2&high=4">
+      <span class="left-group">
+        <span class="mine-link-icon forest"><i class="iconfont icon-guize" aria-hidden="true"></i></span>
+        <span class="left">帮助中心</span>
+      </span>
       <span class="right">›</span>
     </a>
     <a class="mine-link-row" href="/plugin.php?id=xigua_lt&type=thread&channel=martin&mobile=2&high=3">
-      <span class="left">联系客服</span>
+      <span class="left-group">
+        <span class="mine-link-icon pink"><i class="iconfont icon-kefu" aria-hidden="true"></i></span>
+        <span class="left">联系客服</span>
+      </span>
       <span class="right">有问题请找我 ›</span>
     </a>
   </section>
