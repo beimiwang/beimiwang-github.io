@@ -23,9 +23,8 @@
   }
 
   .wallet-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    position: relative;
+    height: 2.35rem;
     font-size: .78rem;
     font-weight: 600;
   }
@@ -33,11 +32,26 @@
   .wallet-nav a {
     color: #fff;
     text-decoration: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
   }
+  .wallet-nav > a:first-child { left: 0; }
+  .wallet-nav > a:last-child { right: 0; min-width: 2.2rem; text-align: right; }
 
   .wallet-nav .title {
-    font-size: .86rem;
+    position: absolute;
+    left: 3.4rem;
+    right: 3.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+    font-size: .84rem;
     font-weight: 700;
+    line-height: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .wallet-summary {
@@ -252,7 +266,7 @@
 <div class="wallet-page">
   <header class="wallet-hero">
     <div class="wallet-nav">
-      <a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+      <a class="ui-back-link is-light" href="/plugin.php?id=xigua_hb&ac=my&high=4"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
       <div class="title">我的钱包</div>
       <a href="/plugin.php?id=xigua_hb&ac=settings&high=4&view=withdraw">提现设置</a>
     </div>

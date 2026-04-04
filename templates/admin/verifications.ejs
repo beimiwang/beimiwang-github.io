@@ -1,0 +1,100 @@
+<%- include("./partials-shell-top", { pageTitle, token, active: 'verifications' }) %>
+<div class="admin-topbar">
+  <div>
+    <h1>认证审核</h1>
+    <div class="meta">集中审核实名认证和企业认证，保存审核结论并同步前台状态。</div>
+  </div>
+</div>
+
+<% if (msg) { %>
+  <div class="notice"><%= msg %></div>
+<% } %>
+
+<div class="panel">
+  <div class="panel-header"><h2>筛选</h2></div>
+  <div class="panel-body">
+    <form class="toolbar" method="get" action="/admin/verifications">
+      <input class="input" type="text" name="keyword" value="<%= data.keyword %>" placeholder="搜索昵称 / 手机号 / 姓名 / 执照号">
+      <select class="select" name="type">
+        <option value="">全部类型</option>
+        <option value="personal" <%= data.type === 'personal' ? 'selected' : '' %>>实名认证</option>
+        <option value="business" <%= data.type === 'business' ? 'selected' : '' %>>企业认证</option>
+      </select>
+      <select class="select" name="status">
+        <option value="">全部状态</option>
+        <option value="pending" <%= data.status === 'pending' ? 'selected' : '' %>>待审核</option>
+        <option value="approved" <%= data.status === 'approved' ? 'selected' : '' %>>已通过</option>
+        <option value="rejected" <%= data.status === 'rejected' ? 'selected' : '' %>>已驳回</option>
+      </select>
+      <button class="button primary" type="submit">查询</button>
+    </form>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="panel-header">
+    <h2>认证申请</h2>
+    <div class="meta"><%= data.items.length %> 条记录</div>
+  </div>
+  <div class="panel-body" style="display:grid;gap:16px;">
+    <% data.items.forEach((item) => { %>
+      <div style="border:1px solid #edf1f5;border-radius:16px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;">
+          <div>
+            <div style="font-size:20px;font-weight:700;color:#111827;"><%= item.nickname %></div>
+            <div style="margin-top:6px;font-size:13px;color:#6b7280;">手机号：<%= item.phone || '未绑定' %></div>
+            <div style="margin-top:4px;font-size:13px;color:#6b7280;">申请时间：<%= item.created_at %></div>
+          </div>
+          <div style="text-align:right;">
+            <div class="badge <%= item.verify_type === 'business' ? 'warn' : 'active' %>"><%= item.verify_type === 'business' ? '企业认证' : '实名认证' %></div>
+            <div class="badge <%= item.status === 'approved' ? 'active' : (item.status === 'rejected' ? '' : 'warn') %>" style="margin-top:8px;">
+              <%= item.status === 'approved' ? '已通过' : (item.status === 'rejected' ? '已驳回' : '待审核') %>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;display:grid;grid-template-columns:<%= item.verify_type === 'business' ? '180px 1fr' : '1fr 1fr' %>;gap:16px;align-items:start;">
+          <% if (item.verify_type === 'business') { %>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;">营业执照</div>
+              <% if (item.license_image) { %>
+                <img src="<%= item.license_image %>" alt="营业执照" style="width:180px;height:180px;object-fit:cover;border-radius:12px;border:1px solid #edf1f5;background:#f8fafc;">
+              <% } else { %>
+                <div style="width:180px;height:180px;border-radius:12px;border:1px dashed #d8dee9;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#9ca3af;">未上传</div>
+              <% } %>
+            </div>
+          <% } %>
+
+          <div style="display:grid;gap:10px;">
+            <div style="display:grid;gap:6px;font-size:13px;color:#6b7280;">
+              <div>姓名：<strong style="color:#111827;"><%= item.real_name || '未填写' %></strong></div>
+              <% if (item.verify_type === 'personal') { %>
+                <div>身份证号：<strong style="color:#111827;"><%= item.id_card_number || '未填写' %></strong></div>
+              <% } else { %>
+                <div>主体名称：<strong style="color:#111827;"><%= item.business_name || '未填写' %></strong></div>
+                <div>主体类型：<strong style="color:#111827;"><%= item.business_type || '未填写' %></strong></div>
+                <div>执照注册号：<strong style="color:#111827;"><%= item.license_number || '未填写' %></strong></div>
+                <div>联系电话：<strong style="color:#111827;"><%= item.contact_phone || '未填写' %></strong></div>
+              <% } %>
+              <div>有效期：<strong style="color:#111827;"><%= Number(item.valid_years || 1) %> 年</strong></div>
+            </div>
+            <form method="post" action="/admin/verifications/<%= item.id %>/status" style="display:grid;gap:10px;">
+              <select class="select" name="status">
+                <option value="pending" <%= item.status === 'pending' ? 'selected' : '' %>>待审核</option>
+                <option value="approved" <%= item.status === 'approved' ? 'selected' : '' %>>通过</option>
+                <option value="rejected" <%= item.status === 'rejected' ? 'selected' : '' %>>驳回</option>
+              </select>
+              <textarea class="input" name="note" placeholder="审核备注 / 驳回原因" style="min-height:92px;padding:12px;"><%= item.note || '' %></textarea>
+              <div><button class="button primary" type="submit">保存审核结果</button></div>
+            </form>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+
+    <% if (!data.items.length) { %>
+      <div style="padding:36px 16px;text-align:center;color:#9ca3af;">暂无认证申请</div>
+    <% } %>
+  </div>
+</div>
+<%- include("./partials-shell-bottom") %>

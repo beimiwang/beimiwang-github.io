@@ -13,14 +13,11 @@
   }
 
   .partner-header {
-    height: 2.2rem;
+    position: relative;
+    height: 2.35rem;
     background: #35c96d;
     color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 .7rem;
-    font-size: .8rem;
+    font-size: .84rem;
     font-weight: 600;
   }
 
@@ -30,15 +27,76 @@
     text-decoration: none;
   }
 
+  .partner-header > a:first-child,
+  .partner-header > a:last-child,
+  .partner-header > span:last-child {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.2rem;
+    z-index: 1;
+  }
+
+  .partner-header > a:first-child {
+    left: .72rem;
+  }
+
+  .partner-header > a:last-child,
+  .partner-header > span:last-child {
+    right: .72rem;
+    justify-content: flex-end;
+    min-width: 2.6rem;
+  }
+
   .partner-header-center {
-    flex: 1;
+    position: absolute;
+    left: 3.4rem;
+    right: 3.4rem;
+    top: 50%;
+    transform: translateY(-50%);
     text-align: center;
-    font-weight: 700;
-    font-size: .78rem;
+    font-weight: 650;
+    font-size: .84rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 0 .4rem;
+    padding: 0;
+  }
+
+  .partner-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .34rem;
+    margin-top: .52rem;
+    flex-wrap: wrap;
+  }
+
+  .partner-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .22rem;
+    min-height: 1rem;
+    padding: 0 .42rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.14);
+    color: rgba(255,255,255,.96);
+    font-size: .54rem;
+    font-weight: 500;
+  }
+
+  .partner-status-pill svg,
+  .partner-menu-icon svg,
+  .partner-metric-icon svg {
+    width: .72rem;
+    height: .72rem;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .partner-detail-hero {
@@ -160,9 +218,10 @@
   }
 
   .partner-menu-icon {
-    width: .88rem;
-    text-align: center;
-    font-size: .72rem;
+    width: .92rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .partner-menu-right {
@@ -186,6 +245,16 @@
   .partner-menu-right .arrow {
     color: #c3cad4;
     font-size: .9rem;
+  }
+
+  .partner-metric-icon {
+    width: 1rem;
+    height: 1rem;
+    margin: 0 auto .18rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #58c56f;
   }
 
   .partner-banner {
@@ -454,7 +523,7 @@
 <div class="partner-shell">
   <% if (!isPrivilege) { %>
     <div class="partner-header">
-      <a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+      <a class="ui-back-link is-light" href="/plugin.php?id=xigua_hb&ac=my&high=4"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
       <div class="partner-header-center">金牌合伙人-<%= nickname %></div>
       <a href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=privilege">等级特权</a>
     </div>
@@ -463,6 +532,16 @@
       <div class="partner-income-main">
         <div class="money">¥<%= Number(data.todayIncome || 0).toFixed(2) %></div>
         <div class="label">今日收入</div>
+      </div>
+      <div class="partner-status-row">
+        <span class="partner-status-pill">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.7 12.4 2.2 2.2 4.8-4.8"/><path d="M12 3.8 18.2 6v5.7c0 3.7-2.6 6.1-6.2 7.8-3.6-1.7-6.2-4.1-6.2-7.8V6L12 3.8Z"/></svg>
+          <span><%= data.user?.verificationBadge?.businessApproved ? '企业认证' : data.user?.verificationBadge?.personalApproved ? '个人认证' : '未认证' %></span>
+        </span>
+        <span class="partner-status-pill">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12.2h9"/><path d="M12 7.7v9"/><path d="M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/></svg>
+          <span><%= data.verification?.depositStatusText || '未缴纳' %></span>
+        </span>
       </div>
       <div class="partner-income-sub">
         <div>
@@ -488,37 +567,37 @@
 
     <div class="partner-menu">
       <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=privilege">
-        <span class="partner-menu-left"><span class="partner-menu-icon">💞</span><span>金牌合伙人</span></span>
+        <span class="partner-menu-left"><span class="partner-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.2 10.3 2.8 2.7 2-2 2.8 2.8"/><path d="M6.5 8.8 4.5 6.9a2.2 2.2 0 0 1 3.1-3.1l1.6 1.6"/><path d="m17.5 8.8 2-1.9a2.2 2.2 0 0 0-3.1-3.1l-1.6 1.6"/><path d="M7.5 12.5 5.7 14.3a2.2 2.2 0 1 0 3.1 3.1l1.8-1.8"/><path d="m16.5 12.5 1.8 1.8a2.2 2.2 0 1 1-3.1 3.1l-1.8-1.8"/></svg></span><span>金牌合伙人</span></span>
         <span class="partner-menu-right"><span class="<%= data.latestOrderStatusLabel === '待支付' ? 'warn' : 'accent' %>"><%= data.latestOrderStatusLabel %></span><span class="arrow">›</span></span>
       </a>
       <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=fans">
-        <span class="partner-menu-left"><span class="partner-menu-icon">👥</span><span>我的粉丝</span></span>
+        <span class="partner-menu-left"><span class="partner-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="2.6"/><circle cx="16.5" cy="10.2" r="2.1"/><path d="M4.8 18.2c1.1-2.2 3-3.4 5.2-3.4s4 1.2 5.1 3.4"/><path d="M14.2 17.7c.6-1.4 1.8-2.2 3.4-2.2 1 0 1.9.3 2.6.9"/></svg></span><span>我的粉丝</span></span>
         <span class="partner-menu-right"><span class="accent"><%= Number(data.fanCount || 0) %></span><span class="arrow">›</span></span>
       </a>
       <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=income">
-        <span class="partner-menu-left"><span class="partner-menu-icon">🪙</span><span>收入明细</span></span>
+        <span class="partner-menu-left"><span class="partner-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="8" rx="5.5" ry="2.8"/><path d="M6.5 8v6c0 1.5 2.5 2.8 5.5 2.8s5.5-1.3 5.5-2.8V8"/><path d="M12 10.2v3.8"/><path d="M10.2 12.1H13.8"/></svg></span><span>收入明细</span></span>
         <span class="partner-menu-right"><span class="arrow">›</span></span>
       </a>
       <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=trend">
-        <span class="partner-menu-left"><span class="partner-menu-icon">📈</span><span>收入趋势</span></span>
+        <span class="partner-menu-left"><span class="partner-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 18.5h13"/><path d="M7.5 15.5 11 12l2.6 2.3 3.9-5"/></svg></span><span>收入趋势</span></span>
         <span class="partner-menu-right"><span class="arrow">›</span></span>
       </a>
       <a class="partner-menu-item" href="/plugin.php?id=xigua_hb&ac=qianbao">
-        <span class="partner-menu-left"><span class="partner-menu-icon">💼</span><span>我的钱包</span></span>
+        <span class="partner-menu-left"><span class="partner-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.5h15v10h-15z"/><path d="M4.5 8.5V7a2 2 0 0 1 2-2h8"/><path d="M15.5 13h4"/></svg></span><span>我的钱包</span></span>
         <span class="partner-menu-right"><span>¥<%= Number(data.wallet?.balance || 0).toFixed(2) %></span><span class="arrow">›</span></span>
       </a>
       <a class="partner-menu-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5&view=rules">
-        <span class="partner-menu-left"><span class="partner-menu-icon">❔</span><span>规则说明</span></span>
+        <span class="partner-menu-left"><span class="partner-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M9.9 9.5a2.3 2.3 0 1 1 3 2.2c-.8.3-1.2.8-1.2 1.6"/><path d="M11.8 16.6h.1"/></svg></span><span>规则说明</span></span>
         <span class="partner-menu-right"><span class="arrow">›</span></span>
       </a>
       <a class="partner-menu-item" href="/plugin.php?id=xigua_lt&type=thread&channel=martin&mobile=2&high=3">
-        <span class="partner-menu-left"><span class="partner-menu-icon">📞</span><span>联系客服</span></span>
+        <span class="partner-menu-left"><span class="partner-menu-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 5.8c.5-.5 1.3-.5 1.8 0l1.7 1.7c.5.5.5 1.3 0 1.8l-1.1 1.1a13 13 0 0 0 4.8 4.8l1.1-1.1c.5-.5 1.3-.5 1.8 0l1.7 1.7c.5.5.5 1.3 0 1.8l-1.1 1.1c-.7.7-1.7 1-2.7.8A17 17 0 0 1 4.2 8.8c-.2-1 .1-2 .8-2.7z"/></svg></span><span>联系客服</span></span>
         <span class="partner-menu-right"><span>有问题请找我</span><span class="arrow">›</span></span>
       </a>
     </div>
   <% } else { %>
     <div class="partner-header">
-      <a href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5">‹ 返回</a>
+      <a class="ui-back-link is-light" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
       <div class="partner-header-center">等级特权</div>
       <span></span>
     </div>
@@ -542,7 +621,15 @@
       <div class="partner-metrics">
         <% data.cards.forEach((item) => { %>
           <div class="partner-metric">
-            <div class="partner-metric-icon"><%= item.icon %></div>
+            <div class="partner-metric-icon">
+              <% if (item.title === '加入费用') { %>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="8" rx="5.5" ry="2.8"/><path d="M6.5 8v6c0 1.5 2.5 2.8 5.5 2.8s5.5-1.3 5.5-2.8V8"/></svg>
+              <% } else if (item.title === '提成比例') { %>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 16.5 16.5 7.5"/><circle cx="8" cy="8" r="2"/><circle cx="16" cy="16" r="2"/></svg>
+              <% } else { %>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v6l3.5 2"/><circle cx="12" cy="12" r="7"/></svg>
+              <% } %>
+            </div>
             <div class="partner-metric-title"><%= item.title %></div>
             <div class="partner-metric-value"><%= item.value %></div>
           </div>

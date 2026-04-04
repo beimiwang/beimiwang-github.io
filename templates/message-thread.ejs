@@ -10,20 +10,36 @@
     overflow: hidden;
   }
   .svc-header {
-    height: 2.2rem;
-    flex: 0 0 2.2rem;
+    height: 2.35rem;
+    flex: 0 0 2.35rem;
     background: #35c96d;
     color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    position: relative;
     padding: 0 .7rem;
-    font-size: .78rem;
+    font-size: .72rem;
     font-weight: 600;
   }
   .svc-header a {
     color: #fff;
     text-decoration: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .svc-header > a:first-child { left: .7rem; }
+  .svc-header > div {
+    position: absolute;
+    left: 3.4rem;
+    right: 3.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+    font-size: .84rem;
+    line-height: 1.1rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .svc-main {
     flex: 1 1 auto;
@@ -185,7 +201,7 @@
 
 <div class="svc-page">
   <div class="svc-header">
-    <a href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3">‹ 返回</a>
+    <a class="ui-back-link is-light" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
     <div><%= data.channel.name %></div>
     <span></span>
   </div>
@@ -221,7 +237,7 @@
   </div>
 
   <form class="svc-composer" method="post" action="/plugin.php?id=xigua_lt&ac=chat_send&channel=<%= data.channel.key %>">
-    <a class="back" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3">‹</a>
+    <a class="back ui-back-link icon-only" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3" aria-label="返回"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg></a>
     <input class="svc-input" type="text" name="content" placeholder="请输入聊天内容">
     <span class="svc-icon">☺</span>
     <span class="svc-icon">＋</span>

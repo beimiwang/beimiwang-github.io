@@ -217,9 +217,26 @@ function init() {
       user_id INTEGER NOT NULL,
       verify_type TEXT NOT NULL DEFAULT 'personal',
       real_name TEXT DEFAULT '',
+      id_card_number TEXT DEFAULT '',
+      license_image TEXT DEFAULT '',
+      business_name TEXT DEFAULT '',
+      business_type TEXT DEFAULT '',
+      license_number TEXT DEFAULT '',
+      contact_phone TEXT DEFAULT '',
+      valid_years INTEGER DEFAULT 1,
       status TEXT NOT NULL DEFAULT 'pending',
       note TEXT DEFAULT '',
       created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS guarantee_deposits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      amount REAL DEFAULT 0,
+      status TEXT DEFAULT 'unpaid',
+      note TEXT DEFAULT '',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS user_comments (
@@ -423,6 +440,28 @@ function init() {
   if (!withdrawProfileColumns.includes("wechat_qr_image")) {
     db.exec("ALTER TABLE user_withdraw_profiles ADD COLUMN wechat_qr_image TEXT DEFAULT ''");
   }
+  const verificationColumns = db.prepare("PRAGMA table_info(verification_requests)").all().map((col) => col.name);
+  if (!verificationColumns.includes("id_card_number")) {
+    db.exec("ALTER TABLE verification_requests ADD COLUMN id_card_number TEXT DEFAULT ''");
+  }
+  if (!verificationColumns.includes("license_image")) {
+    db.exec("ALTER TABLE verification_requests ADD COLUMN license_image TEXT DEFAULT ''");
+  }
+  if (!verificationColumns.includes("business_name")) {
+    db.exec("ALTER TABLE verification_requests ADD COLUMN business_name TEXT DEFAULT ''");
+  }
+  if (!verificationColumns.includes("business_type")) {
+    db.exec("ALTER TABLE verification_requests ADD COLUMN business_type TEXT DEFAULT ''");
+  }
+  if (!verificationColumns.includes("license_number")) {
+    db.exec("ALTER TABLE verification_requests ADD COLUMN license_number TEXT DEFAULT ''");
+  }
+  if (!verificationColumns.includes("contact_phone")) {
+    db.exec("ALTER TABLE verification_requests ADD COLUMN contact_phone TEXT DEFAULT ''");
+  }
+  if (!verificationColumns.includes("valid_years")) {
+    db.exec("ALTER TABLE verification_requests ADD COLUMN valid_years INTEGER DEFAULT 1");
+  }
   db.exec(`
     CREATE TABLE IF NOT EXISTS service_quick_replies (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -564,8 +603,17 @@ function init() {
 
   if (db.prepare("SELECT COUNT(*) AS count FROM verification_requests WHERE user_id = 18681").get().count === 0) {
     db.prepare(`
-      INSERT INTO verification_requests (user_id, verify_type, real_name, status, note, created_at)
-      VALUES (18681, 'personal', '王釜嵊', 'approved', '个人认证已通过', '2026-03-26 14:00:00')
+      INSERT INTO verification_requests (
+        user_id, verify_type, real_name, id_card_number, valid_years, status, note, created_at
+      )
+      VALUES (18681, 'personal', '王釜嵊', '620102199603081234', 2, 'approved', '个人认证已通过', '2026-03-26 14:00:00')
+    `).run();
+  }
+
+  if (db.prepare("SELECT COUNT(*) AS count FROM guarantee_deposits WHERE user_id = 18681").get().count === 0) {
+    db.prepare(`
+      INSERT INTO guarantee_deposits (user_id, amount, status, note, created_at, updated_at)
+      VALUES (18681, 0, 'unpaid', '暂未缴纳保证金', datetime('now', 'localtime'), datetime('now', 'localtime'))
     `).run();
   }
 
@@ -926,14 +974,35 @@ function getCategoryBanner(categoryId) {
   return db.prepare("SELECT * FROM category_banners WHERE category_id = ?").get(categoryId) || null;
 }
 
+function getUserVerificationBadge(userId) {
+  const records = db.prepare(`
+    SELECT verify_type, status
+    FROM verification_requests
+    WHERE user_id = ?
+    ORDER BY datetime(created_at) DESC, id DESC
+  `).all(userId);
+  const personal = records.find((item) => item.verify_type === "personal" && item.status === "approved");
+  const business = records.find((item) => item.verify_type === "business" && item.status === "approved");
+  return {
+    personalApproved: Boolean(personal),
+    businessApproved: Boolean(business),
+    personalLabel: personal ? "个人认证" : "未认证",
+    businessLabel: business ? "企业认证" : "未认证"
+  };
+}
+
 function getUserProfile(userId = 18681) {
   const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
   const userPosts = db.prepare(basePostQuery("WHERE posts.user_id = ?")).all(userId).map(normalizePost);
   const totalPosts = db.prepare("SELECT COUNT(*) AS count FROM posts").get().count;
   const totalViews = db.prepare("SELECT COALESCE(SUM(views), 0) AS count FROM posts").get().count;
   const myViews = db.prepare("SELECT COUNT(*) AS count FROM user_footprints WHERE user_id = ?").get(userId).count;
+  const verificationBadge = getUserVerificationBadge(userId);
   return {
-    user,
+    user: {
+      ...user,
+      verificationBadge
+    },
     posts: userPosts,
     wallet: getUserWallet(userId),
     stats: {
@@ -981,6 +1050,46 @@ function isUserFollowing(followerUserId, targetUserId) {
     LIMIT 1
   `).get(followerUserId, targetUserId);
   return !!row;
+}
+
+function isPostFavorited(userId, postId) {
+  if (!userId || !postId) return false;
+  const row = db.prepare(`
+    SELECT id FROM user_favorites
+    WHERE user_id = ? AND post_id = ?
+    LIMIT 1
+  `).get(userId, postId);
+  return !!row;
+}
+
+function toggleUserFavorite(userId, postId) {
+  if (!userId || !postId) {
+    return { ok: false, favorited: false };
+  }
+  const existing = db.prepare(`
+    SELECT id FROM user_favorites
+    WHERE user_id = ? AND post_id = ?
+    LIMIT 1
+  `).get(userId, postId);
+
+  if (existing) {
+    db.prepare("DELETE FROM user_favorites WHERE id = ?").run(existing.id);
+    return { ok: true, favorited: false };
+  }
+
+  db.prepare(`
+    INSERT INTO user_favorites (user_id, post_id, created_at)
+    VALUES (?, ?, datetime('now', 'localtime'))
+  `).run(userId, postId);
+  return { ok: true, favorited: true };
+}
+
+function recordCallLog(userId, postId, targetPhone, durationSeconds = 0) {
+  if (!userId || !postId) return;
+  db.prepare(`
+    INSERT INTO call_logs (user_id, post_id, target_phone, duration_seconds, created_at)
+    VALUES (?, ?, ?, ?, datetime('now', 'localtime'))
+  `).run(userId, postId, String(targetPhone || "").trim(), Number(durationSeconds || 0));
 }
 
 function isUserBlocked(userId, targetUserId) {
@@ -1484,6 +1593,7 @@ function getUserUnreadSummary(userId) {
 
 function getPartnerCenterData(userId) {
   const profile = getUserProfile(userId);
+  const verificationData = getUserVerificationData(userId);
   const application = db.prepare(`
     SELECT * FROM partner_applications
     WHERE user_id = ?
@@ -1567,6 +1677,7 @@ function getPartnerCenterData(userId) {
     user: profile.user,
     stats: profile.stats,
     wallet: profile.wallet,
+    verification: verificationData.summary,
     application,
     partnerOrders,
     fanCount,
@@ -2062,9 +2173,9 @@ function recordUserHomepageView(userId, viewerUserId = null) {
   `).run(userId, viewerUserId || null);
 }
 
-function getUserAllOrdersData(userId) {
+function getUserAllOrdersData(userId, orderType = "") {
   return {
-    orders: getUserOrders(userId)
+    orders: getUserOrders(userId, orderType)
   };
 }
 
@@ -2079,14 +2190,99 @@ function getUserSubscriptionsData(userId) {
 }
 
 function getUserVerificationData(userId) {
-  return {
-    record: db.prepare(`
-      SELECT * FROM verification_requests
-      WHERE user_id = ?
-      ORDER BY datetime(created_at) DESC, id DESC
-      LIMIT 1
-    `).get(userId)
+  const user = db.prepare("SELECT id, nickname, phone FROM users WHERE id = ?").get(userId) || {};
+  const records = db.prepare(`
+    SELECT * FROM verification_requests
+    WHERE user_id = ?
+    ORDER BY datetime(created_at) DESC, id DESC
+  `).all(userId);
+  const personal = records.find((item) => item.verify_type === "personal") || null;
+  const business = records.find((item) => item.verify_type === "business") || null;
+  const deposit = db.prepare(`
+    SELECT * FROM guarantee_deposits
+    WHERE user_id = ?
+    ORDER BY datetime(updated_at) DESC, id DESC
+    LIMIT 1
+  `).get(userId) || {
+    amount: 0,
+    status: "unpaid",
+    note: "暂未缴纳保证金"
   };
+  const statusTextMap = {
+    approved: "已认证",
+    pending: "审核中",
+    rejected: "未通过",
+    unpaid: "未缴纳",
+    paid: "已缴纳"
+  };
+
+  return {
+    user,
+    personal,
+    business,
+    deposit,
+    summary: {
+      personalStatus: personal?.status || "unverified",
+      personalStatusText: statusTextMap[personal?.status] || "未认证",
+      businessStatus: business?.status || "unverified",
+      businessStatusText: statusTextMap[business?.status] || "未认证",
+      depositStatus: deposit?.status || "unpaid",
+      depositStatusText: statusTextMap[deposit?.status] || "未缴纳"
+    }
+  };
+}
+
+function submitPersonalVerification(userId, payload) {
+  db.prepare(`
+    INSERT INTO verification_requests (
+      user_id, verify_type, real_name, id_card_number, valid_years, status, note, created_at
+    ) VALUES (?, 'personal', ?, ?, ?, 'pending', '实名认证资料已提交，等待审核', datetime('now', 'localtime'))
+  `).run(
+    userId,
+    payload.realName || "",
+    payload.idCardNumber || "",
+    Number(payload.validYears || 2)
+  );
+}
+
+function submitBusinessVerification(userId, payload) {
+  db.prepare(`
+    INSERT INTO verification_requests (
+      user_id, verify_type, real_name, license_image, business_name, business_type,
+      license_number, contact_phone, valid_years, status, note, created_at
+    ) VALUES (?, 'business', ?, ?, ?, ?, ?, ?, ?, 'pending', '企业认证资料已提交，等待审核', datetime('now', 'localtime'))
+  `).run(
+    userId,
+    payload.realName || "",
+    payload.licenseImage || "",
+    payload.businessName || "",
+    payload.businessType || "",
+    payload.licenseNumber || "",
+    payload.contactPhone || "",
+    Number(payload.validYears || 1)
+  );
+}
+
+function submitGuaranteeDeposit(userId, amount = 0) {
+  const latest = db.prepare(`
+    SELECT * FROM guarantee_deposits
+    WHERE user_id = ?
+    ORDER BY datetime(updated_at) DESC, id DESC
+    LIMIT 1
+  `).get(userId);
+  if (latest && ["pending", "paid"].includes(latest.status)) {
+    return latest;
+  }
+  db.prepare(`
+    INSERT INTO guarantee_deposits (user_id, amount, status, note, created_at, updated_at)
+    VALUES (?, ?, 'pending', '保证金申请已提交，等待平台处理', datetime('now', 'localtime'), datetime('now', 'localtime'))
+  `).run(userId, Number(amount || 0));
+  return db.prepare(`
+    SELECT * FROM guarantee_deposits
+    WHERE user_id = ?
+    ORDER BY datetime(updated_at) DESC, id DESC
+    LIMIT 1
+  `).get(userId);
 }
 
 function getUserCommentsData(userId) {
@@ -2109,6 +2305,18 @@ function getUserFavoritesData(userId) {
       JOIN posts ON posts.id = user_favorites.post_id
       WHERE user_favorites.user_id = ?
       ORDER BY datetime(user_favorites.created_at) DESC, user_favorites.id DESC
+    `).all(userId)
+  };
+}
+
+function getUserFollowingData(userId) {
+  return {
+    items: db.prepare(`
+      SELECT users.id AS target_user_id, users.nickname, users.city, users.avatar, user_follows.created_at
+      FROM user_follows
+      JOIN users ON users.id = user_follows.target_user_id
+      WHERE user_follows.follower_user_id = ?
+      ORDER BY datetime(user_follows.created_at) DESC, user_follows.id DESC
     `).all(userId)
   };
 }
@@ -2361,6 +2569,79 @@ function getAdminMessages(keyword = "", type = "") {
     ORDER BY datetime(user_messages.created_at) DESC, user_messages.id DESC
   `).all(params);
   return { messages: rows, keyword, type };
+}
+
+function getAdminVerifications(type = "", status = "", keyword = "") {
+  const clauses = [];
+  const params = {};
+  if (type) {
+    clauses.push("verification_requests.verify_type = @type");
+    params.type = type;
+  }
+  if (status) {
+    clauses.push("verification_requests.status = @status");
+    params.status = status;
+  }
+  if (keyword && keyword.trim()) {
+    clauses.push("(users.nickname LIKE @keyword OR users.phone LIKE @keyword OR verification_requests.real_name LIKE @keyword OR verification_requests.license_number LIKE @keyword)");
+    params.keyword = `%${keyword.trim()}%`;
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+  const items = db.prepare(`
+    SELECT
+      verification_requests.*,
+      users.nickname,
+      users.phone,
+      users.avatar
+    FROM verification_requests
+    JOIN users ON users.id = verification_requests.user_id
+    ${where}
+    ORDER BY datetime(verification_requests.created_at) DESC, verification_requests.id DESC
+  `).all(params);
+  return { items, type, status, keyword };
+}
+
+function updateVerificationReview(id, status, note = "") {
+  db.prepare(`
+    UPDATE verification_requests
+    SET status = ?, note = ?
+    WHERE id = ?
+  `).run(status, note, id);
+  return db.prepare("SELECT * FROM verification_requests WHERE id = ?").get(id);
+}
+
+function getAdminGuaranteeDeposits(status = "", keyword = "") {
+  const clauses = [];
+  const params = {};
+  if (status) {
+    clauses.push("guarantee_deposits.status = @status");
+    params.status = status;
+  }
+  if (keyword && keyword.trim()) {
+    clauses.push("(users.nickname LIKE @keyword OR users.phone LIKE @keyword OR guarantee_deposits.note LIKE @keyword)");
+    params.keyword = `%${keyword.trim()}%`;
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+  const items = db.prepare(`
+    SELECT
+      guarantee_deposits.*,
+      users.nickname,
+      users.phone
+    FROM guarantee_deposits
+    JOIN users ON users.id = guarantee_deposits.user_id
+    ${where}
+    ORDER BY datetime(guarantee_deposits.updated_at) DESC, guarantee_deposits.id DESC
+  `).all(params);
+  return { items, status, keyword };
+}
+
+function updateGuaranteeDepositReview(id, status, note = "") {
+  db.prepare(`
+    UPDATE guarantee_deposits
+    SET status = ?, note = ?, updated_at = datetime('now', 'localtime')
+    WHERE id = ?
+  `).run(status, note, id);
+  return db.prepare("SELECT * FROM guarantee_deposits WHERE id = ?").get(id);
 }
 
 function getAdminPartnerApplications(status = "", keyword = "") {
@@ -2635,12 +2916,14 @@ module.exports = {
   getAdminOrders,
   getAdminPartnerApplications,
   getAdminPosts,
+  getAdminGuaranteeDeposits,
   getAdminServiceConversation,
   getAdminServiceConversations,
   getAdminWithdrawRequests,
   getAdminSystemData,
   getAdminUsers,
   getAdminUsersList,
+  getAdminVerifications,
   getCategoryBanner,
   getMembershipBenefits,
   getMembershipPlans,
@@ -2655,10 +2938,12 @@ module.exports = {
   getUserCallLogsData,
   getUserCommentsData,
   getUserFavoritesData,
+  getUserFollowingData,
   getUserFootprintsData,
   getUserHomepageData,
   getUserSubscriptionsData,
   getUserUnreadSummary,
+  getUserVerificationBadge,
   getUserVerificationData,
   getMembershipPlanById,
   markOrderEffectApplied,
@@ -2697,11 +2982,16 @@ module.exports = {
   incrementShare,
   incrementViews,
   init,
+  isPostFavorited,
   refreshPost,
+  recordCallLog,
+  submitBusinessVerification,
+  submitGuaranteeDeposit,
   signInToday,
   assignServiceConversation,
   sendAdminServiceReply,
   sendServiceUserMessage,
+  submitPersonalVerification,
   submitPartnerApplication,
   updateServiceConversationStatus,
   updateWithdrawRequestReview,
@@ -2709,6 +2999,7 @@ module.exports = {
   topUpUserWallet,
   topUpWallet,
   toggleUserBlock,
+  toggleUserFavorite,
   toggleUserFollow,
   upsertCategoryBanner,
   updateServiceAgent,
@@ -2727,6 +3018,8 @@ module.exports = {
   updateMembershipPlan,
   updateNotice,
   updatePost,
+  updateGuaranteeDepositReview,
+  updateVerificationReview,
   upsertUserAddress,
   upsertUserWithdrawProfile,
   updateRefreshSettings,

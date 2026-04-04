@@ -8,7 +8,9 @@
   const relativeText = String(post.created_at).slice(5, 16).replace(" ", " ");
   const plainContent = String(post.content || post.summary || "").trim();
   const contentSentences = plainContent.split(/[。！!？?]/).map((item) => item.trim()).filter(Boolean);
-  const phoneHref = post.phone ? `tel:${post.phone}` : "javascript:;";
+  const phoneHref = post.phone ? `/plugin.php?id=xigua_hb&ac=call&pubid=${post.id}` : "javascript:;";
+  const favoriteHref = `/plugin.php?id=xigua_hb&ac=favorite&pubid=${post.id}`;
+  const favoriteLabel = typeof isFavorited !== "undefined" && isFavorited ? "★ 已收藏" : "☆ 收藏";
   const recruitCountMatch = plainContent.match(/(\d+)\s*(名|人)/) || String(post.title || "").match(/(\d+)\s*(名|人)/);
   const recruitCount = recruitCountMatch ? `${recruitCountMatch[1]}人` : "面议";
   const recruitRolePool = cleanTags.filter((tag) => !["招聘", "置顶", "包食宿", "夫妻工", "分红"].includes(tag));
@@ -26,6 +28,16 @@
   const rideDeparture = (String(post.content || "").match(/出发时间[:：]([^，。]+)/) || String(post.content || "").match(/([今明后]天[^，。]*)/) || [])[1] || "时间待定";
   const ridePassengers = (String(post.content || "").match(/人数说明[:：]([^，。]+)/) || [])[1] || post.summary || "可电话沟通";
   const rideFee = (String(post.content || "").match(/费用说明[:：]([^，。]+)/) || [])[1] || post.price_label || "电话联系";
+  const detailBackHref = post.category_id
+    ? `/plugin.php?id=xigua_hb&ac=cat&cat_id=${post.category_id}`
+    : "/plugin.php?id=xigua_hb&mobile=2&high=0";
+  const anyVerified = verificationBadge?.businessApproved || verificationBadge?.personalApproved;
+  const genericAuthText = verificationBadge?.businessApproved
+    ? "企业认证"
+    : verificationBadge?.personalApproved
+      ? "个人认证"
+      : "未认证";
+  const genericAuthApproved = anyVerified;
 %>
 
 <style>
@@ -37,10 +49,8 @@
   .detail-topbar {
     background: #2ECC71;
     color: #fff;
-    height: 2.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    height: 2.35rem;
+    position: relative;
     padding: 0 .7rem;
     font-size: .72rem;
   }
@@ -48,13 +58,43 @@
     color: #fff;
     text-decoration: none;
     min-width: 2.2rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .18rem;
+    font-weight: 500;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .detail-topbar > a:first-child {
+    left: .7rem;
+  }
+  .detail-topbar > a:last-child {
+    right: .7rem;
+    justify-content: flex-end;
+    text-align: right;
+  }
+  .detail-topbar svg {
+    width: .78rem;
+    height: .78rem;
+    flex: none;
+    display: block;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
   .detail-topbar .title {
-    flex: 1;
-    margin: 0 .35rem;
+    position: absolute;
+    left: 3.4rem;
+    right: 3.4rem;
+    top: 50%;
+    transform: translateY(-50%);
     text-align: center;
-    font-size: .86rem;
+    font-size: .84rem;
     font-weight: 700;
+    line-height: 1.1rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -89,8 +129,38 @@
     font-weight: 700;
   }
   .detail-auth {
+    display: inline-flex;
+    align-items: center;
+    gap: .16rem;
     color: #8ac98e;
     font-weight: 500;
+    font-size: .64rem;
+    line-height: .9rem;
+    letter-spacing: .01em;
+  }
+  .detail-auth-icon {
+    width: .88rem;
+    height: .88rem;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #55d97f, #32bf63);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+    flex: none;
+  }
+  .detail-auth-icon svg {
+    width: .56rem;
+    height: .56rem;
+    display: block;
+  }
+  .detail-auth.is-muted {
+    color: #b1b8c4;
+  }
+  .detail-auth.is-muted .detail-auth-icon {
+    background: #eef1f5;
+    color: #9aa3b2;
   }
   .detail-badges {
     display: flex;
@@ -288,15 +358,23 @@
     line-height: .82rem;
   }
   .detail-mini-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: .2rem;
+    width: 1.28rem;
+    height: 1.28rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
     margin-bottom: .12rem;
     color: #13264b;
+  }
+  .detail-mini-icon svg {
+    width: 1.08rem;
+    height: 1.08rem;
+    display: block;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
   .detail-cta {
     height: 2.4rem;
@@ -359,11 +437,40 @@
     line-height: 1.22rem;
     font-weight: 700;
   }
+  .detail-toast {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + .7rem);
+    left: 50%;
+    transform: translate(-50%, -0.35rem);
+    min-width: 5.4rem;
+    max-width: calc(100vw - 2rem);
+    padding: .62rem .95rem;
+    border-radius: .7rem;
+    background: rgba(31, 41, 55, .92);
+    color: #fff;
+    font-size: .68rem;
+    line-height: 1rem;
+    text-align: center;
+    box-shadow: 0 .22rem .9rem rgba(15, 23, 42, .24);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 120;
+  }
+  .detail-toast.is-show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 </style>
 
 <div class="detail-shell">
   <div class="detail-topbar">
-    <a href="javascript:history.back()">‹ 返回</a>
+    <a href="<%= detailBackHref %>" id="detailBackLink">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15 5 8 12l7 7"/>
+      </svg>
+      <span>返回</span>
+    </a>
     <div class="title"><%= `${titlePrefix} ${post.title}` %></div>
     <a href="/plugin.php?id=xigua_hb&ac=pub&high=2" style="text-align:right;">发布</a>
   </div>
@@ -375,7 +482,23 @@
         <div class="detail-user-main">
           <div class="detail-user-name">
             <span><%= post.nickname %></span>
-            <span class="detail-auth">企业认证</span>
+            <span class="detail-auth <%= verificationBadge?.businessApproved ? '' : 'is-muted' %>">
+              <span class="detail-auth-icon" aria-hidden="true">
+                <% if (verificationBadge?.businessApproved) { %>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3.2 18.4 5.8v5.4c0 4.2-2.5 7.5-6.4 9.6-3.9-2.1-6.4-5.4-6.4-9.6V5.8L12 3.2Z" fill="currentColor"/>
+                    <path d="m8.7 12.2 2.1 2.1 4.5-4.7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                <% } else { %>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="8" fill="currentColor"/>
+                    <path d="M12 7.8v5.2" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="12" cy="16.8" r="1.1" fill="#fff"/>
+                  </svg>
+                <% } %>
+              </span>
+              <span><%= verificationBadge?.businessApproved ? '企业认证' : '未认证' %></span>
+            </span>
           </div>
           <div class="detail-badges">
             <span class="detail-badge green">招聘</span>
@@ -400,7 +523,25 @@
       <div class="detail-desc"><%= plainContent %></div>
 
       <div class="detail-card">
-        <div class="detail-card-title">公司信息 <span class="detail-auth">已认证</span></div>
+        <div class="detail-card-title">公司信息
+          <span class="detail-auth <%= verificationBadge?.businessApproved ? '' : 'is-muted' %>">
+            <span class="detail-auth-icon" aria-hidden="true">
+              <% if (verificationBadge?.businessApproved) { %>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 3.2 18.4 5.8v5.4c0 4.2-2.5 7.5-6.4 9.6-3.9-2.1-6.4-5.4-6.4-9.6V5.8L12 3.2Z" fill="currentColor"/>
+                  <path d="m8.7 12.2 2.1 2.1 4.5-4.7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              <% } else { %>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="8" fill="currentColor"/>
+                  <path d="M12 7.8v5.2" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                  <circle cx="12" cy="16.8" r="1.1" fill="#fff"/>
+                </svg>
+              <% } %>
+            </span>
+            <span><%= verificationBadge?.businessApproved ? '已认证' : '未认证' %></span>
+          </span>
+        </div>
         <div class="detail-card-line">
           <div class="detail-company">
             <div class="company-logo">企</div>
@@ -422,7 +563,7 @@
         <span>♡ <%= post.likes %></span>
         <span>◉ 浏览量 <%= post.views %></span>
         <span>↗ 分享 <%= post.shares %></span>
-        <span>☆ 收藏 0</span>
+        <a class="detail-favorite-link" href="<%= favoriteHref %>" style="color:inherit;text-decoration:none;"><%= favoriteLabel %></a>
       </div>
     </div>
   <% } else if (isJobWanted) { %>
@@ -432,7 +573,23 @@
         <div class="detail-user-main">
           <div class="detail-user-name">
             <span><%= post.nickname %></span>
-            <span class="detail-auth">个人认证</span>
+            <span class="detail-auth <%= verificationBadge?.personalApproved ? '' : 'is-muted' %>">
+              <span class="detail-auth-icon" aria-hidden="true">
+                <% if (verificationBadge?.personalApproved) { %>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3.2 18.4 5.8v5.4c0 4.2-2.5 7.5-6.4 9.6-3.9-2.1-6.4-5.4-6.4-9.6V5.8L12 3.2Z" fill="currentColor"/>
+                    <path d="m8.7 12.2 2.1 2.1 4.5-4.7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                <% } else { %>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="8" fill="currentColor"/>
+                    <path d="M12 7.8v5.2" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="12" cy="16.8" r="1.1" fill="#fff"/>
+                  </svg>
+                <% } %>
+              </span>
+              <span><%= verificationBadge?.personalApproved ? '个人认证' : '未认证' %></span>
+            </span>
           </div>
           <div class="detail-badges">
             <span class="detail-badge green">求职</span>
@@ -461,7 +618,7 @@
         <span>♡ <%= post.likes %></span>
         <span>◉ 浏览量 <%= post.views %></span>
         <span>↗ 分享 <%= post.shares %></span>
-        <span>☆ 收藏 0</span>
+        <a class="detail-favorite-link" href="<%= favoriteHref %>" style="color:inherit;text-decoration:none;"><%= favoriteLabel %></a>
       </div>
 
       <div class="detail-group-box">
@@ -476,6 +633,23 @@
         <div class="detail-user-main">
           <div class="detail-user-name">
             <span><%= post.nickname %></span>
+            <span class="detail-auth <%= verificationBadge?.personalApproved ? '' : 'is-muted' %>">
+              <span class="detail-auth-icon" aria-hidden="true">
+                <% if (verificationBadge?.personalApproved) { %>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3.2 18.4 5.8v5.4c0 4.2-2.5 7.5-6.4 9.6-3.9-2.1-6.4-5.4-6.4-9.6V5.8L12 3.2Z" fill="currentColor"/>
+                    <path d="m8.7 12.2 2.1 2.1 4.5-4.7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                <% } else { %>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="8" fill="currentColor"/>
+                    <path d="M12 7.8v5.2" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="12" cy="16.8" r="1.1" fill="#fff"/>
+                  </svg>
+                <% } %>
+              </span>
+              <span><%= verificationBadge?.personalApproved ? '个人认证' : '未认证' %></span>
+            </span>
           </div>
           <div class="detail-badges">
             <span class="detail-badge green"><%= rideType %></span>
@@ -514,7 +688,7 @@
         <span>♡ <%= post.likes %></span>
         <span>◉ 浏览量 <%= post.views %></span>
         <span>↗ 分享 <%= post.shares %></span>
-        <span>☆ 收藏 0</span>
+        <a class="detail-favorite-link" href="<%= favoriteHref %>" style="color:inherit;text-decoration:none;"><%= favoriteLabel %></a>
       </div>
     </div>
   <% } else { %>
@@ -522,7 +696,26 @@
       <div class="detail-user">
         <img class="detail-avatar" src="<%= post.avatar %>" alt="<%= post.nickname %>">
         <div class="detail-user-main">
-          <div class="detail-user-name"><span><%= post.nickname %></span></div>
+          <div class="detail-user-name">
+            <span><%= post.nickname %></span>
+            <span class="detail-auth <%= genericAuthApproved ? '' : 'is-muted' %>">
+              <span class="detail-auth-icon" aria-hidden="true">
+                <% if (genericAuthApproved) { %>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3.2 18.4 5.8v5.4c0 4.2-2.5 7.5-6.4 9.6-3.9-2.1-6.4-5.4-6.4-9.6V5.8L12 3.2Z" fill="currentColor"/>
+                    <path d="m8.7 12.2 2.1 2.1 4.5-4.7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                <% } else { %>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="8" fill="currentColor"/>
+                    <path d="M12 7.8v5.2" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="12" cy="16.8" r="1.1" fill="#fff"/>
+                  </svg>
+                <% } %>
+              </span>
+              <span><%= genericAuthText %></span>
+            </span>
+          </div>
           <div class="detail-badges">
             <span class="detail-badge green"><%= post.category_name || "信息" %></span>
             <% safeTags.forEach((tag) => { %><span class="detail-badge outline"><%= tag %></span><% }) %>
@@ -539,7 +732,7 @@
         <span>♡ <%= post.likes %></span>
         <span>◉ 浏览量 <%= post.views %></span>
         <span>↗ 分享 <%= post.shares %></span>
-        <span>☆ 收藏 0</span>
+        <a class="detail-favorite-link" href="<%= favoriteHref %>" style="color:inherit;text-decoration:none;"><%= favoriteLabel %></a>
       </div>
     </div>
   <% } %>
@@ -547,17 +740,97 @@
 
 <div class="detail-bottom-bar">
   <a class="detail-mini-action" href="/plugin.php?id=xigua_hb&mobile=2&high=0">
-    <span class="detail-mini-icon">⌂</span>
+    <span class="detail-mini-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M4.5 10.2 12 4l7.5 6.2"/>
+        <path d="M6.7 9.9V20h10.6V9.9"/>
+      </svg>
+    </span>
     <span>首页</span>
   </a>
   <a class="detail-mini-action" href="/plugin.php?id=xigua_hb&ac=pub&high=2">
-    <span class="detail-mini-icon">＋</span>
+    <span class="detail-mini-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 5.5v13"/>
+        <path d="M5.5 12h13"/>
+      </svg>
+    </span>
     <span>发布</span>
   </a>
   <a class="detail-mini-action" href="javascript:sharePost(<%= post.id %>)">
-    <span class="detail-mini-icon">↗</span>
+    <span class="detail-mini-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M7 17 17 7"/>
+        <path d="M9 7h8v8"/>
+      </svg>
+    </span>
     <span>分享</span>
   </a>
   <a class="detail-cta" href="/plugin.php?id=xigua_hk&ac=join&idu=5&high=1">开通套餐</a>
   <a class="detail-cta" href="<%= phoneHref %>">打电话</a>
 </div>
+
+<div id="detailToast" class="detail-toast" aria-live="polite"></div>
+
+<script>
+  (() => {
+    const toast = document.getElementById("detailToast");
+    const backLink = document.getElementById("detailBackLink");
+    const favoriteLinks = Array.from(document.querySelectorAll(".detail-favorite-link"));
+    let toastTimer = null;
+
+    if (backLink) {
+      const ref = document.referrer;
+      try {
+        if (ref) {
+          const refUrl = new URL(ref, window.location.origin);
+          const currentUrl = new URL(window.location.href);
+          if (refUrl.origin === currentUrl.origin && refUrl.href !== currentUrl.href) {
+            backLink.href = refUrl.href;
+          }
+        }
+      } catch (_error) {
+        // keep fallback href
+      }
+    }
+
+    if (!toast || !favoriteLinks.length) return;
+
+    const showToast = (message) => {
+      toast.textContent = message;
+      toast.classList.add("is-show");
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.classList.remove("is-show");
+      }, 1600);
+    };
+
+    const updateFavoriteText = (favorited) => {
+      const text = favorited ? "★ 已收藏" : "☆ 收藏";
+      favoriteLinks.forEach((link) => {
+        link.textContent = text;
+      });
+    };
+
+    favoriteLinks.forEach((link) => {
+      link.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        try {
+          const response = await fetch(`${link.href}${link.href.includes("?") ? "&" : "?"}ajax=1`, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+          });
+          const result = await response.json().catch(() => ({ ok: false, message: "操作失败，请重试" }));
+          if (!response.ok || !result.ok) {
+            showToast(result.message || "操作失败，请重试");
+            return;
+          }
+          updateFavoriteText(Boolean(result.favorited));
+          showToast(result.message || "已收藏");
+        } catch (_error) {
+          showToast("操作失败，请重试");
+        }
+      });
+    });
+  })();
+</script>

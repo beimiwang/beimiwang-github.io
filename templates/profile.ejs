@@ -30,7 +30,7 @@
   }
 
   .mine-hero {
-    padding: 1rem .95rem .92rem;
+    padding: .88rem .88rem .82rem;
     background:
       linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.06)),
       linear-gradient(180deg, #35c96d, #35c96d);
@@ -67,7 +67,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: .7rem;
+    gap: .86rem;
     position: relative;
     z-index: 1;
   }
@@ -75,14 +75,14 @@
   .mine-user {
     display: flex;
     align-items: center;
-    gap: .78rem;
+    gap: .92rem;
     min-width: 0;
     flex: 1 1 auto;
   }
 
   .mine-avatar {
-    width: 3.35rem;
-    height: 3.35rem;
+    width: 3rem;
+    height: 3rem;
     border-radius: 50%;
     border: 2px solid rgba(255,255,255,.88);
     object-fit: cover;
@@ -102,9 +102,9 @@
   }
 
   .mine-name {
-    font-size: 1.08rem;
-    line-height: 1.24rem;
-    font-weight: 700;
+    font-size: .96rem;
+    line-height: 1.12rem;
+    font-weight: 650;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -113,61 +113,95 @@
   .mine-subactions {
     display: flex;
     align-items: center;
-    gap: .38rem;
-    margin-top: .46rem;
+    gap: .44rem;
+    margin-top: .4rem;
     flex-wrap: wrap;
+  }
+
+  .mine-verify-row {
+    display: flex;
+    align-items: center;
+    gap: .34rem;
+    margin-top: .42rem;
+    flex-wrap: wrap;
+  }
+
+  .mine-verify-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    min-height: 1rem;
+    padding: 0 .42rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.14);
+    color: rgba(255,255,255,.96);
+    font-size: .52rem;
+    font-weight: 500;
+    letter-spacing: -.01em;
+  }
+
+  .mine-verify-pill.is-muted {
+    color: rgba(255,255,255,.86);
+  }
+
+  .mine-verify-pill svg {
+    width: .6rem;
+    height: .6rem;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
   }
 
   .mine-pill {
     display: inline-flex;
     align-items: center;
     gap: .24rem;
-    min-height: 1.28rem;
-    padding: 0 .62rem;
+    min-height: 1.18rem;
+    padding: 0 .56rem;
     border-radius: 999px;
     background: rgba(0, 0, 0, .14);
     color: #fff;
     text-decoration: none;
-    font-size: .62rem;
+    font-size: .58rem;
     font-weight: 600;
   }
 
   .mine-setting {
     color: #fff;
     text-decoration: none;
-    font-size: .82rem;
-    font-weight: 700;
+    font-size: .76rem;
+    font-weight: 600;
     flex: 0 0 auto;
-    margin-top: .08rem;
+    margin-top: .04rem;
   }
 
   .mine-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: .35rem;
-    margin-top: 1rem;
+    gap: .48rem;
+    margin-top: .9rem;
     position: relative;
     z-index: 1;
   }
 
   .mine-stat {
-    padding: .62rem .35rem .54rem;
-    border-radius: .8rem;
-    background: rgba(255,255,255,.12);
+    padding: .52rem .3rem .48rem;
+    border-radius: .72rem;
+    background: rgba(255,255,255,.1);
     text-align: center;
   }
 
   .mine-stat .v {
-    font-size: 1.02rem;
-    line-height: 1.16rem;
-    font-weight: 700;
+    font-size: .92rem;
+    line-height: 1.04rem;
+    font-weight: 650;
   }
 
   .mine-stat .k {
-    margin-top: .18rem;
-    font-size: .64rem;
-    line-height: .88rem;
-    opacity: .96;
+    margin-top: .14rem;
+    font-size: .58rem;
+    line-height: .8rem;
+    opacity: .94;
   }
 
   .mine-notice {
@@ -254,6 +288,16 @@
     box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .05);
   }
 
+  .mine-item-icon svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
   .mine-item-label {
     font-size: .67rem;
     line-height: .9rem;
@@ -312,6 +356,16 @@
             <a class="mine-pill" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5">🤝 加盟合伙人</a>
             <span class="mine-pill">UID:<%= data.user.id %></span>
           </div>
+          <div class="mine-verify-row">
+            <span class="mine-verify-pill">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.7 12.4 2.2 2.2 4.8-4.8"/><path d="M12 3.8 18.2 6v5.7c0 3.7-2.6 6.1-6.2 7.8-3.6-1.7-6.2-4.1-6.2-7.8V6L12 3.8Z"/></svg>
+              <span><%= data.user.verificationBadge?.personalApproved ? '个人认证' : '未实名' %></span>
+            </span>
+            <span class="mine-verify-pill <%= data.user.verificationBadge?.businessApproved ? '' : 'is-muted' %>">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.7 12.4 2.2 2.2 4.8-4.8"/><path d="M12 3.8 18.2 6v5.7c0 3.7-2.6 6.1-6.2 7.8-3.6-1.7-6.2-4.1-6.2-7.8V6L12 3.8Z"/></svg>
+              <span><%= data.user.verificationBadge?.businessApproved ? '企业认证' : '未企业认证' %></span>
+            </span>
+          </div>
         </div>
       </div>
       <a class="mine-setting" href="/plugin.php?id=xigua_hb&ac=settings&high=4">设置</a>
@@ -349,24 +403,24 @@
   <section class="mine-card mine-section">
     <div class="mine-grid">
       <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=my_posts&high=4">
-        <div class="mine-item-icon" style="color:#32c86a;">✈</div>
+        <div class="mine-item-icon" style="color:#32c86a;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5h14"/><path d="m13.5 6 5.5 6.5-5.5 5.5"/><path d="m9.5 9-4.5 3.5 4.5 3.5"/></svg></div>
         <div class="mine-item-label">我的发布</div>
         <div class="mine-item-sub"><%= data.posts.length %>条</div>
       </a>
       <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=qianbao">
-        <div class="mine-item-icon" style="color:#32c86a;">💼</div>
+        <div class="mine-item-icon" style="color:#32c86a;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.5h15v10h-15z"/><path d="M4.5 8.5V7a2 2 0 0 1 2-2h8"/><path d="M15.5 13h4"/></svg></div>
         <div class="mine-item-label">我的钱包</div>
       </a>
       <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=homepage&high=4">
-        <div class="mine-item-icon" style="color:#32c86a;">👤</div>
+        <div class="mine-item-icon" style="color:#32c86a;"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19c1.7-3 4-4.5 6.5-4.5s4.8 1.5 6.5 4.5"/></svg></div>
         <div class="mine-item-label">个人主页</div>
       </a>
       <a class="mine-item" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3">
-        <div class="mine-item-icon" style="color:#32c86a;">💬</div>
+        <div class="mine-item-icon" style="color:#32c86a;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 7.8A2.8 2.8 0 0 1 9 5h6a2.8 2.8 0 0 1 2.8 2.8v4.6A2.8 2.8 0 0 1 15 15.2h-3.2L7.5 18v-2.8H9a2.8 2.8 0 0 1-2.8-2.8z"/></svg></div>
         <div class="mine-item-label">我的消息</div>
       </a>
       <a class="mine-item" href="/plugin.php?id=xigua_hh&mobile=2&ac=my&idu=5">
-        <div class="mine-item-icon" style="color:#32c86a;">🤝</div>
+        <div class="mine-item-icon" style="color:#32c86a;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 10.3 11 13l2-2 2.8 2.8"/><path d="M6.5 8.8 4.5 6.9a2.2 2.2 0 0 1 3.1-3.1l1.6 1.6"/><path d="m17.5 8.8 2-1.9a2.2 2.2 0 0 0-3.1-3.1l-1.6 1.6"/><path d="M7.5 12.5 5.7 14.3a2.2 2.2 0 1 0 3.1 3.1l1.8-1.8"/><path d="m16.5 12.5 1.8 1.8a2.2 2.2 0 1 1-3.1 3.1l-1.8-1.8"/></svg></div>
         <div class="mine-item-label">合伙人</div>
       </a>
     </div>
@@ -375,12 +429,12 @@
   <section class="mine-card mine-section">
     <h3 class="mine-section-title">我的订单</h3>
     <div class="mine-grid">
-      <a class="mine-item" href="/plugin.php?id=xigua_hk&ac=join&idu=5&high=1">
-        <div class="mine-item-icon" style="color:#4fa7ff;">🎫</div>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=orders&high=4&type=membership">
+        <div class="mine-item-icon" style="color:#4fa7ff;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5h14v7H5z"/><path d="M8 8.5V7h8v1.5"/><path d="M8.5 12h7"/><path d="M9.5 10.5v3"/><path d="M14.5 10.5v3"/></svg></div>
         <div class="mine-item-label">会员卡订单</div>
       </a>
       <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=orders&high=4">
-        <div class="mine-item-icon" style="color:#4fa7ff;">🧾</div>
+        <div class="mine-item-icon" style="color:#4fa7ff;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.8h10v14.4l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2z"/><path d="M9.2 9.2h5.6"/><path d="M9.2 12.2h5.6"/><path d="M9.2 15.2h3.4"/></svg></div>
         <div class="mine-item-label">我的订单</div>
       </a>
     </div>
@@ -389,16 +443,16 @@
   <section class="mine-card mine-section">
     <h3 class="mine-section-title">我的工具</h3>
     <div class="mine-grid">
-      <a class="mine-item" href="/plugin.php?id=xigua_wr&high=1"><div class="mine-item-icon" style="color:#ff557d;">📅</div><div class="mine-item-label">每日签到</div></a>
-      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=coupons&high=4"><div class="mine-item-icon" style="color:#ff557d;">🎁</div><div class="mine-item-label">我的兑换</div></a>
-      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=subscriptions&high=4"><div class="mine-item-icon" style="color:#ffbe2f;">🔖</div><div class="mine-item-label">我的订阅</div></a>
-      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="mine-item-icon" style="color:#ff7b38;">📍</div><div class="mine-item-label">收货地址</div></a>
-      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=verify&high=4"><div class="mine-item-icon" style="color:#76d395;">🛡</div><div class="mine-item-label">认证中心</div></a>
-      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="mine-item-icon" style="color:#f49b1c;">🔔</div><div class="mine-item-label">提醒设置</div></a>
-      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=comments&high=4"><div class="mine-item-icon" style="color:#8b90ff;">💭</div><div class="mine-item-label">我的评论</div></a>
-      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=favorites&high=4"><div class="mine-item-icon" style="color:#34b6ff;">★</div><div class="mine-item-label">收藏/关注</div></a>
-      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=footprints&high=4"><div class="mine-item-icon" style="color:#2ec16f;">👣</div><div class="mine-item-label">我的足迹</div></a>
-      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=call_logs&high=4"><div class="mine-item-icon" style="color:#2ec16f;">📞</div><div class="mine-item-label">来电记录</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_wr&high=1"><div class="mine-item-icon" style="color:#ff557d;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.8v2.1"/><path d="M17 4.8v2.1"/><path d="M5.5 8h13v10.2h-13z"/><path d="M5.5 10.8h13"/><path d="M9 14.2h2.2"/></svg></div><div class="mine-item-label">每日签到</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=coupons&high=4"><div class="mine-item-icon" style="color:#ff557d;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8.2h12v3.2a1.8 1.8 0 0 0 0 3.6v3.2H6V15a1.8 1.8 0 0 0 0-3.6z"/><path d="M12 8.2v10"/></svg></div><div class="mine-item-label">我的兑换</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=subscriptions&high=4"><div class="mine-item-icon" style="color:#ffbe2f;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5h8l2 2v10.8H6V7.5z"/><path d="M14 5.5v3h4"/><path d="M9 12h6"/><path d="M9 15h4.5"/></svg></div><div class="mine-item-label">我的订阅</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="mine-item-icon" style="color:#ff7b38;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20c3.5 0 6.3-4 6.3-7.2A6.3 6.3 0 1 0 5.7 12.8C5.7 16 8.5 20 12 20Z"/><circle cx="12" cy="10.8" r="2.2"/></svg></div><div class="mine-item-label">收货地址</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=verify&high=4"><div class="mine-item-icon" style="color:#76d395;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.7 12.4 2.2 2.2 4.8-4.8"/><path d="M12 3.8 18.2 6v5.7c0 3.7-2.6 6.1-6.2 7.8-3.6-1.7-6.2-4.1-6.2-7.8V6L12 3.8Z"/></svg></div><div class="mine-item-label">认证中心</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=settings&high=4"><div class="mine-item-icon" style="color:#f49b1c;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2a3.8 3.8 0 0 1 3.8 3.8v1.2c0 .8.2 1.5.7 2.2l1 1.4H6.5l1-1.4c.5-.7.7-1.4.7-2.2V9A3.8 3.8 0 0 1 12 5.2Z"/><path d="M10 17.5a2 2 0 0 0 4 0"/></svg></div><div class="mine-item-label">提醒设置</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=comments&high=4"><div class="mine-item-icon" style="color:#8b90ff;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 7.8A2.8 2.8 0 0 1 9 5h6a2.8 2.8 0 0 1 2.8 2.8v4.6A2.8 2.8 0 0 1 15 15.2H11l-3.6 3v-3H9a2.8 2.8 0 0 1-2.8-2.8z"/><path d="M9 9.3h6"/><path d="M9 11.9h4.5"/></svg></div><div class="mine-item-label">我的评论</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=favorites&high=4"><div class="mine-item-icon" style="color:#34b6ff;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 18.3-4.8 2.5.9-5.4-3.9-3.8 5.4-.8L12 5.9l2.4 4.9 5.4.8-3.9 3.8.9 5.4z"/></svg></div><div class="mine-item-label">收藏/关注</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=footprints&high=4"><div class="mine-item-icon" style="color:#2ec16f;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8.2c0 1.4-.8 2.5-1.8 2.5S5.4 9.6 5.4 8.2 6.2 5.7 7.2 5.7 9 6.8 9 8.2Z"/><path d="M15.4 7.5c0 1.3-.7 2.3-1.6 2.3s-1.6-1-1.6-2.3.7-2.3 1.6-2.3 1.6 1 1.6 2.3Z"/><path d="M11.5 12.4c1.5 0 2.7 1.2 2.7 2.7s-1.2 3.2-2.7 3.2-3.8-1.7-3.8-3.2 2.3-2.7 3.8-2.7Z"/><path d="M17.4 12.7c1.2 0 2.2 1 2.2 2.2S18.6 18 17.4 18s-2.8-1.2-2.8-3.1 1.6-2.2 2.8-2.2Z"/></svg></div><div class="mine-item-label">我的足迹</div></a>
+      <a class="mine-item" href="/plugin.php?id=xigua_hb&ac=call_logs&high=4"><div class="mine-item-icon" style="color:#2ec16f;"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 5.8c.5-.5 1.3-.5 1.8 0l1.7 1.7c.5.5.5 1.3 0 1.8l-1.1 1.1a13 13 0 0 0 4.8 4.8l1.1-1.1c.5-.5 1.3-.5 1.8 0l1.7 1.7c.5.5.5 1.3 0 1.8l-1.1 1.1c-.7.7-1.7 1-2.7.8A17 17 0 0 1 4.2 8.8c-.2-1 .1-2 .8-2.7z"/></svg></div><div class="mine-item-label">来电记录</div></a>
     </div>
   </section>
 

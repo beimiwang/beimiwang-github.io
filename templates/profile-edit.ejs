@@ -45,22 +45,28 @@
   }
 
   .profile-edit-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    position: relative;
+    height: 2.35rem;
     color: #fff;
   }
 
   .profile-edit-back {
-    color: #fff;
-    text-decoration: none;
-    font-size: .9rem;
-    font-weight: 700;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .profile-edit-top-placeholder {
+    position: absolute;
+    left: 3.4rem;
+    right: 3.4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
     opacity: 0;
-    font-size: .9rem;
+    font-size: .84rem;
+    line-height: 1.1rem;
   }
 
   .profile-edit-identity {
@@ -415,7 +421,7 @@
   <div id="profileEditToast" class="profile-edit-toast" aria-live="polite"></div>
   <div class="profile-edit-hero">
     <div class="profile-edit-topbar">
-      <a class="profile-edit-back" href="/plugin.php?id=xigua_hb&ac=my&high=4">&lt; 返回</a>
+      <a class="profile-edit-back ui-back-link is-light" href="/plugin.php?id=xigua_hb&ac=my&high=4"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
       <span class="profile-edit-top-placeholder">占位</span>
       <span class="profile-edit-top-placeholder">占位</span>
     </div>

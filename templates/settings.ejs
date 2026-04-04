@@ -1,8 +1,11 @@
 <%- include("partials/head", { pageTitle, message }) %>
 <style>
   .settings-shell { background:#f6f7fb; min-height:100vh; padding-bottom:4.6rem; }
-  .settings-header { height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .72rem; font-size:.8rem; font-weight:700; }
-  .settings-header a { color:#fff; text-decoration:none; }
+  .settings-header { height:2.35rem; background:#35c96d; color:#fff; position:relative; padding:0 .72rem; font-size:.72rem; font-weight:700; }
+  .settings-header a { color:#fff; text-decoration:none; position:absolute; top:50%; transform:translateY(-50%); }
+  .settings-header > a:first-child { left:.72rem; }
+  .settings-header > div { position:absolute; left:3.4rem; right:3.4rem; top:50%; transform:translateY(-50%); text-align:center; font-size:.84rem; line-height:1.1rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .settings-header > a:last-child { right:.72rem; min-width:2.2rem; text-align:right; }
   .settings-wrap { padding:.62rem .38rem 0; }
   .settings-panel { background:#fff; border-radius:.68rem; box-shadow:0 .08rem .28rem rgba(15,23,42,.04); overflow:hidden; margin-bottom:.66rem; }
   .settings-row-link, .settings-logout-btn { width:100%; min-height:2.55rem; border:0; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .8rem; text-decoration:none; color:#2b3340; font-size:.84rem; font-weight:600; box-sizing:border-box; }
@@ -36,7 +39,7 @@
 
 <div class="settings-shell">
   <div class="settings-header">
-    <a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+    <a class="ui-back-link is-light" href="/plugin.php?id=xigua_hb&ac=my&high=4"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
     <div><%= headerTitle %></div>
     <a href="<%= headerRightHref %>"><%= headerRightText %></a>
   </div>

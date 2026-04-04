@@ -15,11 +15,13 @@ const {
   getAdminOrders,
   getAdminPartnerApplications,
   getAdminPosts,
+  getAdminGuaranteeDeposits,
   getAdminServiceConversation,
   getAdminServiceConversations,
   getAdminWithdrawRequests,
   getAdminSystemData,
   getAdminUsers,
+  getAdminVerifications,
   getCategoryBanner,
   getOrderById,
   createAdminUser,
@@ -48,6 +50,7 @@ const {
   getServiceAgents,
   getServiceQuickReplies,
   getUserBySession,
+  getUserFollowingData,
   getUserSettingsData,
   getUserProfileEditData,
   getUserProfile,
@@ -57,9 +60,12 @@ const {
   incrementShare,
   incrementViews,
   init,
+  isPostFavorited,
   refreshPost,
+  recordCallLog,
   recordUserHomepageView,
   togglePostStatus,
+  toggleUserFavorite,
   topUpWallet,
   toggleUserBlock,
   toggleUserFollow,
@@ -89,6 +95,7 @@ const {
   getUserHomepageData,
   getUserSubscriptionsData,
   getUserVerificationData,
+  getUserVerificationBadge,
   getCheckinData,
   getMembershipPlanById,
   markOrderEffectApplied,
@@ -105,11 +112,16 @@ const {
   assignServiceConversation,
   sendAdminServiceReply,
   sendServiceUserMessage,
+  submitBusinessVerification,
+  submitGuaranteeDeposit,
+  submitPersonalVerification,
   submitPartnerApplication,
   updateServiceConversationStatus,
+  updateGuaranteeDepositReview,
   updateWithdrawRequestReview,
   updateMessageReadStatus,
   updatePartnerApplicationStatus,
+  updateVerificationReview,
   updateUserPhone,
   updateUserPassword,
   updatePost,
@@ -358,7 +370,50 @@ function renderPlugin(req, res) {
       if (!post) {
         return res.status(404).render("message", { title: "内容不存在", body: "对应信息已删除或不存在。" });
       }
-      return res.render("detail", { currentTab: "home", pageTitle: post.title, post, message: msg });
+      const isFavorited = userSession.loggedIn ? isPostFavorited(userSession.user.id, post.id) : false;
+      return res.render("detail", { currentTab: "home", pageTitle: post.title, post, message: "", userSession, isFavorited, verificationBadge: getUserVerificationBadge(post.user_id) });
+    }
+
+    if (ac === "call") {
+      const post = getPostById(Number(pubid));
+      if (!post || !post.phone) {
+        return res.redirect("/plugin.php?id=xigua_hb&mobile=2&high=0");
+      }
+      if (userSession.loggedIn) {
+        recordCallLog(userSession.user.id, post.id, post.phone, 0);
+      }
+      return res.redirect(`tel:${post.phone}`);
+    }
+
+    if (ac === "favorite") {
+      const wantsJson = req.get("x-requested-with") === "XMLHttpRequest" || req.query.ajax === "1";
+      const redirectTarget = String(req.query.redirect || "").trim();
+      if (!userSession.loggedIn) {
+        if (wantsJson) {
+          return res.status(401).json({ ok: false, message: "请先登录", loginRequired: true });
+        }
+        return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
+      }
+      const post = getPostById(Number(pubid));
+      if (!post) {
+        if (wantsJson) {
+          return res.status(404).json({ ok: false, message: "信息不存在" });
+        }
+        return res.redirect("/plugin.php?id=xigua_hb&mobile=2&high=0");
+      }
+      const result = toggleUserFavorite(userSession.user.id, post.id);
+      if (wantsJson) {
+        return res.json({
+          ok: true,
+          favorited: result.favorited,
+          message: result.favorited ? "已收藏" : "已取消收藏"
+        });
+      }
+      return redirectWithMessage(
+        res,
+        redirectTarget || `/plugin.php?id=xigua_hb&ac=view&pubid=${encodeURIComponent(post.id)}`,
+        result.favorited ? "已收藏" : "已取消收藏"
+      );
     }
 
     if (ac === "ride_api") {
@@ -498,7 +553,7 @@ function renderPlugin(req, res) {
         currentTab: "mine",
         pageTitle: "个人主页",
         data: getUserHomepageData(targetUserId, userSession.user.id, homepageTab),
-        message: msg
+        message: ""
       });
     }
 
@@ -507,8 +562,17 @@ function renderPlugin(req, res) {
         return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
       }
       const targetUserId = Number(req.query.uid || 0);
-      toggleUserFollow(userSession.user.id, targetUserId);
-      return res.redirect(`/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=${encodeURIComponent(targetUserId)}`);
+      const redirectTarget = String(req.query.redirect || "").trim();
+      const result = toggleUserFollow(userSession.user.id, targetUserId);
+      const wantsJson = req.get("x-requested-with") === "XMLHttpRequest" || req.query.ajax === "1";
+      if (wantsJson) {
+        return res.json({
+          ok: true,
+          following: result.following,
+          message: result.following ? "已关注" : "已取消关注"
+        });
+      }
+      return res.redirect(redirectTarget || `/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=${encodeURIComponent(targetUserId)}`);
     }
 
     if (ac === "homepage_block") {
@@ -541,10 +605,11 @@ function renderPlugin(req, res) {
       if (!userSession.loggedIn) {
         return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
       }
+      const orderType = String(req.query.type || "").trim();
       return res.render("user-orders", {
         currentTab: "mine",
-        pageTitle: "我的订单",
-        data: getUserAllOrdersData(userSession.user.id),
+        pageTitle: orderType === "membership" ? "会员卡订单" : "我的订单",
+        data: getUserAllOrdersData(userSession.user.id, orderType),
         message: msg
       });
     }
@@ -566,10 +631,20 @@ function renderPlugin(req, res) {
       if (!userSession.loggedIn) {
         return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
       }
+      const verifyView = ["personal", "business", "deposit"].includes(String(req.query.view || ""))
+        ? String(req.query.view)
+        : "home";
+      const pageTitleMap = {
+        home: "我的认证",
+        personal: "实名认证",
+        business: "企业认证",
+        deposit: "诚信保证金"
+      };
       return res.render("verification-center", {
         currentTab: "mine",
-        pageTitle: "认证中心",
+        pageTitle: pageTitleMap[verifyView],
         message: msg,
+        verifyView,
         data: getUserVerificationData(userSession.user.id)
       });
     }
@@ -591,12 +666,14 @@ function renderPlugin(req, res) {
       if (!userSession.loggedIn) {
         return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
       }
+      const favoritesTab = String(req.query.tab || "posts").trim() === "users" ? "users" : "posts";
       return res.render("user-list-page", {
         currentTab: "mine",
         pageTitle: "收藏/关注",
         message: msg,
         listType: "favorites",
-        data: getUserFavoritesData(userSession.user.id)
+        data: favoritesTab === "users" ? getUserFollowingData(userSession.user.id) : getUserFavoritesData(userSession.user.id),
+        favoritesTab
       });
     }
 
@@ -908,6 +985,28 @@ app.get("/admin/messages", (req, res) => {
     pageTitle: "站内消息",
     token: session.username,
     data: getAdminMessages(req.query.keyword || "", req.query.type || ""),
+    msg: req.query.msg || ""
+  });
+});
+
+app.get("/admin/verifications", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  res.render("admin/verifications", {
+    pageTitle: "认证审核",
+    token: session.username,
+    data: getAdminVerifications(req.query.type || "", req.query.status || "", req.query.keyword || ""),
+    msg: req.query.msg || ""
+  });
+});
+
+app.get("/admin/guarantee-deposits", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  res.render("admin/guarantee-deposits", {
+    pageTitle: "保证金审核",
+    token: session.username,
+    data: getAdminGuaranteeDeposits(req.query.status || "", req.query.keyword || ""),
     msg: req.query.msg || ""
   });
 });
@@ -1408,6 +1507,56 @@ app.post("/admin/messages/:id/read", (req, res) => {
   res.redirect("/admin/messages?msg=" + encodeURIComponent("消息状态已更新"));
 });
 
+app.post("/admin/verifications/:id/status", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  const status = String(req.body.status || "pending");
+  const note = String(req.body.note || "").trim();
+  const record = updateVerificationReview(Number(req.params.id), status, note);
+  if (record && status === "approved") {
+    createUserMessage(record.user_id, {
+      type: "system",
+      title: record.verify_type === "business" ? "企业认证已通过" : "实名认证已通过",
+      content: note || (record.verify_type === "business" ? "您的企业认证已审核通过。" : "您的实名认证已审核通过。"),
+      href: "/plugin.php?id=xigua_hb&ac=verify&high=4"
+    });
+  }
+  if (record && status === "rejected") {
+    createUserMessage(record.user_id, {
+      type: "system",
+      title: record.verify_type === "business" ? "企业认证未通过" : "实名认证未通过",
+      content: note || "本次认证未通过，请完善资料后重新提交。",
+      href: "/plugin.php?id=xigua_hb&ac=verify&high=4"
+    });
+  }
+  res.redirect("/admin/verifications?msg=" + encodeURIComponent("认证审核结果已保存"));
+});
+
+app.post("/admin/guarantee-deposits/:id/status", (req, res) => {
+  const session = requireAdmin(req, res);
+  if (!session) return;
+  const status = String(req.body.status || "pending");
+  const note = String(req.body.note || "").trim();
+  const record = updateGuaranteeDepositReview(Number(req.params.id), status, note);
+  if (record && status === "paid") {
+    createUserMessage(record.user_id, {
+      type: "wallet",
+      title: "保证金已通过",
+      content: note || "您的诚信保证金已审核通过。",
+      href: "/plugin.php?id=xigua_hb&ac=verify&high=4&view=deposit"
+    });
+  }
+  if (record && status === "rejected") {
+    createUserMessage(record.user_id, {
+      type: "wallet",
+      title: "保证金申请未通过",
+      content: note || "本次保证金申请未通过，请稍后重试或联系客服。",
+      href: "/plugin.php?id=xigua_hb&ac=verify&high=4&view=deposit"
+    });
+  }
+  res.redirect("/admin/guarantee-deposits?msg=" + encodeURIComponent("保证金审核结果已保存"));
+});
+
 app.post("/admin/service/:id/reply", (req, res) => {
   const session = requireAdmin(req, res);
   if (!session) return;
@@ -1703,6 +1852,78 @@ app.post("/plugin.php", (req, res) => {
     }
     updateUserPhone(session.user.id, phone);
     return redirectWithMessage(res, `/plugin.php?id=xigua_hb&ac=settings&high=4&view=${encodeURIComponent(nextView)}`, "手机号已绑定");
+  }
+
+  if (id === "xigua_hb" && ac === "verify" && action === "personal") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    const body = req.body || {};
+    const realName = String(body.real_name || "").trim();
+    const idCardNumber = String(body.id_card_number || "").trim();
+    if (!realName) {
+      return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=verify&high=4&view=personal", "请填写姓名");
+    }
+    if (!/^\d{17}[\dXx]$/.test(idCardNumber)) {
+      return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=verify&high=4&view=personal", "请填写正确的身份证号码");
+    }
+    submitPersonalVerification(session.user.id, {
+      realName,
+      idCardNumber,
+      validYears: 2
+    });
+    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=verify&high=4", "实名认证资料已提交");
+  }
+
+  if (id === "xigua_hb" && ac === "verify" && action === "business") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    return upload.single("license_image_file")(req, res, (error) => {
+      if (error) {
+        return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=verify&high=4&view=business", "营业执照上传失败，请重试");
+      }
+      const body = req.body || {};
+      const businessName = String(body.business_name || "").trim();
+      const businessType = String(body.business_type || "").trim();
+      const licenseNumber = String(body.license_number || "").trim();
+      const contactPhone = String(body.contact_phone || "").trim();
+      const realName = String(body.real_name || businessName || "").trim();
+      const licenseImage = req.file
+        ? `/uploads/${req.file.filename}`
+        : String(body.license_image_current || "").trim();
+      if (!businessName || !businessType || !licenseNumber || !contactPhone || !licenseImage) {
+        return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=verify&high=4&view=business", "请完整填写企业认证资料");
+      }
+      submitBusinessVerification(session.user.id, {
+        realName,
+        businessName,
+        businessType,
+        licenseNumber,
+        contactPhone,
+        licenseImage,
+        validYears: 1
+      });
+      return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=verify&high=4", "企业认证资料已提交");
+    });
+  }
+
+  if (id === "xigua_hb" && ac === "verify" && action === "deposit") {
+    const session = requireUser(req, res);
+    if (!session) return;
+    submitGuaranteeDeposit(session.user.id, 200);
+    createOrder({
+      userId: session.user.id,
+      orderType: "guarantee_deposit",
+      amount: 200,
+      status: "pending",
+      note: "诚信保证金申请"
+    });
+    createUserMessage(session.user.id, {
+      type: "wallet",
+      title: "保证金申请已提交",
+      content: "您的诚信保证金申请已提交，请等待平台审核。",
+      href: "/plugin.php?id=xigua_hb&ac=verify&high=4&view=deposit"
+    });
+    return redirectWithMessage(res, "/plugin.php?id=xigua_hb&ac=verify&high=4&view=deposit", "保证金申请已提交");
   }
 
   if (id === "xigua_hb" && ac === "homepage_follow") {

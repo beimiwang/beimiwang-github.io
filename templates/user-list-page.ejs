@@ -1,45 +1,74 @@
 <%- include("partials/head", { pageTitle, message }) %>
 <style>
   .ulp-shell { background:#f6f7fb; min-height:100vh; padding-bottom:4.4rem; }
-  .ulp-header { height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .7rem; font-size:.78rem; font-weight:600; }
+  .ulp-header { position:relative; height:2.35rem; background:#35c96d; color:#fff; font-size:.84rem; font-weight:600; }
   .ulp-header a { color:#fff; text-decoration:none; }
+  .ulp-header > a:first-child { position:absolute; left:.72rem; top:50%; transform:translateY(-50%); }
+  .ulp-header > div { position:absolute; left:3.4rem; right:3.4rem; top:50%; transform:translateY(-50%); text-align:center; font-size:.84rem; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ulp-header > span { position:absolute; right:.72rem; top:50%; transform:translateY(-50%); min-width:2.6rem; }
   .ulp-list { margin:.7rem .6rem 0; display:grid; gap:.55rem; }
   .ulp-card { background:#fff; border-radius:.82rem; box-shadow:0 .1rem .32rem rgba(15,23,42,.05); padding:.8rem; }
   .ulp-card h3 { margin:0 0 .26rem; font-size:.82rem; line-height:1.12rem; color:#233042; }
   .ulp-card p { margin:0; font-size:.68rem; line-height:1rem; color:#606a7b; }
   .ulp-meta { margin-top:.32rem; display:flex; gap:.42rem; flex-wrap:wrap; font-size:.58rem; color:#9aa4b2; }
+  .ulp-actions { margin-top:.48rem; display:flex; gap:.42rem; flex-wrap:wrap; }
+  .ulp-btn { min-height:1.38rem; padding:0 .6rem; border-radius:.62rem; border:1px solid #d7dde7; display:inline-flex; align-items:center; justify-content:center; background:#fff; color:#516072; text-decoration:none; font-size:.6rem; font-weight:600; }
+  .ulp-btn.primary { border-color:#c9efda; color:#35b76a; background:#f4fff8; }
+  .ulp-card-link { display:block; text-decoration:none; color:inherit; }
+  .ulp-tabs { margin:.7rem .6rem 0; display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; }
+  .ulp-tab { height:2rem; border-radius:.82rem; background:#fff; box-shadow:0 .1rem .32rem rgba(15,23,42,.05); display:flex; align-items:center; justify-content:center; text-decoration:none; color:#728096; font-size:.72rem; font-weight:600; }
+  .ulp-tab.active { background:#35c96d; color:#fff; }
 </style>
 <div class="ulp-shell">
-  <div class="ulp-header"><a href="<%= typeof backHref !== 'undefined' ? backHref : '/plugin.php?id=xigua_hb&ac=my&high=4' %>">‹ 返回</a><div><%= pageTitle %></div><span></span></div>
+  <div class="ulp-header"><a class="ui-back-link is-light" href="<%= typeof backHref !== 'undefined' ? backHref : '/plugin.php?id=xigua_hb&ac=my&high=4' %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a><div><%= pageTitle %></div><span></span></div>
+  <% if (listType === 'favorites') { %>
+    <div class="ulp-tabs">
+      <a class="ulp-tab <%= (typeof favoritesTab === 'undefined' || favoritesTab === 'posts') ? 'active' : '' %>" href="/plugin.php?id=xigua_hb&ac=favorites&high=4&tab=posts">收藏</a>
+      <a class="ulp-tab <%= favoritesTab === 'users' ? 'active' : '' %>" href="/plugin.php?id=xigua_hb&ac=favorites&high=4&tab=users">关注</a>
+    </div>
+  <% } %>
   <div class="ulp-list">
     <% const items = data.items || []; %>
-    <% if (!items.length) { %><div class="ulp-card">暂无内容</div><% } %>
+    <% if (!items.length) { %><div class="ulp-card"><%= listType === 'favorites' ? ((favoritesTab === 'users') ? '暂无关注记录' : '暂无收藏记录') : '暂无内容' %></div><% } %>
     <% items.forEach((item) => { %>
       <div class="ulp-card">
         <% if (listType === 'subscriptions') { %>
-          <h3><%= item.title %></h3>
-          <p>关键词：<%= item.keyword || '未设置' %></p>
+          <a class="ulp-card-link" href="/plugin.php?id=xigua_hb&mobile=2&high=0&keyword=<%= encodeURIComponent(item.keyword || '') %>"><h3><%= item.title %></h3><p>关键词：<%= item.keyword || '未设置' %></p></a>
           <div class="ulp-meta"><span><%= item.category_name || '全部类目' %></span><span><%= item.status === 'active' ? '订阅中' : '已暂停' %></span><span><%= item.created_at %></span></div>
         <% } else if (listType === 'comments') { %>
-          <h3><%= item.post_title %></h3>
-          <p><%= item.content %></p>
+          <a class="ulp-card-link" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= item.post_id %>"><h3><%= item.post_title %></h3><p><%= item.content %></p></a>
           <div class="ulp-meta"><span><%= item.created_at %></span></div>
         <% } else if (listType === 'favorites') { %>
-          <h3><%= item.post_title %></h3>
-          <p>已收藏信息，地区：<%= item.location || '未设置' %></p>
-          <div class="ulp-meta"><span><%= item.created_at %></span></div>
+          <% if (favoritesTab === 'users') { %>
+            <a class="ulp-card-link" href="/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=<%= item.target_user_id %>"><h3><%= item.nickname || '未命名用户' %></h3><p>已关注用户，城市：<%= item.city || '未设置' %></p></a>
+            <div class="ulp-meta"><span><%= item.created_at %></span></div>
+            <div class="ulp-actions">
+              <a class="ulp-btn primary" href="/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=<%= item.target_user_id %>">查看主页</a>
+              <a class="ulp-btn" href="/plugin.php?id=xigua_hb&ac=homepage_follow&uid=<%= item.target_user_id %>&redirect=<%= encodeURIComponent('/plugin.php?id=xigua_hb&ac=favorites&high=4&tab=users') %>">取消关注</a>
+            </div>
+          <% } else { %>
+            <a class="ulp-card-link" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= item.post_id %>"><h3><%= item.post_title %></h3><p>已收藏信息，地区：<%= item.location || '未设置' %></p></a>
+            <div class="ulp-meta"><span><%= item.created_at %></span></div>
+            <div class="ulp-actions">
+              <a class="ulp-btn primary" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= item.post_id %>">查看详情</a>
+              <a class="ulp-btn" href="/plugin.php?id=xigua_hb&ac=favorite&pubid=<%= item.post_id %>&redirect=<%= encodeURIComponent('/plugin.php?id=xigua_hb&ac=favorites&high=4&tab=posts') %>">取消收藏</a>
+            </div>
+          <% } %>
         <% } else if (listType === 'footprints') { %>
-          <h3><%= item.post_title %></h3>
-          <p>浏览地区：<%= item.location || '未设置' %></p>
+          <a class="ulp-card-link" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= item.post_id %>"><h3><%= item.post_title %></h3><p>浏览地区：<%= item.location || '未设置' %></p></a>
           <div class="ulp-meta"><span><%= item.viewed_at %></span></div>
+          <div class="ulp-actions"><a class="ulp-btn primary" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= item.post_id %>">再次查看</a></div>
         <% } else if (listType === 'call_logs') { %>
-          <h3><%= item.post_title %></h3>
-          <p>联系号码：<%= item.target_phone || '未记录' %></p>
+          <a class="ulp-card-link" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= item.post_id %>"><h3><%= item.post_title %></h3><p>联系号码：<%= item.target_phone || '未记录' %></p></a>
           <div class="ulp-meta"><span>通话 <%= Math.floor(Number(item.duration_seconds || 0) / 60) %> 分 <%= Number(item.duration_seconds || 0) % 60 %> 秒</span><span><%= item.created_at %></span></div>
+          <div class="ulp-actions">
+            <% if (item.target_phone) { %><a class="ulp-btn primary" href="tel:<%= item.target_phone %>">一键回拨</a><% } %>
+            <a class="ulp-btn" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= item.post_id %>">查看原帖</a>
+          </div>
         <% } else if (listType === 'partner_fans') { %>
-          <h3><%= item.nickname || '未命名用户' %></h3>
-          <p>城市：<%= item.city || '未设置' %></p>
+          <a class="ulp-card-link" href="/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=<%= item.id %>"><h3><%= item.nickname || '未命名用户' %></h3><p>城市：<%= item.city || '未设置' %></p></a>
           <div class="ulp-meta"><span>关注时间 <%= item.created_at %></span></div>
+          <div class="ulp-actions"><a class="ulp-btn primary" href="/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=<%= item.id %>">查看主页</a></div>
         <% } else if (listType === 'partner_income') { %>
           <h3><%= item.note || '合伙人收益' %></h3>
           <p>来源粉丝：<%= item.fan_nickname || '匿名用户' %></p>

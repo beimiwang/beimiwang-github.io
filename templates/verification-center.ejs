@@ -1,29 +1,234 @@
 <%- include("partials/head", { pageTitle, message }) %>
+<%
+  const currentView = verifyView || "home";
+  const personal = data.personal || {};
+  const business = data.business || {};
+  const deposit = data.deposit || {};
+  const summary = data.summary || {};
+  const user = data.user || {};
+  const statusClass = (status) => {
+    if (status === "approved" || status === "paid") return "is-approved";
+    if (status === "pending") return "is-pending";
+    if (status === "rejected") return "is-rejected";
+    return "is-empty";
+  };
+  const depositAmount = Number(deposit.amount || 0).toFixed(2);
+%>
 <style>
-  .vc-shell { background:#f6f7fb; min-height:100vh; padding-bottom:4.4rem; }
-  .vc-header { height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .7rem; font-size:.78rem; font-weight:600; }
-  .vc-header a { color:#fff; text-decoration:none; }
-  .vc-card { margin:.7rem .6rem 0; background:#fff; border-radius:.82rem; box-shadow:0 .1rem .32rem rgba(15,23,42,.05); padding:.9rem; }
-  .vc-title { font-size:.96rem; color:#233042; font-weight:700; }
-  .vc-status { margin-top:.45rem; display:inline-flex; padding:.22rem .62rem; border-radius:999px; background:#ecfff4; color:#2ea85d; font-size:.62rem; font-weight:700; }
-  .vc-desc { margin-top:.55rem; font-size:.7rem; line-height:1.05rem; color:#647084; }
-  .vc-meta { margin-top:.7rem; display:grid; gap:.42rem; font-size:.66rem; color:#7a8597; }
+  .verify-shell { min-height:100vh; background:#f5f6f8; padding-bottom:4.3rem; }
+  .verify-header { position:relative; height:2.35rem; background:#63cf79; color:#fff; font-size:.84rem; font-weight:600; }
+  .verify-header a { color:#fff; text-decoration:none; }
+  .verify-header > a:first-child,
+  .verify-header > a:last-child {
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    display:inline-flex;
+    align-items:center;
+    min-height:1.2rem;
+    z-index:1;
+  }
+  .verify-header > a:first-child { left:.72rem; }
+  .verify-header > a:last-child { right:.72rem; min-width:2.6rem; justify-content:flex-end; }
+  .verify-header > div {
+    position:absolute;
+    left:3.4rem;
+    right:3.4rem;
+    top:50%;
+    transform:translateY(-50%);
+    text-align:center;
+    font-size:.84rem;
+    font-weight:650;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .verify-home-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.55rem; padding:.62rem; align-items:start; }
+  .verify-home-card { background:#fff; border-radius:.2rem; box-shadow:0 .08rem .24rem rgba(15,23,42,.04); min-height:5.85rem; text-decoration:none; color:#293549; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.32rem; padding:.4rem; }
+  .verify-home-card.full { grid-column:1 / 2; }
+  .verify-card-icon { width:1.8rem; height:1.8rem; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#f4fbf6; color:#63c96e; }
+  .verify-card-icon.is-blue { background:#f2f7ff; color:#4a86e9; }
+  .verify-card-icon.is-red { background:#fff4f4; color:#ef6b6b; }
+  .verify-card-icon svg,
+  .verify-hero-mark svg { width:1.08rem; height:1.08rem; stroke:currentColor; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+  .verify-card-title { font-size:.84rem; font-weight:500; color:#283649; }
+  .verify-pill { min-width:3.2rem; text-align:center; border-radius:999px; border:.06rem solid #e5e7eb; color:#9aa3b2; font-size:.58rem; line-height:1; padding:.24rem .65rem; }
+  .verify-pill.is-approved { border-color:#c6f0d0; color:#35b55f; background:#f2fff5; }
+  .verify-pill.is-pending { border-color:#ffe0a8; color:#d9901f; background:#fffaf0; }
+  .verify-pill.is-rejected { border-color:#ffd1d1; color:#e45b5b; background:#fff5f5; }
+  .verify-hero { position:relative; background:linear-gradient(180deg, #64cf79 0%, #63cb75 100%); color:#fff; padding:1rem .82rem .95rem; overflow:hidden; }
+  .verify-hero::before, .verify-hero::after { content:""; position:absolute; background:rgba(255,255,255,.1); border-radius:999px; }
+  .verify-hero::before { width:1.5rem; height:.38rem; left:-.12rem; top:.7rem; transform:rotate(55deg); }
+  .verify-hero::after { width:2rem; height:.42rem; right:.15rem; top:1.1rem; transform:rotate(-55deg); }
+  .verify-hero-title { font-size:.76rem; font-weight:600; }
+  .verify-hero-subtitle { margin-top:.45rem; font-size:.72rem; line-height:1rem; font-weight:500; }
+  .verify-hero-mark { position:absolute; right:.72rem; top:.72rem; width:2.2rem; height:2.2rem; border-radius:50%; background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; }
+  .verify-section { margin:-.58rem .62rem 0; background:#fff; border-radius:.24rem; box-shadow:0 .08rem .24rem rgba(15,23,42,.05); padding:.72rem .68rem .78rem; }
+  .verify-section + .verify-section { margin-top:.58rem; }
+  .verify-section-title { font-size:.72rem; font-weight:600; color:#5b6678; margin-bottom:.55rem; }
+  .verify-row { display:flex; align-items:center; min-height:2rem; border-radius:.18rem; background:#fff; box-shadow:inset 0 0 0 .05rem #eff1f4; padding:0 .72rem; margin-top:.45rem; }
+  .verify-label { width:3.5rem; color:#2d394b; font-size:.82rem; font-weight:600; }
+  .verify-input, .verify-select { flex:1; border:0; outline:none; font-size:.78rem; color:#495567; background:transparent; }
+  .verify-input::placeholder { color:#b2bac6; }
+  .verify-upload-box { display:flex; gap:.7rem; align-items:flex-start; background:#fff; border-radius:.18rem; box-shadow:inset 0 0 0 .05rem #eff1f4; padding:.72rem; }
+  .verify-upload-btn { width:3.6rem; height:3.6rem; border-radius:.12rem; background:#f5f7fb; display:flex; align-items:center; justify-content:center; color:#c4cad3; font-size:2rem; position:relative; overflow:hidden; flex-shrink:0; }
+  .verify-upload-btn img { width:100%; height:100%; object-fit:cover; }
+  .verify-upload-desc { font-size:.68rem; line-height:.98rem; color:#7e8796; }
+  .verify-file-input { position:absolute; inset:0; opacity:0; }
+  .verify-valid-card { width:7.2rem; border:.05rem solid #bfeac8; border-radius:.12rem; padding:.55rem .55rem .48rem; position:relative; background:linear-gradient(180deg, #fbfffc 0%, #f4fff7 100%); }
+  .verify-valid-card::after { content:""; position:absolute; right:0; bottom:0; width:0; height:0; border-left:.55rem solid transparent; border-top:.55rem solid transparent; border-right:.55rem solid #59cb73; border-bottom:.55rem solid #59cb73; }
+  .verify-valid-title { font-size:.74rem; font-weight:600; color:#2d394b; }
+  .verify-valid-price { margin-top:.35rem; font-size:1.02rem; font-weight:700; color:#263446; }
+  .verify-valid-price span { font-size:.58rem; font-weight:500; color:#627084; }
+  .verify-submit-wrap { padding:.82rem .62rem 1rem; }
+  .verify-submit { width:100%; height:2.02rem; border:0; border-radius:.18rem; background:#63cb75; color:#fff; font-size:.84rem; font-weight:600; }
+  .deposit-hero { padding:1.15rem .82rem 1.25rem; text-align:center; }
+  .deposit-amount { font-size:1.14rem; font-weight:300; letter-spacing:.01rem; }
+  .deposit-sub { margin-top:.18rem; font-size:.68rem; opacity:.96; }
+  .deposit-faq { padding:.82rem .7rem 0; }
+  .deposit-faq-item { margin-bottom:.82rem; }
+  .deposit-faq-q { color:#4dbf69; font-size:.82rem; font-weight:600; }
+  .deposit-faq-a { margin-top:.3rem; color:#5f6b7c; font-size:.68rem; line-height:1rem; }
+  .deposit-actions { display:grid; grid-template-columns:1fr 1fr; gap:.62rem; padding:.9rem .62rem 1rem; }
+  .deposit-btn { height:2.05rem; border-radius:.18rem; font-size:.82rem; font-weight:600; border:.05rem solid #dfe4ea; background:#fff; color:#344154; text-decoration:none; display:flex; align-items:center; justify-content:center; }
+  .deposit-btn.primary { background:#63cb75; color:#fff; border-color:#63cb75; }
+  .verify-inline-note { margin-top:.45rem; font-size:.68rem; color:#7b8797; line-height:1rem; }
 </style>
-<div class="vc-shell">
-  <div class="vc-header"><a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a><div>认证中心</div><span></span></div>
-  <div class="vc-card">
-    <div class="vc-title">个人认证</div>
-    <% if (data.record) { %>
-      <div class="vc-status"><%= ({ approved:'已认证', pending:'审核中', rejected:'未通过' }[data.record.status] || data.record.status) %></div>
-      <div class="vc-desc"><%= data.record.note || '认证状态已同步到系统。' %></div>
-      <div class="vc-meta">
-        <div>认证类型：<%= data.record.verify_type === 'personal' ? '个人认证' : data.record.verify_type %></div>
-        <div>认证姓名：<%= data.record.real_name || '未填写' %></div>
-        <div>申请时间：<%= data.record.created_at %></div>
-      </div>
-    <% } else { %>
-      <div class="vc-desc">你当前还没有提交认证申请。</div>
-    <% } %>
+
+<div class="verify-shell">
+  <div class="verify-header">
+    <a class="ui-back-link is-light" href="<%= currentView === 'home' ? '/plugin.php?id=xigua_hb&ac=my&high=4' : '/plugin.php?id=xigua_hb&ac=verify&high=4' %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
+    <div><%= pageTitle %></div>
+    <a href="/plugin.php?id=xigua_hb&ac=my&high=4"><%= currentView === 'home' ? '我的' : '' %></a>
   </div>
+
+  <% if (currentView === 'home') { %>
+    <div class="verify-home-grid">
+      <a class="verify-home-card" href="/plugin.php?id=xigua_hb&ac=verify&high=4&view=personal">
+        <div class="verify-card-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19c1.7-3 4-4.5 6.5-4.5s4.8 1.5 6.5 4.5"/><path d="m16.5 13.4 1.2 1.2 2.1-2.1"/></svg></div>
+        <div class="verify-card-title">实名认证</div>
+        <div class="verify-pill <%= statusClass(summary.personalStatus) %>"><%= summary.personalStatusText %></div>
+      </a>
+      <a class="verify-home-card" href="/plugin.php?id=xigua_hb&ac=verify&high=4&view=business">
+        <div class="verify-card-icon is-blue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 18.2 6v5.7c0 3.7-2.6 6.1-6.2 7.8-3.6-1.7-6.2-4.1-6.2-7.8V6L12 3.8Z"/><path d="M9 12.5h4.7"/><path d="M9.8 9.6h4"/></svg></div>
+        <div class="verify-card-title">企业认证</div>
+        <div class="verify-pill <%= statusClass(summary.businessStatus) %>"><%= summary.businessStatusText %></div>
+      </a>
+      <a class="verify-home-card full" href="/plugin.php?id=xigua_hb&ac=verify&high=4&view=deposit">
+        <div class="verify-card-icon is-red"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M8.5 8.2c.7-.8 1.8-1.2 3.5-1.2 2 0 3.5.9 3.5 2.6s-1.4 2.4-3.5 2.4h-.4c-2 0-3.1.8-3.1 2.4S10 17 12 17c1.6 0 2.8-.5 3.6-1.4"/></svg></div>
+        <div class="verify-card-title">诚信保证金</div>
+        <div class="verify-pill <%= statusClass(summary.depositStatus) %>"><%= summary.depositStatusText %></div>
+      </a>
+    </div>
+  <% } %>
+
+  <% if (currentView === 'personal') { %>
+    <div class="verify-hero">
+      <div class="verify-hero-title">请上传资料完成实名认证</div>
+      <div class="verify-hero-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19c1.7-3 4-4.5 6.5-4.5s4.8 1.5 6.5 4.5"/><path d="m16.5 13.4 1.2 1.2 2.1-2.1"/></svg></div>
+    </div>
+    <form method="post" action="/plugin.php?id=xigua_hb&ac=verify&do=personal">
+      <div class="verify-section">
+        <div class="verify-section-title">基本信息</div>
+        <div class="verify-row">
+          <div class="verify-label">姓名</div>
+          <input class="verify-input" name="real_name" type="text" placeholder="请填写姓名" value="<%= personal.real_name || '' %>">
+        </div>
+        <div class="verify-row">
+          <div class="verify-label">身份证号</div>
+          <input class="verify-input" name="id_card_number" type="text" placeholder="请填写正确的身份证号码" value="<%= personal.id_card_number || '' %>">
+        </div>
+        <div class="verify-inline-note">认证有效期</div>
+        <div class="verify-valid-card">
+          <div class="verify-valid-title">自动通过</div>
+          <div class="verify-valid-price">0<span>元 / 有效期 2年</span></div>
+        </div>
+      </div>
+      <div class="verify-submit-wrap"><button class="verify-submit" type="submit">提交</button></div>
+    </form>
+  <% } %>
+
+  <% if (currentView === 'business') { %>
+    <div class="verify-hero">
+      <div class="verify-hero-title">请上传资料完成企业认证</div>
+      <div class="verify-hero-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 18.2 6v5.7c0 3.7-2.6 6.1-6.2 7.8-3.6-1.7-6.2-4.1-6.2-7.8V6L12 3.8Z"/><path d="M9 12.5h4.7"/><path d="M9.8 9.6h4"/></svg></div>
+    </div>
+    <form method="post" enctype="multipart/form-data" action="/plugin.php?id=xigua_hb&ac=verify&do=business">
+      <div class="verify-section">
+        <div class="verify-section-title">企业/个体工商户认证</div>
+        <div class="verify-section-title" style="margin-bottom:.38rem;color:#2d394b;">营业执照</div>
+        <div class="verify-upload-box">
+          <label class="verify-upload-btn">
+            <% if (business.license_image) { %>
+              <img src="<%= business.license_image %>" alt="营业执照">
+            <% } else { %>
+              +
+            <% } %>
+            <input class="verify-file-input" type="file" accept="image/*" name="license_image_file">
+          </label>
+          <div class="verify-upload-desc">
+            请提供清晰的营业执照的照片<br>
+            编号、文字需清晰可见
+          </div>
+        </div>
+        <input type="hidden" name="license_image_current" value="<%= business.license_image || '' %>">
+        <div class="verify-row">
+          <div class="verify-label">主体名称</div>
+          <input class="verify-input" name="business_name" type="text" placeholder="请填写企业/个体工商户名称" value="<%= business.business_name || '' %>">
+        </div>
+        <div class="verify-row">
+          <div class="verify-label">主体类型</div>
+          <select class="verify-select" name="business_type">
+            <option value="">请选择营业主体类型</option>
+            <option value="企业" <%= business.business_type === '企业' ? 'selected' : '' %>>企业</option>
+            <option value="个体工商户" <%= business.business_type === '个体工商户' ? 'selected' : '' %>>个体工商户</option>
+            <option value="门店商户" <%= business.business_type === '门店商户' ? 'selected' : '' %>>门店商户</option>
+          </select>
+        </div>
+        <div class="verify-row">
+          <div class="verify-label">执照注册号</div>
+          <input class="verify-input" name="license_number" type="text" placeholder="请填写营业执照注册号" value="<%= business.license_number || '' %>">
+        </div>
+        <div class="verify-row">
+          <div class="verify-label">联系电话</div>
+          <input class="verify-input" name="contact_phone" type="text" placeholder="请填写联系电话" value="<%= business.contact_phone || user.phone || '' %>">
+        </div>
+        <input type="hidden" name="real_name" value="<%= business.real_name || user.nickname || '' %>">
+        <div class="verify-inline-note">认证有效期</div>
+        <div class="verify-valid-card">
+          <div class="verify-valid-title">自动通过</div>
+          <div class="verify-valid-price">0<span>元 / 有效期 1年</span></div>
+        </div>
+      </div>
+      <div class="verify-submit-wrap"><button class="verify-submit" type="submit">提交</button></div>
+    </form>
+  <% } %>
+
+  <% if (currentView === 'deposit') { %>
+    <div class="verify-hero deposit-hero">
+      <div class="deposit-amount">¥<%= depositAmount %></div>
+      <div class="deposit-sub"><%= summary.depositStatus === 'paid' ? '已缴纳诚信保证金' : summary.depositStatus === 'pending' ? '保证金申请审核中' : '未缴纳诚信保证金' %></div>
+    </div>
+    <div class="deposit-faq">
+      <div class="deposit-faq-item">
+        <div class="deposit-faq-q">保证券是什么？</div>
+        <div class="deposit-faq-a">指根据本站规则及其它协议缴存并同意冻结于其本站账户中，授权本站处置的，用于在服务商不能按约提供服务时赔付给顾客或本站按照相关规定扣除的违约金。</div>
+      </div>
+      <div class="deposit-faq-item">
+        <div class="deposit-faq-q">缴纳保证金有什么好处？</div>
+        <div class="deposit-faq-a">1. 为消费者提供保障，可以让消费者放心购买，提高商家成交概率。<br>2. 提高商家信誉度，会增加更多诚信商家曝光，并有醒目的安全标志。<br>3. 可以参加更多的活动，获得更大的推广平台，竞争力更强。</div>
+      </div>
+      <div class="deposit-faq-item">
+        <div class="deposit-faq-q">保证金如何退回？</div>
+        <div class="deposit-faq-a">退诚信保证金路径如下：<br>1、登录账号，进入：我的-我的钱包；<br>2、点击我的保证金；<br>3、保证金可退还，在申请后7个工作日内退还。</div>
+      </div>
+    </div>
+    <div class="deposit-actions">
+      <form method="post" action="/plugin.php?id=xigua_hb&ac=verify&do=deposit" style="margin:0;">
+        <button class="deposit-btn primary" type="submit"><%= summary.depositStatus === 'pending' ? '已提交申请' : summary.depositStatus === 'paid' ? '已完成缴纳' : '立即缴纳' %></button>
+      </form>
+      <a class="deposit-btn" href="/plugin.php?id=xigua_hb&ac=verify&high=4">取消</a>
+    </div>
+  <% } %>
 </div>
 <%- include("partials/tabbar", { currentTab }) %>

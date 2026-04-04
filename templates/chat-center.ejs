@@ -2,11 +2,12 @@
 <style>
   .msg-page { background:#f7f7f7; min-height:100vh; padding-bottom:4.4rem; }
   .msg-header {
-    height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center;
-    justify-content:space-between; padding:0 .7rem; font-size:.78rem; font-weight:600;
+    height:2.35rem; background:#35c96d; color:#fff; position:relative;
+    padding:0 .7rem; font-size:.72rem; font-weight:600;
   }
-  .msg-header a { color:#fff; text-decoration:none; }
-  .msg-header .title { font-size:.82rem; font-weight:700; }
+  .msg-header a { color:#fff; text-decoration:none; position:absolute; top:50%; transform:translateY(-50%); }
+  .msg-header > a:first-child { left:.7rem; }
+  .msg-header .title { position:absolute; left:3.4rem; right:3.4rem; top:50%; transform:translateY(-50%); text-align:center; font-size:.84rem; font-weight:700; line-height:1.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .msg-shortcuts {
     display:grid; grid-template-columns:repeat(4, 1fr); gap:.2rem; background:#fff;
     padding:.8rem .45rem .55rem; border-bottom:1px solid #f1f1f1;
@@ -39,7 +40,7 @@
 
 <div class="msg-page">
   <div class="msg-header">
-    <a href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
+    <a class="ui-back-link is-light" href="/plugin.php?id=xigua_hb&mobile=2&high=0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
     <div class="title">我的消息</div>
     <span></span>
   </div>

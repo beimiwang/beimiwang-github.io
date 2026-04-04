@@ -1,8 +1,11 @@
 <%- include("partials/head", { pageTitle, message }) %>
 <style>
   .uo-shell { background:#f6f7fb; min-height:100vh; padding-bottom:4.4rem; }
-  .uo-header { height:2.2rem; background:#35c96d; color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 .7rem; font-size:.78rem; font-weight:600; }
-  .uo-header a { color:#fff; text-decoration:none; }
+  .uo-header { height:2.35rem; background:#35c96d; color:#fff; position:relative; padding:0 .7rem; font-size:.72rem; font-weight:600; }
+  .uo-header a { color:#fff; text-decoration:none; position:absolute; top:50%; transform:translateY(-50%); }
+  .uo-header > a:first-child { left:.7rem; }
+  .uo-header > div { position:absolute; left:3.4rem; right:3.4rem; top:50%; transform:translateY(-50%); text-align:center; font-size:.84rem; line-height:1.1rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .uo-header > span { position:absolute; right:.7rem; top:50%; transform:translateY(-50%); min-width:2.2rem; }
   .uo-list { margin:.7rem .6rem 0; display:grid; gap:.55rem; }
   .uo-card { background:#fff; border-radius:.82rem; box-shadow:0 .1rem .32rem rgba(15,23,42,.05); padding:.8rem; }
   .uo-top { display:flex; justify-content:space-between; gap:.6rem; }
@@ -11,9 +14,9 @@
   .uo-meta { margin-top:.28rem; display:flex; gap:.4rem; flex-wrap:wrap; font-size:.6rem; color:#98a2b2; }
 </style>
 <div class="uo-shell">
-  <div class="uo-header"><a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a><div>我的订单</div><span></span></div>
+  <div class="uo-header"><a class="ui-back-link is-light" href="/plugin.php?id=xigua_hb&ac=my&high=4"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a><div><%= pageTitle %></div><span></span></div>
   <div class="uo-list">
-    <% if (!data.orders.length) { %><div class="uo-card">暂无订单记录</div><% } %>
+    <% if (!data.orders.length) { %><div class="uo-card"><%= pageTitle === "会员卡订单" ? "暂无会员卡订单" : "暂无订单记录" %></div><% } %>
     <% data.orders.forEach((item) => { %>
       <div class="uo-card">
         <div class="uo-top">

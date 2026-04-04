@@ -690,7 +690,7 @@
 <% if (isRideCategory) { %>
 <div class="ride-app">
   <div class="ride-header">
-    <a href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
+    <a class="ui-back-link is-light" href="/plugin.php?id=xigua_hb&mobile=2&high=0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
     <div class="title"><%= data.category ? data.category.name : "顺风车" %></div>
     <a href="/plugin.php?id=xigua_hb&ac=pub&high=2" style="text-align:right;">发布</a>
   </div>
@@ -771,7 +771,7 @@
 <% } else { %>
 <div class="list-app">
   <div class="list-header">
-    <a href="/plugin.php?id=xigua_hb&mobile=2&high=0">‹ 返回</a>
+    <a class="ui-back-link is-light" href="/plugin.php?id=xigua_hb&mobile=2&high=0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
     <div class="title"><%= data.category ? data.category.name : "分类" %></div>
     <a href="/plugin.php?id=xigua_hb&ac=pub&high=2" style="text-align:right;">发布</a>
   </div>

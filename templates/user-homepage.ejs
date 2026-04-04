@@ -42,18 +42,19 @@
   .uph-topbar {
     position: relative;
     z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: .72rem .62rem 0;
+    height: 2.35rem;
+    padding: 0 .62rem;
     color: #fff;
-    font-size: .78rem;
+    font-size: .72rem;
     font-weight: 600;
   }
 
   .uph-topbar a {
     color: #fff;
     text-decoration: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .uph-dots {
@@ -69,6 +70,10 @@
     letter-spacing: .12rem;
     padding: 0;
     cursor: pointer;
+    position: absolute;
+    right: .62rem;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .uph-sheet {
@@ -176,6 +181,39 @@
     font-size: .66rem;
     color: var(--uph-subtle);
     font-weight: 500;
+  }
+
+  .uph-verify {
+    display: inline-flex;
+    align-items: center;
+    gap: .18rem;
+    padding: .1rem .36rem .1rem .12rem;
+    border-radius: 999px;
+    background: #effaf2;
+    color: #35b55f;
+    font-size: .56rem;
+    line-height: .8rem;
+    font-weight: 500;
+    letter-spacing: .01em;
+  }
+
+  .uph-verify-icon {
+    width: .88rem;
+    height: .88rem;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #55d97f, #32bf63);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
+    flex: none;
+  }
+
+  .uph-verify-icon svg {
+    width: .54rem;
+    height: .54rem;
+    display: block;
   }
 
   .uph-tabs {
@@ -354,6 +392,32 @@
   .uph-action-sheet-divider {
     height: .4rem;
   }
+
+  .uph-toast {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + .7rem);
+    left: 50%;
+    transform: translate(-50%, -0.35rem);
+    min-width: 5.4rem;
+    max-width: calc(100vw - 2rem);
+    padding: .62rem .95rem;
+    border-radius: .7rem;
+    background: rgba(31, 41, 55, .92);
+    color: #fff;
+    font-size: .68rem;
+    line-height: 1rem;
+    text-align: center;
+    box-shadow: 0 .22rem .9rem rgba(15, 23, 42, .24);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 120;
+  }
+
+  .uph-toast.is-show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 </style>
 
 <div class="uph-page">
@@ -363,7 +427,7 @@
     <% } %>
     <div class="uph-hero-overlay"></div>
     <div class="uph-topbar">
-      <a href="/plugin.php?id=xigua_hb&ac=my&high=4">‹ 返回</a>
+      <a class="ui-back-link is-light" href="/plugin.php?id=xigua_hb&ac=my&high=4"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a>
       <div></div>
       <button class="uph-dot-trigger" type="button" id="uphActionSheetOpen">···</button>
     </div>
@@ -385,7 +449,7 @@
         </div>
         <div class="uph-actions">
           <% if (!data.isSelf) { %>
-            <a class="uph-action" href="/plugin.php?id=xigua_hb&ac=homepage_follow&high=4&uid=<%= data.user.id %>" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;"><%= data.isFollowing ? "已关注" : "关注" %></a>
+            <a class="uph-action" id="uphFollowBtn" href="/plugin.php?id=xigua_hb&ac=homepage_follow&high=4&uid=<%= data.user.id %>" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;"><%= data.isFollowing ? "已关注" : "关注" %></a>
             <a class="uph-action-alt" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">消息</a>
           <% } else { %>
             <a class="uph-action" href="/plugin.php?id=xigua_hb&ac=profile_edit&high=4" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">编辑</a>
@@ -395,6 +459,27 @@
 
       <div class="uph-name-row">
         <div class="uph-name"><%= data.user.nickname %></div>
+        <% if (data.user.verificationBadge?.businessApproved) { %>
+          <div class="uph-verify">
+            <span class="uph-verify-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 3.2 18.4 5.8v5.4c0 4.2-2.5 7.5-6.4 9.6-3.9-2.1-6.4-5.4-6.4-9.6V5.8L12 3.2Z" fill="currentColor"/>
+                <path d="m8.7 12.2 2.1 2.1 4.5-4.7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span>企业认证</span>
+          </div>
+        <% } else if (data.user.verificationBadge?.personalApproved) { %>
+          <div class="uph-verify">
+            <span class="uph-verify-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 3.2 18.4 5.8v5.4c0 4.2-2.5 7.5-6.4 9.6-3.9-2.1-6.4-5.4-6.4-9.6V5.8L12 3.2Z" fill="currentColor"/>
+                <path d="m8.7 12.2 2.1 2.1 4.5-4.7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span>个人认证</span>
+          </div>
+        <% } %>
         <div class="uph-recent">刚刚来过</div>
       </div>
     </div>
@@ -454,6 +539,8 @@
   </section>
 </div>
 
+<div id="uphToast" class="uph-toast" aria-live="polite"></div>
+
 <div class="uph-sheet-mask" id="uphActionSheetMask"></div>
 <div class="uph-action-sheet" id="uphActionSheet">
   <button class="uph-action-sheet-btn" type="button" id="uphShareBtn">分享</button>
@@ -482,6 +569,9 @@
     const mask = document.getElementById("uphActionSheetMask");
     const sheet = document.getElementById("uphActionSheet");
     const shareBtn = document.getElementById("uphShareBtn");
+    const followBtn = document.getElementById("uphFollowBtn");
+    const toast = document.getElementById("uphToast");
+    let toastTimer = null;
     if (!trigger || !close || !mask || !sheet || !shareBtn) return;
 
     const shareTitle = <%- JSON.stringify(data.user.nickname + "的个人主页") %>;
@@ -497,9 +587,39 @@
       sheet.classList.remove("is-open");
     }
 
+    function showToast(message) {
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add("is-show");
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        toast.classList.remove("is-show");
+      }, 1600);
+    }
+
     trigger.addEventListener("click", openSheet);
     close.addEventListener("click", closeSheet);
     mask.addEventListener("click", closeSheet);
+
+    if (followBtn) {
+      followBtn.addEventListener("click", async (event) => {
+        event.preventDefault();
+        try {
+          const response = await fetch(`${followBtn.href}${followBtn.href.includes("?") ? "&" : "?"}ajax=1`, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+          });
+          const result = await response.json();
+          if (!response.ok || !result.ok) {
+            showToast(result.message || "操作失败，请重试");
+            return;
+          }
+          followBtn.textContent = result.following ? "已关注" : "关注";
+          showToast(result.message || "操作成功");
+        } catch (_error) {
+          showToast("操作失败，请重试");
+        }
+      });
+    }
 
     shareBtn.addEventListener("click", async () => {
       try {
