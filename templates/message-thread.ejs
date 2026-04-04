@@ -183,8 +183,16 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: .82rem;
     flex: 0 0 auto;
+  }
+  .svc-icon svg {
+    width:.78rem;
+    height:.78rem;
+    stroke:currentColor;
+    stroke-width:1.9;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
   }
   .svc-send {
     min-width: 2.02rem;
@@ -239,8 +247,8 @@
   <form class="svc-composer" method="post" action="/plugin.php?id=xigua_lt&ac=chat_send&channel=<%= data.channel.key %>">
     <a class="back ui-back-link icon-only" href="/plugin.php?id=xigua_lt&type=sx&mobile=2&high=3" aria-label="返回"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg></a>
     <input class="svc-input" type="text" name="content" placeholder="请输入聊天内容">
-    <span class="svc-icon">☺</span>
-    <span class="svc-icon">＋</span>
+    <span class="svc-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M9.2 14.2c.7.8 1.7 1.2 2.8 1.2s2.1-.4 2.8-1.2"/><path d="M9.5 10.4h.01"/><path d="M14.5 10.4h.01"/></svg></span>
+    <span class="svc-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5v13"/><path d="M5.5 12h13"/></svg></span>
     <button class="svc-send" type="submit">发送</button>
   </form>
 </div>

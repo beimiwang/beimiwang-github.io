@@ -734,7 +734,7 @@
     <button type="submit">搜索</button>
   </form>
 
-  <div class="ride-disclaimer">📢 免责声明：本平台不对任何人提供任何形式担保，所有信息仅供参考，不承担任何民事及法律责任，用户使用本平台即视为同意。</div>
+  <div class="ride-disclaimer"><span style="display:inline-flex;width:.82rem;height:.82rem;vertical-align:-.14rem;margin-right:.18rem;color:#ff7d86;"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:100%;height:100%;stroke:currentColor;stroke-width:1.85;fill:none;stroke-linecap:round;stroke-linejoin:round;"><path d="M4.5 12v-1.5c0-.6.3-1.1.8-1.4l8.9-5.1v12l-8.9-5.1a1.6 1.6 0 0 0-.8 1.4V12Z"/><path d="M14.2 7.6h1.2a3 3 0 0 1 0 6h-1.2"/><path d="m7.8 15.1.8 3.1"/></svg></span>免责声明：本平台不对任何人提供任何形式担保，所有信息仅供参考，不承担任何民事及法律责任，用户使用本平台即视为同意。</div>
 
   <div class="ride-list-head">
     <span>顺风车信息</span>
@@ -758,7 +758,7 @@
               <span><%= formatRelative(post.created_at) %></span>
               <span>◉ <%= post.views %></span>
             </div>
-            <a class="ride-call" href="tel:<%= post.phone %>">📞 电话</a>
+            <a class="ride-call" href="tel:<%= post.phone %>"><span style="display:inline-flex;width:.72rem;height:.72rem;margin-right:.14rem;vertical-align:-.1rem;"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:100%;height:100%;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;"><path d="M6.4 4.8h2.7l1.3 3.4-1.8 1.6a13.8 13.8 0 0 0 5.6 5.6l1.6-1.8 3.4 1.3v2.7a1.7 1.7 0 0 1-1.9 1.7A16.5 16.5 0 0 1 4.7 6.7 1.7 1.7 0 0 1 6.4 4.8Z"/></svg></span>电话</a>
           </div>
         </div>
       <% }) %>

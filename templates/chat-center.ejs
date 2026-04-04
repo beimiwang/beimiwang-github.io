@@ -17,6 +17,7 @@
     width:1.28rem; height:1.28rem; margin:0 auto .38rem; border-radius:.35rem;
     display:flex; align-items:center; justify-content:center; box-shadow:0 .08rem .24rem rgba(0,0,0,.08);
   }
+  .msg-shortcut .icon svg { width:.72rem; height:.72rem; stroke:#fff; stroke-width:1.9; fill:none; stroke-linecap:round; stroke-linejoin:round; }
   .msg-shortcut .label { font-size:.65rem; line-height:.9rem; }
   .msg-list { background:#fff; margin-top:.18rem; }
   .msg-row {
@@ -35,7 +36,8 @@
     min-height:9rem; display:flex; flex-direction:column; align-items:center; justify-content:center;
     color:#d6d6d6; font-size:.72rem; gap:.22rem; background:#fff;
   }
-  .msg-empty .icon { font-size:2rem; line-height:1; color:#e4e4e4; }
+  .msg-empty .icon { width:2rem; height:2rem; color:#e4e4e4; }
+  .msg-empty .icon svg { width:100%; height:100%; stroke:currentColor; stroke-width:1.55; fill:none; stroke-linecap:round; stroke-linejoin:round; }
 </style>
 
 <div class="msg-page">
@@ -47,10 +49,19 @@
 
   <div class="msg-shortcuts">
     <% const shortcutColors = { follow: '#f5a25e', fans: '#7b89ff', settings: '#d85ce9', profile: '#62b5ff' }; %>
-    <% const shortcutGlyph = { follow: '✣', fans: '♥', settings: '🔔', profile: '👤' }; %>
     <% (data.shortcuts || []).forEach((item) => { %>
       <a class="msg-shortcut" href="<%= item.href %>">
-        <div class="icon" style="background:<%= shortcutColors[item.key] || '#35c96d' %>;"><span style="color:#fff;font-size:.72rem;"><%= shortcutGlyph[item.key] || '•' %></span></div>
+        <div class="icon" style="background:<%= shortcutColors[item.key] || '#35c96d' %>;">
+          <% if (item.key === 'follow') { %>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 10.3 11 13l2-2 2.8 2.8"/><path d="M6.5 8.8 4.5 6.9a2.2 2.2 0 0 1 3.1-3.1l1.6 1.6"/><path d="m17.5 8.8 2-1.9a2.2 2.2 0 0 0-3.1-3.1l-1.6 1.6"/><path d="M7.5 12.5 5.7 14.3a2.2 2.2 0 1 0 3.1 3.1l1.8-1.8"/><path d="m16.5 12.5 1.8 1.8a2.2 2.2 0 1 1-3.1 3.1l-1.8-1.8"/></svg>
+          <% } else if (item.key === 'fans') { %>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-6.5-3.8-6.5-9.2A3.6 3.6 0 0 1 12 8.1a3.6 3.6 0 0 1 6.5 2.7C18.5 16.2 12 20 12 20Z"/></svg>
+          <% } else if (item.key === 'settings') { %>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.2a3.8 3.8 0 0 1 3.8 3.8v1.2c0 .8.2 1.5.7 2.2l1 1.4H6.5l1-1.4c.5-.7.7-1.4.7-2.2V9A3.8 3.8 0 0 1 12 5.2Z"/><path d="M10 17.5a2 2 0 0 0 4 0"/></svg>
+          <% } else { %>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19c1.7-3 4-4.5 6.5-4.5s4.8 1.5 6.5 4.5"/></svg>
+          <% } %>
+        </div>
         <div class="label"><%= item.label %></div>
       </a>
     <% }) %>
@@ -73,7 +84,7 @@
   </div>
 
   <div class="msg-empty">
-    <div class="icon">🗎</div>
+    <div class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4.8h6.5L18.2 8v11.2H8A2.2 2.2 0 0 1 5.8 17V7A2.2 2.2 0 0 1 8 4.8Z"/><path d="M14.5 4.8V8h3.7"/><path d="M9.2 12.2h5.6"/><path d="M9.2 15.2h4.1"/></svg></div>
     <div>没有更多了</div>
   </div>
 </div>

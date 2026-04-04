@@ -18,6 +18,8 @@
   .ulp-tabs { margin:.7rem .6rem 0; display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; }
   .ulp-tab { height:2rem; border-radius:.82rem; background:#fff; box-shadow:0 .1rem .32rem rgba(15,23,42,.05); display:flex; align-items:center; justify-content:center; text-decoration:none; color:#728096; font-size:.72rem; font-weight:600; }
   .ulp-tab.active { background:#35c96d; color:#fff; }
+  .ulp-toast { position:fixed; top:calc(env(safe-area-inset-top) + .7rem); left:50%; transform:translate(-50%, -.35rem); min-width:5.2rem; max-width:calc(100vw - 2rem); padding:.58rem .9rem; border-radius:.72rem; background:rgba(31,41,55,.92); color:#fff; font-size:.66rem; line-height:.96rem; text-align:center; box-shadow:0 .22rem .9rem rgba(15,23,42,.24); opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease; z-index:120; }
+  .ulp-toast.is-show { opacity:1; transform:translate(-50%, 0); }
 </style>
 <div class="ulp-shell">
   <div class="ulp-header"><a class="ui-back-link is-light" href="<%= typeof backHref !== 'undefined' ? backHref : '/plugin.php?id=xigua_hb&ac=my&high=4' %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg><span>返回</span></a><div><%= pageTitle %></div><span></span></div>
@@ -44,14 +46,14 @@
             <div class="ulp-meta"><span><%= item.created_at %></span></div>
             <div class="ulp-actions">
               <a class="ulp-btn primary" href="/plugin.php?id=xigua_hb&ac=homepage&high=4&uid=<%= item.target_user_id %>">查看主页</a>
-              <a class="ulp-btn" href="/plugin.php?id=xigua_hb&ac=homepage_follow&uid=<%= item.target_user_id %>&redirect=<%= encodeURIComponent('/plugin.php?id=xigua_hb&ac=favorites&high=4&tab=users') %>">取消关注</a>
+              <a class="ulp-btn" data-async-action="follow" href="/plugin.php?id=xigua_hb&ac=homepage_follow&uid=<%= item.target_user_id %>&redirect=<%= encodeURIComponent('/plugin.php?id=xigua_hb&ac=favorites&high=4&tab=users') %>">取消关注</a>
             </div>
           <% } else { %>
             <a class="ulp-card-link" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= item.post_id %>"><h3><%= item.post_title %></h3><p>已收藏信息，地区：<%= item.location || '未设置' %></p></a>
             <div class="ulp-meta"><span><%= item.created_at %></span></div>
             <div class="ulp-actions">
               <a class="ulp-btn primary" href="/plugin.php?id=xigua_hb&ac=view&pubid=<%= item.post_id %>">查看详情</a>
-              <a class="ulp-btn" href="/plugin.php?id=xigua_hb&ac=favorite&pubid=<%= item.post_id %>&redirect=<%= encodeURIComponent('/plugin.php?id=xigua_hb&ac=favorites&high=4&tab=posts') %>">取消收藏</a>
+              <a class="ulp-btn" data-async-action="favorite" href="/plugin.php?id=xigua_hb&ac=favorite&pubid=<%= item.post_id %>&redirect=<%= encodeURIComponent('/plugin.php?id=xigua_hb&ac=favorites&high=4&tab=posts') %>">取消收藏</a>
             </div>
           <% } %>
         <% } else if (listType === 'footprints') { %>
@@ -82,4 +84,56 @@
     <% }) %>
   </div>
 </div>
+<div id="ulpToast" class="ulp-toast" aria-live="polite"></div>
 <%- include("partials/tabbar", { currentTab }) %>
+<script>
+  (() => {
+    const toast = document.getElementById("ulpToast");
+    const actionLinks = Array.from(document.querySelectorAll(".ulp-btn[data-async-action]"));
+    if (!toast || !actionLinks.length) return;
+    const emptyText = "<%= listType === 'favorites' ? ((favoritesTab === 'users') ? '暂无关注记录' : '暂无收藏记录') : '暂无内容' %>";
+
+    let toastTimer = null;
+    const showToast = (message) => {
+      toast.textContent = message;
+      toast.classList.add("is-show");
+      window.clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => toast.classList.remove("is-show"), 1600);
+    };
+
+    actionLinks.forEach((link) => {
+      link.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const card = link.closest(".ulp-card");
+        try {
+          const response = await fetch(`${link.href}${link.href.includes("?") ? "&" : "?"}ajax=1`, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+          });
+          const result = await response.json().catch(() => ({ ok: false, message: "操作失败，请重试" }));
+          if (!response.ok || !result.ok) {
+            showToast(result.message || "操作失败，请重试");
+            return;
+          }
+          showToast(result.message || "操作成功");
+          if (card) {
+            card.style.transition = "opacity .18s ease, transform .18s ease";
+            card.style.opacity = "0";
+            card.style.transform = "translateY(-0.2rem)";
+            window.setTimeout(() => {
+              card.remove();
+              const list = document.querySelector(".ulp-list");
+              if (list && !list.querySelector(".ulp-card")) {
+                const empty = document.createElement("div");
+                empty.className = "ulp-card";
+                empty.textContent = emptyText;
+                list.appendChild(empty);
+              }
+            }, 180);
+          }
+        } catch (_error) {
+          showToast("操作失败，请重试");
+        }
+      });
+    });
+  })();
+</script>

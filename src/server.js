@@ -558,13 +558,16 @@ function renderPlugin(req, res) {
     }
 
     if (ac === "homepage_follow") {
+      const wantsJson = req.get("x-requested-with") === "XMLHttpRequest" || req.query.ajax === "1";
       if (!userSession.loggedIn) {
+        if (wantsJson) {
+          return res.status(401).json({ ok: false, message: "请先登录", loginRequired: true });
+        }
         return res.redirect("/plugin.php?id=xigua_hb&ac=auth&msg=请先登录");
       }
       const targetUserId = Number(req.query.uid || 0);
       const redirectTarget = String(req.query.redirect || "").trim();
       const result = toggleUserFollow(userSession.user.id, targetUserId);
-      const wantsJson = req.get("x-requested-with") === "XMLHttpRequest" || req.query.ajax === "1";
       if (wantsJson) {
         return res.json({
           ok: true,

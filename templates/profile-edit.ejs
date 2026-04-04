@@ -105,8 +105,16 @@
     align-items: center;
     justify-content: center;
     color: #fff;
-    font-size: .82rem;
     box-shadow: 0 .15rem .42rem rgba(11, 17, 32, .22);
+  }
+  .profile-edit-camera svg {
+    width:.82rem;
+    height:.82rem;
+    stroke:#fff;
+    stroke-width:1.9;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
   }
 
   .profile-edit-name {
@@ -184,9 +192,18 @@
 
   .profile-edit-editicon {
     color: #adb4c0;
-    font-size: .88rem;
-    line-height: 1;
+    width:.88rem;
+    height:.88rem;
     flex: 0 0 auto;
+  }
+  .profile-edit-editicon svg {
+    width:100%;
+    height:100%;
+    stroke:currentColor;
+    stroke-width:1.85;
+    fill:none;
+    stroke-linecap:round;
+    stroke-linejoin:round;
   }
 
   .profile-edit-gender {
@@ -216,6 +233,18 @@
     font-size: .8rem;
     font-weight: 600;
     box-shadow: inset 0 0 0 1px rgba(31, 41, 55, .04);
+  }
+  .profile-edit-gender label .gender-symbol {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:.92rem;
+    height:.92rem;
+    border-radius:999px;
+    border:1px solid currentColor;
+    font-size:.58rem;
+    line-height:1;
+    font-weight:700;
   }
 
   .profile-edit-gender input:checked + label {
@@ -429,7 +458,7 @@
     <div class="profile-edit-identity">
       <div class="profile-edit-avatar-wrap">
         <img id="avatarPreview" class="profile-edit-avatar" src="<%= data.user.avatar %>" alt="<%= data.user.nickname %>">
-        <label class="profile-edit-camera" for="avatarInput">📷</label>
+        <label class="profile-edit-camera" for="avatarInput"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 7.2h1.6l.8-1.4h2.8l.8 1.4h1.6a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H8.2a2 2 0 0 1-2-2V9.2a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="3.1"/></svg></label>
       </div>
       <div class="profile-edit-name"><%= data.user.nickname %></div>
     </div>
@@ -444,7 +473,7 @@
         <div class="profile-edit-label">用户名</div>
         <div class="profile-edit-inline">
           <input class="profile-edit-input" type="text" name="nickname" value="<%= data.user.nickname %>" placeholder="请输入用户名">
-          <span class="profile-edit-editicon">✎</span>
+          <span class="profile-edit-editicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 16 7.8-7.8 2 2L10 18H8z"/><path d="m14.7 7.3 2-2a1.4 1.4 0 0 1 2 2l-2 2"/><path d="M5.8 18.2h12.4"/></svg></span>
         </div>
       </div>
 
@@ -458,11 +487,11 @@
         <div class="profile-edit-gender">
           <div class="profile-edit-gender-item">
             <input id="genderMale" type="radio" name="gender" value="male" <%= data.user.gender === "male" ? "checked" : "" %>>
-            <label for="genderMale">♂ 男生</label>
+            <label for="genderMale"><span class="gender-symbol">男</span> 男生</label>
           </div>
           <div class="profile-edit-gender-item">
             <input id="genderFemale" type="radio" name="gender" value="female" <%= data.user.gender === "female" ? "checked" : "" %>>
-            <label for="genderFemale">♀ 女生</label>
+            <label for="genderFemale"><span class="gender-symbol">女</span> 女生</label>
           </div>
           <div class="profile-edit-gender-item">
             <input id="genderSecret" type="radio" name="gender" value="secret" <%= (!data.user.gender || data.user.gender === "secret") ? "checked" : "" %>>
